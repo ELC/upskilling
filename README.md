@@ -101,17 +101,12 @@ erDiagram
         int depends_on_step_id FK
     }
 
-    path_template_dependencies {
-        int path_template_id FK
-        int depends_on_path_template_id FK
-    }
-
     user_career_paths {
         int user_career_path_id PK
         int user_id FK
         int career_id FK
         date start_date
-        date deadline
+        date end_date
         int overall_progress_percent
     }
 
@@ -161,7 +156,6 @@ erDiagram
     careers ||--o{ path_templates : contains
     path_templates ||--o{ path_template_steps : has
     path_template_steps ||--o{ path_step_dependencies : depends_on
-    path_templates ||--o{ path_template_dependencies : depends_on
 
     users ||--o{ user_career_paths : assigned
     careers ||--o{ user_career_paths : defines

@@ -78,19 +78,12 @@ CREATE TABLE path_step_dependencies (
   PRIMARY KEY (step_id, depends_on_step_id)
 );
 
-CREATE TABLE path_template_dependencies (
-  path_template_id INTEGER NOT NULL REFERENCES path_templates(path_template_id),
-  depends_on_path_template_id INTEGER NOT NULL
-    REFERENCES path_templates(path_template_id),
-  PRIMARY KEY (path_template_id, depends_on_path_template_id)
-);
-
 CREATE TABLE user_career_paths (
   user_career_path_id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(user_id),
   career_id INTEGER NOT NULL REFERENCES careers(career_id),
   start_date DATE NOT NULL,
-  deadline DATE NOT NULL,
+  end_date DATE NOT NULL,
   overall_progress_percent INTEGER NOT NULL
     CHECK (overall_progress_percent BETWEEN 0 AND 100)
 );

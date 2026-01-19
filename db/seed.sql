@@ -182,20 +182,12 @@ INSERT INTO path_step_dependencies (step_id, depends_on_step_id) VALUES
   (15, 14),
   (16, 15);
 
-INSERT INTO path_template_dependencies (path_template_id, depends_on_path_template_id) VALUES
-  (2, 1),
-  (3, 2),
-  (4, 3),
-  (6, 5),
-  (7, 6),
-  (8, 7);
-
 INSERT INTO user_career_paths (
   user_career_path_id,
   user_id,
   career_id,
   start_date,
-  deadline,
+  end_date,
   overall_progress_percent
 ) VALUES
   (1, 4, 2, '2025-01-14', '2025-06-14', 75),
