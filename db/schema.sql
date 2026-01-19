@@ -4,7 +4,6 @@ CREATE TABLE users (
   user_id INTEGER PRIMARY KEY,
   full_name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'path_creator', 'mentor', 'mentee')),
   bio TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -28,6 +27,12 @@ CREATE TABLE role_actions (
   PRIMARY KEY (role_id, action_id)
 );
 
+CREATE TABLE user_roles (
+  user_id INTEGER NOT NULL REFERENCES users(user_id),
+  role_id INTEGER NOT NULL REFERENCES roles(role_id),
+  PRIMARY KEY (user_id, role_id)
+);
+
 CREATE TABLE teams (
   team_id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
@@ -46,22 +51,14 @@ CREATE TABLE careers (
   specialization TEXT
 );
 
-CREATE TABLE seniorities (
-  seniority_id INTEGER PRIMARY KEY,
-  name TEXT NOT NULL,
-  rank INTEGER NOT NULL
-);
-
 CREATE TABLE path_templates (
   path_template_id INTEGER PRIMARY KEY,
   career_id INTEGER NOT NULL REFERENCES careers(career_id),
-  seniority_id INTEGER NOT NULL REFERENCES seniorities(seniority_id),
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   duration_hours INTEGER NOT NULL,
   default_start_offset_days INTEGER,
-  default_deadline_offset_days INTEGER,
-  course_link TEXT
+  default_deadline_offset_days INTEGER
 );
 
 CREATE TABLE path_template_steps (
@@ -71,6 +68,7 @@ CREATE TABLE path_template_steps (
   name TEXT NOT NULL,
   description TEXT,
   duration_hours INTEGER,
+  course_link TEXT,
   UNIQUE (path_template_id, step_order)
 );
 

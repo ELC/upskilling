@@ -34,7 +34,6 @@ erDiagram
         int user_id PK
         string full_name
         string email
-        string role
         string bio
         timestamp created_at
     }
@@ -57,6 +56,11 @@ erDiagram
         int action_id FK
     }
 
+    user_roles {
+        int user_id FK
+        int role_id FK
+    }
+
     teams {
         int team_id PK
         string name
@@ -74,20 +78,12 @@ erDiagram
         string specialization
     }
 
-    seniorities {
-        int seniority_id PK
-        string name
-        int rank
-    }
-
     path_templates {
         int path_template_id PK
         int career_id FK
-        int seniority_id FK
         string name
         string description
         int duration_hours
-        string course_link
     }
 
     path_template_steps {
@@ -97,6 +93,7 @@ erDiagram
         string name
         string description
         int duration_hours
+        string course_link
     }
 
     path_step_dependencies {
@@ -151,13 +148,13 @@ erDiagram
     %% Relationships
     roles ||--o{ role_actions : has
     actions ||--o{ role_actions : granted_to
+    users ||--o{ user_roles : has
+    roles ||--o{ user_roles : assigned_to
 
     users ||--o{ teams : manages
     teams ||--o{ team_members : contains
-    users ||--o{ team_members : belongs_to
 
     careers ||--o{ path_templates : contains
-    seniorities ||--o{ path_templates : scoped_by
     path_templates ||--o{ path_template_steps : has
     path_template_steps ||--o{ path_step_dependencies : depends_on
     path_templates ||--o{ path_template_dependencies : depends_on
