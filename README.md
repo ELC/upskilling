@@ -169,6 +169,137 @@ erDiagram
     user_path_assignments ||--o{ log_entries : related_to
 ```
 
+### Schema Explanation
+
+The schema is organized into **4 main domains**:
+
+#### 1. Users & Access Control
+
+```mermaid
+flowchart LR
+    subgraph access [Access Control]
+        U[users] --> UR[user_roles]
+        UR --> R[roles]
+        R --> RA[role_actions]
+        RA --> A[actions]
+    end
+```
+
+| Table | Purpose |
+|-------|---------|
+| `users` | All people in the system (admins, mentors, mentees, path creators) |
+| `roles` | System roles: admin, path_creator, mentor, mentee. Includes `max_active_paths` to limit concurrent assignments |
+| `actions` | Atomic permissions like `team.view`, `paths.assign`, `paths.validate` |
+| `role_actions` | Maps which actions each role can perform |
+| `user_roles` | Assigns roles to users. A user can have multiple roles |
+
+#### 2. Team Organization
+
+```mermaid
+flowchart LR
+    subgraph teams_org [Team Structure]
+        U[users] -->|manages| T[teams]
+        T --> TM[team_members]
+        TM --> U2[users]
+    end
+```
+
+| Table | Purpose |
+|-------|---------|
+| `teams` | Groups of users managed by a single manager |
+| `team_members` | Links users to teams. A user can belong to multiple teams |
+
+#### 3. Learning Path Templates (Catalog)
+
+```mermaid
+flowchart TD
+    C[careers] --> PT[path_templates]
+    PT --> PTS[path_template_steps]
+    PTS --> PSD[path_step_dependencies]
+```
+
+| Table | Purpose |
+|-------|---------|
+| `careers` | High-level career tracks (e.g., "Frontend Developer", "UX/UI Designer") |
+| `path_templates` | Reusable learning paths belonging to a career. Seniority encoded in name |
+| `path_template_steps` | Individual learning activities within a path (courses, modules) |
+| `path_step_dependencies` | Prerequisites between steps - a step can only start after dependencies are completed |
+
+#### 4. User Progress & Tracking
+
+This is where **templates become real assignments**. Think of it like a university degree:
+
+```mermaid
+flowchart TD
+    subgraph career [user_career_paths = Degree Program]
+        UCP["John pursues UX/UI Designer<br/>Jan 14 - Jun 14, 2025"]
+    end
+
+    subgraph paths [user_path_assignments = Courses]
+        P1["Path 1: User Research<br/>Jan 14 - Feb 14"]
+        P2["Path 2: Design Thinking<br/>Feb 15 - Mar 15"]
+        P3["Path 3: Prototyping<br/>Mar 16 - Apr 16"]
+    end
+
+    subgraph steps [user_step_progress = Lessons]
+        S1[Research planning]
+        S2[Interview guide]
+        S3[Conduct interviews]
+    end
+
+    UCP --> P1
+    UCP --> P2
+    UCP --> P3
+    P1 --> S1
+    P1 --> S2
+    P1 --> S3
+```
+
+| Level | Table | Analogy | Example |
+|-------|-------|---------|---------|
+| Career | `user_career_paths` | Degree Program | "John is pursuing UX/UI Designer from Jan-Jun 2025" |
+| Path | `user_path_assignments` | Courses in the program | "Course 1: User Research Fundamentals (4 weeks)" |
+| Step | `user_step_progress` | Lessons in each course | "Lesson 1: Research planning (6 hours)" |
+
+| Table | Purpose |
+|-------|---------|
+| `user_career_paths` | When a user is assigned to pursue a career track with start/end dates |
+| `user_path_assignments` | Concrete assignment of a path template to a user's career journey |
+| `user_step_progress` | Tracks progress on each step with planned vs actual dates |
+| `log_entries` | Logbook for mentor-mentee interactions, approvals, and notes |
+
+#### Complete Data Flow
+
+```mermaid
+flowchart TB
+    subgraph catalog [Template Catalog - Created Once]
+        C[careers] --> PT[path_templates]
+        PT --> PTS[path_template_steps]
+        PTS --> PSD[path_step_dependencies]
+    end
+
+    subgraph assignment [User Assignments - Per Person]
+        U[users] --> UCP[user_career_paths]
+        C --> UCP
+        UCP --> UPA[user_path_assignments]
+        PT --> UPA
+        UPA --> USP[user_step_progress]
+        PTS --> USP
+    end
+
+    subgraph feedback [Feedback Loop]
+        UCP --> LOG[log_entries]
+        UPA --> LOG
+    end
+```
+
+**The flow is**:
+1. **Admins/Path Creators** define careers, paths, and steps
+2. **Mentors** assign career paths to mentees
+3. **System** creates `user_career_paths` → `user_path_assignments` → `user_step_progress`
+4. **Mentees** work through steps, updating progress
+5. **Mentors** validate completed paths and add log entries
+
 ## Project Structure
 
 ```
