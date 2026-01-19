@@ -132,6 +132,10 @@ erDiagram
         int step_id FK
         string status
         int progress_percent
+        date planned_start_date
+        date planned_end_date
+        date actual_start_date
+        date actual_end_date
         timestamp updated_at
     }
 

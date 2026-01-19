@@ -117,6 +117,10 @@ CREATE TABLE user_step_progress (
   status TEXT NOT NULL
     CHECK (status IN ('Pending', 'In Progress', 'Completed')),
   progress_percent INTEGER NOT NULL CHECK (progress_percent BETWEEN 0 AND 100),
+  planned_start_date DATE,
+  planned_end_date DATE,
+  actual_start_date DATE,
+  actual_end_date DATE,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (user_path_assignment_id, step_id)
 );
