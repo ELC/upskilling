@@ -1,8 +1,11 @@
 """Teams router."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
+from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse, PaginatedResponse
 from upskills.models.domain.team import (
     TeamCreate,
@@ -22,7 +25,7 @@ router = APIRouter()
 @router.get("", response_model=PaginatedResponse[TeamListResponse])
 async def list_teams(
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.view")),
+    _: Annotated[User, Depends(require_permissions("team.view"))],
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ) -> PaginatedResponse[TeamListResponse]:
@@ -66,7 +69,7 @@ async def get_teams_im_member_of(
 async def create_team(
     data: TeamCreate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.manage")),
+    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> TeamWithMembersResponse:
     """Create a new team (requires team.manage permission)."""
     service = TeamService(session)
@@ -89,7 +92,7 @@ async def create_team(
 async def get_team(
     team_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.view")),
+    _: Annotated[User, Depends(require_permissions("team.view"))],
 ) -> TeamWithMembersResponse:
     """Get a specific team (requires team.view permission)."""
     service = TeamService(session)
@@ -109,7 +112,7 @@ async def update_team(
     team_id: int,
     data: TeamUpdate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.manage")),
+    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> TeamWithMembersResponse:
     """Update a team (requires team.manage permission)."""
     service = TeamService(session)
@@ -140,7 +143,7 @@ async def update_team(
 async def delete_team(
     team_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.manage")),
+    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Delete a team (requires team.manage permission)."""
     service = TeamService(session)
@@ -160,7 +163,7 @@ async def delete_team(
 async def get_team_members(
     team_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.view")),
+    _: Annotated[User, Depends(require_permissions("team.view"))],
 ) -> list[TeamMemberResponse]:
     """Get members of a team (requires team.view permission)."""
     service = TeamService(session)
@@ -172,7 +175,7 @@ async def add_team_member(
     team_id: int,
     data: TeamMemberAdd,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.manage")),
+    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Add a member to a team (requires team.manage permission)."""
     service = TeamService(session)
@@ -193,7 +196,7 @@ async def add_team_members_bulk(
     team_id: int,
     data: TeamMemberBulkAdd,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.manage")),
+    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Add multiple members to a team (requires team.manage permission)."""
     service = TeamService(session)
@@ -221,7 +224,7 @@ async def remove_team_member(
     team_id: int,
     user_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.manage")),
+    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Remove a member from a team (requires team.manage permission)."""
     service = TeamService(session)

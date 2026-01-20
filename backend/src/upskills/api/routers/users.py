@@ -1,8 +1,11 @@
 """Users router."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
+from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse, PaginatedResponse
 from upskills.models.domain.user import (
     PasswordChange,
@@ -18,7 +21,7 @@ router = APIRouter()
 @router.get("", response_model=PaginatedResponse[UserResponse])
 async def list_users(
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.view")),
+    _: Annotated[User, Depends(require_permissions("team.view"))],
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ) -> PaginatedResponse[UserResponse]:
@@ -123,7 +126,7 @@ async def change_my_password(
 async def get_user(
     user_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.view")),
+    _: Annotated[User, Depends(require_permissions("team.view"))],
 ) -> UserResponse:
     """Get a specific user (requires team.view permission)."""
     service = UserService(session)
@@ -142,7 +145,7 @@ async def get_user(
 async def delete_user(
     user_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.manage")),
+    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Delete a user (requires team.manage permission)."""
     service = UserService(session)
@@ -163,7 +166,7 @@ async def assign_role_to_user(
     user_id: int,
     role_name: str,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.manage")),
+    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Assign a role to a user (requires team.manage permission)."""
     service = UserService(session)
@@ -184,7 +187,7 @@ async def remove_role_from_user(
     user_id: int,
     role_name: str,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("team.manage")),
+    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Remove a role from a user (requires team.manage permission)."""
     service = UserService(session)

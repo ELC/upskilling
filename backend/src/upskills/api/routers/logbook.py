@@ -1,8 +1,11 @@
 """Logbook router."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
+from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse
 from upskills.models.domain.progress import (
     LogEntryCreate,
@@ -31,7 +34,7 @@ async def get_logbook_entries(
 async def create_logbook_entry(
     data: LogEntryCreate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("logbook.create")),
+    _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> LogEntryResponse:
     """Create a new logbook entry (requires logbook.create permission)."""
     service = LogbookService(session)
@@ -78,7 +81,7 @@ async def update_logbook_entry(
     log_entry_id: int,
     data: LogEntryUpdate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("logbook.create")),
+    _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> LogEntryResponse:
     """Update a logbook entry (requires logbook.create permission)."""
     service = LogbookService(session)
@@ -103,7 +106,7 @@ async def update_logbook_entry(
 async def delete_logbook_entry(
     log_entry_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("logbook.create")),
+    _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> MessageResponse:
     """Delete a logbook entry (requires logbook.create permission)."""
     service = LogbookService(session)

@@ -1,8 +1,11 @@
 """Paths router for path templates and steps."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
+from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse, PaginatedResponse
 from upskills.models.domain.career import (
     PathStepCreate,
@@ -52,7 +55,7 @@ async def list_paths(
 async def create_path(
     data: PathTemplateCreate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("path_template.create")),
+    _: Annotated[User, Depends(require_permissions("path_template.create"))],
 ) -> PathTemplateResponse:
     """Create a new path template (requires path_template.create permission)."""
     service = PathTemplateService(session)
@@ -99,7 +102,7 @@ async def update_path(
     path_id: int,
     data: PathTemplateUpdate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("path_template.update")),
+    _: Annotated[User, Depends(require_permissions("path_template.update"))],
 ) -> PathTemplateResponse:
     """Update a path template (requires path_template.update permission)."""
     service = PathTemplateService(session)
@@ -126,7 +129,7 @@ async def update_path(
 async def delete_path(
     path_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("path_template.update")),
+    _: Annotated[User, Depends(require_permissions("path_template.update"))],
 ) -> MessageResponse:
     """Delete a path template (requires path_template.update permission)."""
     service = PathTemplateService(session)
@@ -161,7 +164,7 @@ async def create_step(
     path_id: int,
     data: PathStepCreate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("path_content.add")),
+    _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> PathStepResponse:
     """Create a new step (requires path_content.add permission)."""
     service = PathStepService(session)
@@ -208,7 +211,7 @@ async def update_step(
     step_id: int,
     data: PathStepUpdate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("path_content.add")),
+    _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> PathStepResponse:
     """Update a step (requires path_content.add permission)."""
     service = PathStepService(session)
@@ -235,7 +238,7 @@ async def update_step(
 async def delete_step(
     step_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("path_content.add")),
+    _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> MessageResponse:
     """Delete a step (requires path_content.add permission)."""
     service = PathStepService(session)
@@ -259,7 +262,7 @@ async def add_step_dependency(
     step_id: int,
     data: StepDependencyCreate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("path_content.add")),
+    _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> MessageResponse:
     """Add a dependency to a step (requires path_content.add permission)."""
     service = PathStepService(session)
@@ -273,7 +276,7 @@ async def remove_step_dependency(
     step_id: int,
     depends_on_step_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("path_content.add")),
+    _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> MessageResponse:
     """Remove a dependency from a step (requires path_content.add permission)."""
     service = PathStepService(session)

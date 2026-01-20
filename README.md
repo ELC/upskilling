@@ -353,22 +353,50 @@ upskilling/
 
 ### Backend Setup
 
-```bash
+#### Windows (PowerShell or Git Bash)
+
+```powershell
+# Install UV (if not installed)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Navigate to backend
 cd backend
 
-# Install UV if you haven't
-pip install uv
-
-# Create virtual environment and install dependencies
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-uv pip install -e ".[dev]"
+# Sync dependencies (creates venv automatically)
+uv sync
 
 # Run the development server
-uvicorn upskills.main:app --reload --port 8000
+uv run poe serve-dev
+```
+
+#### macOS / Linux
+
+```bash
+# Install UV (if not installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Navigate to backend
+cd backend
+
+# Sync dependencies (creates venv automatically)
+uv sync
+
+# Run the development server
+uv run poe serve-dev
 ```
 
 The API will be available at `http://localhost:8000`. API docs at `http://localhost:8000/docs`.
+
+**Available tasks (via poethepoet):**
+
+| Command | Description |
+|---------|-------------|
+| `uv run poe serve` | Run production server |
+| `uv run poe serve-dev` | Run dev server with hot reload |
+| `uv run poe test` | Run tests |
+| `uv run poe format` | Run pre-commit formatters |
+| `uv run poe lint` | Run ruff linter |
+| `uv run poe typecheck` | Run mypy type checker |
 
 ### Frontend Setup
 

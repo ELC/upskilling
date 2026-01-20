@@ -1,8 +1,11 @@
 """Progress tracking router."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
+from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse
 from upskills.models.domain.progress import (
     DashboardStats,
@@ -77,7 +80,7 @@ async def get_career_path(
 async def assign_career_path(
     data: UserCareerPathCreate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("paths.assign")),
+    _: Annotated[User, Depends(require_permissions("paths.assign"))],
 ) -> UserCareerPathResponse:
     """Assign a career path to a user (requires paths.assign permission)."""
     service = ProgressService(session)
@@ -103,7 +106,7 @@ async def update_career_path(
     career_path_id: int,
     data: UserCareerPathUpdate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("paths.assign")),
+    _: Annotated[User, Depends(require_permissions("paths.assign"))],
 ) -> UserCareerPathResponse:
     """Update a career path (requires paths.assign permission)."""
     service = ProgressService(session)
@@ -148,7 +151,7 @@ async def get_path_assignments(
 async def assign_path(
     data: UserPathAssignmentCreate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("paths.assign")),
+    _: Annotated[User, Depends(require_permissions("paths.assign"))],
 ) -> UserPathAssignmentResponse:
     """Assign a path to a user's career (requires paths.assign permission)."""
     service = ProgressService(session)
@@ -219,7 +222,7 @@ async def update_assignment(
 @router.get("/pending-validations", response_model=list[UserPathAssignmentDetailResponse])
 async def get_pending_validations(
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("paths.validate")),
+    _: Annotated[User, Depends(require_permissions("paths.validate"))],
 ) -> list[UserPathAssignmentDetailResponse]:
     """Get all assignments pending mentor validation."""
     service = ProgressService(session)
@@ -230,7 +233,7 @@ async def get_pending_validations(
 async def approve_assignment(
     assignment_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("paths.validate")),
+    _: Annotated[User, Depends(require_permissions("paths.validate"))],
 ) -> UserPathAssignmentResponse:
     """Approve a completed path assignment."""
     service = ProgressService(session)
@@ -253,7 +256,7 @@ async def approve_assignment(
 async def reject_assignment(
     assignment_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("paths.validate")),
+    _: Annotated[User, Depends(require_permissions("paths.validate"))],
 ) -> UserPathAssignmentResponse:
     """Reject a completed path assignment."""
     service = ProgressService(session)

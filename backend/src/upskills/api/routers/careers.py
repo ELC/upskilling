@@ -1,8 +1,11 @@
 """Careers router."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
+from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse, PaginatedResponse
 from upskills.models.domain.career import (
     CareerCreate,
@@ -42,7 +45,7 @@ async def list_careers(
 async def create_career(
     data: CareerCreate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("career.create")),
+    _: Annotated[User, Depends(require_permissions("career.create"))],
 ) -> CareerResponse:
     """Create a new career (requires career.create permission)."""
     service = CareerService(session)
@@ -78,7 +81,7 @@ async def update_career(
     career_id: int,
     data: CareerUpdate,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("career.update")),
+    _: Annotated[User, Depends(require_permissions("career.update"))],
 ) -> CareerResponse:
     """Update a career (requires career.update permission)."""
     service = CareerService(session)
@@ -102,7 +105,7 @@ async def update_career(
 async def delete_career(
     career_id: int,
     session: DbSession,
-    _: CurrentUser = Depends(require_permissions("career.update")),
+    _: Annotated[User, Depends(require_permissions("career.update"))],
 ) -> MessageResponse:
     """Delete a career (requires career.update permission)."""
     service = CareerService(session)
