@@ -22,9 +22,11 @@ UpSkills helps organizations:
 
 ## Tech Stack
 
-- **Frontend**: React
-- **Backend**: .NET 10
-- **Database**: Relational (SQL)
+- **Frontend**: React 18 + TypeScript + TailwindCSS + Vite
+- **Backend**: Python 3.12 + FastAPI + SQLAlchemy + Pydantic
+- **Database**: SQLite (dev) / PostgreSQL (prod)
+- **Package Management**: UV (backend), npm (frontend)
+- **Containerization**: Docker + docker-compose
 
 ## Database Schema
 
@@ -304,29 +306,106 @@ flowchart TB
 
 ```
 upskilling/
+├── backend/
+│   ├── src/upskills/
+│   │   ├── api/routers/       # FastAPI route handlers
+│   │   ├── core/              # Config, security, dependencies
+│   │   ├── db/                # Database provider abstraction
+│   │   ├── models/
+│   │   │   ├── db/            # SQLAlchemy ORM models
+│   │   │   └── domain/        # Pydantic request/response models
+│   │   ├── repositories/      # Data access layer
+│   │   ├── services/          # Business logic layer
+│   │   ├── containers.py      # DI container
+│   │   └── main.py            # FastAPI app entry point
+│   ├── tests/
+│   ├── pyproject.toml         # Python dependencies (UV)
+│   ├── Dockerfile
+│   └── .pre-commit-config.yaml
+├── frontend/
+│   ├── src/
+│   │   ├── components/        # Reusable UI components
+│   │   ├── pages/             # Page components
+│   │   ├── services/          # API client
+│   │   ├── contexts/          # React contexts (auth)
+│   │   └── types/             # TypeScript types
+│   ├── package.json
+│   ├── Dockerfile
+│   └── nginx.conf
 ├── db/
-│   ├── schema.sql      # Database table definitions
-│   └── seed.sql        # Demo data for development
+│   ├── schema.sql             # Database table definitions
+│   └── seed.sql               # Demo data for development
 ├── docs/
-│   └── db/
-│       └── tables.md   # Quick reference for tables
+│   └── db/tables.md           # Quick reference for tables
+├── docker-compose.yml
+├── LICENSE
 └── README.md
 ```
 
 ## Getting Started
 
-1. **Database Setup**
-   ```bash
-   # Run schema creation
-   psql -d your_db -f db/schema.sql
-   
-   # Load demo data
-   psql -d your_db -f db/seed.sql
-   ```
+### Prerequisites
 
-2. **Backend** (coming soon)
-3. **Frontend** (coming soon)
+- Python 3.12+
+- Node.js 20+
+- UV package manager (for Python)
+- Docker (optional, for containerized deployment)
+
+### Backend Setup
+
+```bash
+cd backend
+
+# Install UV if you haven't
+pip install uv
+
+# Create virtual environment and install dependencies
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -e ".[dev]"
+
+# Run the development server
+uvicorn upskills.main:app --reload --port 8000
+```
+
+The API will be available at `http://localhost:8000`. API docs at `http://localhost:8000/docs`.
+
+### Frontend Setup
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run the development server
+npm run dev
+```
+
+The frontend will be available at `http://localhost:3000`.
+
+### Docker Deployment
+
+```bash
+# Build and run all services
+docker-compose up --build
+
+# Frontend: http://localhost
+# Backend API: http://localhost:8000
+```
+
+## API Endpoints
+
+| Prefix | Description |
+|--------|-------------|
+| `/api/v1/auth` | Authentication (login, register, refresh, password reset) |
+| `/api/v1/users` | User management and profiles |
+| `/api/v1/teams` | Team management |
+| `/api/v1/careers` | Career track CRUD |
+| `/api/v1/paths` | Path templates and steps |
+| `/api/v1/progress` | Career paths, assignments, step progress |
+| `/api/v1/logbook` | Mentor-mentee interaction logs |
 
 ## License
 
-Internal use only.
+MIT License - see [LICENSE](LICENSE) for details.
