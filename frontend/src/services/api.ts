@@ -86,6 +86,9 @@ api.interceptors.response.use(
 // Auth API
 export const authApi = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/cd4c7f55-6aae-4cfc-9219-02b3877c13d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.ts:authApi.login',message:'Sending login request',data:{email:data.email,passwordLength:data.password.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D,E'})}).catch(()=>{});
+    // #endregion
     const response = await api.post<AuthResponse>('/auth/login', data);
     return response.data;
   },

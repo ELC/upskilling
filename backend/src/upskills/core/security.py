@@ -3,23 +3,36 @@
 from datetime import datetime, timedelta
 from typing import Any
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from upskills.core.config import get_settings
-
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
+    # #region agent log - hypothesis F
+    import json, os
+    log_path = r"c:\Users\leona\source\repos\upskilling\.cursor\debug.log"
+    with open(log_path, "a") as f: f.write(json.dumps({"location":"security.py:hash_password","message":"Hashing password","data":{"passwordLength":len(password)},"hypothesisId":"F"}) + "\n")
+    # #endregion
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    # #region agent log - hypothesis F
+    import json, os
+    log_path = r"c:\Users\leona\source\repos\upskilling\.cursor\debug.log"
+    with open(log_path, "a") as f: f.write(json.dumps({"location":"security.py:verify_password","message":"Verifying password","data":{"passwordLength":len(plain_password),"hashLength":len(hashed_password)},"hypothesisId":"F"}) + "\n")
+    # #endregion
+    try:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception as e:
+        # #region agent log - hypothesis F
+        with open(log_path, "a") as f: f.write(json.dumps({"location":"security.py:verify_password","message":"Password verification failed","data":{"error":str(e)},"hypothesisId":"F"}) + "\n")
+        # #endregion
+        return False
 
 
 def create_access_token(

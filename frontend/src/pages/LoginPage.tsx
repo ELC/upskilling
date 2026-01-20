@@ -18,11 +18,31 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
 
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/cd4c7f55-6aae-4cfc-9219-02b3877c13d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginPage.tsx:handleSubmit',message:'Login attempt started',data:{email,passwordLength:password.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B,C,D'})}).catch(()=>{});
+    // #endregion
+
     try {
       await login({ email, password });
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/cd4c7f55-6aae-4cfc-9219-02b3877c13d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginPage.tsx:handleSubmit',message:'Login succeeded',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'success'})}).catch(()=>{});
+      // #endregion
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to sign in. Please try again.');
+      // #region agent log
+      console.log('[DEBUG] Login error:', {status: err.response?.status, detail: err.response?.data?.detail, detailType: typeof err.response?.data?.detail, isArray: Array.isArray(err.response?.data?.detail)});
+      fetch('http://127.0.0.1:7244/ingest/cd4c7f55-6aae-4cfc-9219-02b3877c13d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginPage.tsx:catch',message:'Login error caught',data:{status:err.response?.status,detail:err.response?.data?.detail,detailType:typeof err.response?.data?.detail,isArray:Array.isArray(err.response?.data?.detail),fullData:err.response?.data},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      // Fix: Handle Pydantic validation errors (array of objects) vs string errors
+      const detail = err.response?.data?.detail;
+      let errorMessage = 'Failed to sign in. Please try again.';
+      if (typeof detail === 'string') {
+        errorMessage = detail;
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        // Pydantic validation error - extract message from first error
+        errorMessage = detail[0]?.msg || errorMessage;
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
