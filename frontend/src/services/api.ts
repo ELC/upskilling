@@ -59,15 +59,15 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
           const response = await axios.post<TokenResponse>(`${API_BASE_URL}/auth/refresh`, {
-            refresh_token: refreshToken,
+            refreshToken: refreshToken,
           });
 
-          const { access_token, refresh_token } = response.data;
-          localStorage.setItem('access_token', access_token);
-          localStorage.setItem('refresh_token', refresh_token);
+          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          localStorage.setItem('access_token', accessToken);
+          localStorage.setItem('refresh_token', newRefreshToken);
 
           if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           }
           return api(originalRequest);
         }
@@ -96,7 +96,7 @@ export const authApi = {
   },
 
   refresh: async (refreshToken: string): Promise<TokenResponse> => {
-    const response = await api.post<TokenResponse>('/auth/refresh', { refresh_token: refreshToken });
+    const response = await api.post<TokenResponse>('/auth/refresh', { refreshToken: refreshToken });
     return response.data;
   },
 
