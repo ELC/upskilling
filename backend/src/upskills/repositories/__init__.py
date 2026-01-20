@@ -17,14 +17,14 @@ from upskills.repositories.user import RoleRepository, UserRepository
 
 __all__ = [
     "BaseRepository",
-    "UserRepository",
+    "CareerRepository",
+    "LogEntryRepository",
+    "PathStepRepository",
+    "PathTemplateRepository",
     "RoleRepository",
     "TeamRepository",
-    "CareerRepository",
-    "PathTemplateRepository",
-    "PathStepRepository",
     "UserCareerPathRepository",
     "UserPathAssignmentRepository",
+    "UserRepository",
     "UserStepProgressRepository",
-    "LogEntryRepository",
 ]

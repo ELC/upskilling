@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
 from upskills.models.db.user import User
-from upskills.models.domain.base import MessageResponse
 from upskills.models.domain.progress import (
     DashboardStats,
     MenteeProgressSummary,
+    StepProgressUpdateInput,
     UserCareerPathCreate,
     UserCareerPathDetailResponse,
     UserCareerPathResponse,
@@ -30,7 +30,7 @@ router = APIRouter()
 # === Dashboard ===
 
 
-@router.get("/dashboard", response_model=DashboardStats)
+@router.get("/dashboard")
 async def get_dashboard(
     current_user: CurrentUser,
     session: DbSession,
@@ -43,7 +43,7 @@ async def get_dashboard(
 # === Career Paths ===
 
 
-@router.get("/career-paths", response_model=list[UserCareerPathDetailResponse])
+@router.get("/career-paths")
 async def get_my_career_paths(
     current_user: CurrentUser,
     session: DbSession,
@@ -53,7 +53,7 @@ async def get_my_career_paths(
     return await service.get_user_career_paths(current_user.user_id)
 
 
-@router.get("/career-paths/{career_path_id}", response_model=UserCareerPathDetailResponse)
+@router.get("/career-paths/{career_path_id}")
 async def get_career_path(
     career_path_id: int,
     current_user: CurrentUser,
@@ -74,7 +74,6 @@ async def get_career_path(
 
 @router.post(
     "/career-paths",
-    response_model=UserCareerPathResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def assign_career_path(
@@ -98,10 +97,10 @@ async def assign_career_path(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.put("/career-paths/{career_path_id}", response_model=UserCareerPathResponse)
+@router.put("/career-paths/{career_path_id}")
 async def update_career_path(
     career_path_id: int,
     data: UserCareerPathUpdate,
@@ -131,7 +130,6 @@ async def update_career_path(
 
 @router.get(
     "/career-paths/{career_path_id}/assignments",
-    response_model=list[UserPathAssignmentResponse],
 )
 async def get_path_assignments(
     career_path_id: int,
@@ -145,7 +143,6 @@ async def get_path_assignments(
 
 @router.post(
     "/assignments",
-    response_model=UserPathAssignmentResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def assign_path(
@@ -169,10 +166,10 @@ async def assign_path(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.get("/assignments/{assignment_id}", response_model=UserPathAssignmentDetailResponse)
+@router.get("/assignments/{assignment_id}")
 async def get_assignment(
     assignment_id: int,
     current_user: CurrentUser,
@@ -191,7 +188,7 @@ async def get_assignment(
     return result
 
 
-@router.put("/assignments/{assignment_id}", response_model=UserPathAssignmentResponse)
+@router.put("/assignments/{assignment_id}")
 async def update_assignment(
     assignment_id: int,
     data: UserPathAssignmentUpdate,
@@ -203,7 +200,9 @@ async def update_assignment(
     result = await service.update_assignment_status(
         assignment_id,
         status=data.status.value if data.status else None,
-        mentor_validation_status=data.mentor_validation_status.value if data.mentor_validation_status else None,
+        mentor_validation_status=data.mentor_validation_status.value
+        if data.mentor_validation_status
+        else None,
     )
     await session.commit()
 
@@ -219,7 +218,7 @@ async def update_assignment(
 # === Mentor Validation ===
 
 
-@router.get("/pending-validations", response_model=list[UserPathAssignmentDetailResponse])
+@router.get("/pending-validations")
 async def get_pending_validations(
     session: DbSession,
     _: Annotated[User, Depends(require_permissions("paths.validate"))],
@@ -229,7 +228,7 @@ async def get_pending_validations(
     return await service.get_pending_validations()
 
 
-@router.post("/assignments/{assignment_id}/approve", response_model=UserPathAssignmentResponse)
+@router.post("/assignments/{assignment_id}/approve")
 async def approve_assignment(
     assignment_id: int,
     session: DbSession,
@@ -252,7 +251,7 @@ async def approve_assignment(
     return result
 
 
-@router.post("/assignments/{assignment_id}/reject", response_model=UserPathAssignmentResponse)
+@router.post("/assignments/{assignment_id}/reject")
 async def reject_assignment(
     assignment_id: int,
     session: DbSession,
@@ -280,7 +279,6 @@ async def reject_assignment(
 
 @router.get(
     "/assignments/{assignment_id}/steps",
-    response_model=list[UserStepProgressResponse],
 )
 async def get_step_progress(
     assignment_id: int,
@@ -292,7 +290,7 @@ async def get_step_progress(
     return await service.get_step_progress(assignment_id)
 
 
-@router.put("/steps/{progress_id}", response_model=UserStepProgressResponse)
+@router.put("/steps/{progress_id}")
 async def update_step_progress(
     progress_id: int,
     data: UserStepProgressUpdate,
@@ -301,8 +299,7 @@ async def update_step_progress(
 ) -> UserStepProgressResponse:
     """Update step progress."""
     service = ProgressService(session)
-    result = await service.update_step_progress(
-        progress_id,
+    input_data = StepProgressUpdateInput(
         status=data.status.value if data.status else None,
         progress_percent=data.progress_percent,
         planned_start_date=data.planned_start_date,
@@ -310,6 +307,7 @@ async def update_step_progress(
         actual_start_date=data.actual_start_date,
         actual_end_date=data.actual_end_date,
     )
+    result = await service.update_step_progress(progress_id, input_data)
     await session.commit()
 
     if not result:
@@ -324,7 +322,7 @@ async def update_step_progress(
 # === Team Progress (for mentors) ===
 
 
-@router.get("/team-progress", response_model=list[MenteeProgressSummary])
+@router.get("/team-progress")
 async def get_team_progress(
     current_user: CurrentUser,
     session: DbSession,
@@ -337,10 +335,9 @@ async def get_team_progress(
     teams = await team_service.get_teams_by_manager(current_user.user_id)
 
     # Collect all unique member IDs
-    member_ids = set()
+    member_ids: set[int] = set()
     for team in teams:
-        for member in team.members:
-            member_ids.add(member.user_id)
+        member_ids.update(member.user_id for member in team.members)
 
     if not member_ids:
         return []

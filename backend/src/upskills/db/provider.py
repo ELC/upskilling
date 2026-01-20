@@ -1,8 +1,7 @@
 """Abstract database provider interface."""
 
 from abc import ABC, abstractmethod
-from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from contextlib import AbstractAsyncContextManager
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,8 +24,7 @@ class DatabaseProvider(ABC):
         ...
 
     @abstractmethod
-    @asynccontextmanager
-    async def session(self) -> AsyncIterator[AsyncSession]:
+    def session(self) -> AbstractAsyncContextManager[AsyncSession]:
         """Provide a transactional scope around a series of operations.
 
         Usage:

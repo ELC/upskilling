@@ -1,8 +1,7 @@
 """User repository."""
 
-from datetime import datetime, timedelta
-from typing import Any
 import secrets
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,9 +37,7 @@ class UserRepository(BaseRepository[User]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_all_with_roles(
-        self, *, skip: int = 0, limit: int = 100
-    ) -> list[User]:
+    async def get_all_with_roles(self, *, skip: int = 0, limit: int = 100) -> list[User]:
         """Get all users with their roles."""
         stmt = (
             select(User)
@@ -72,21 +69,17 @@ class UserRepository(BaseRepository[User]):
 
     async def remove_role(self, user_id: int, role_id: int) -> None:
         """Remove a role from a user."""
-        stmt = select(UserRole).where(
-            UserRole.user_id == user_id, UserRole.role_id == role_id
-        )
+        stmt = select(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
         result = await self._session.execute(stmt)
         user_role = result.scalar_one_or_none()
         if user_role:
             await self._session.delete(user_role)
             await self._session.flush()
 
-    async def create_password_reset_token(
-        self, user_id: int, expires_hours: int = 24
-    ) -> str:
+    async def create_password_reset_token(self, user_id: int, expires_hours: int = 24) -> str:
         """Create a password reset token for a user."""
         token = secrets.token_urlsafe(32)
-        expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
+        expires_at = datetime.now(UTC) + timedelta(hours=expires_hours)
 
         reset_token = PasswordResetToken(
             user_id=user_id,
@@ -101,8 +94,8 @@ class UserRepository(BaseRepository[User]):
         """Get a valid password reset token."""
         stmt = select(PasswordResetToken).where(
             PasswordResetToken.token == token,
-            PasswordResetToken.used == False,
-            PasswordResetToken.expires_at > datetime.utcnow(),
+            PasswordResetToken.used.is_(False),
+            PasswordResetToken.expires_at > datetime.now(UTC),
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()

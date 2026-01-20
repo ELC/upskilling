@@ -1,6 +1,7 @@
 """FastAPI dependencies for authentication and authorization."""
 
-from typing import Annotated
+from collections.abc import Callable, Coroutine
+from typing import Annotated, Any, cast
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -15,9 +16,10 @@ from upskills.repositories.user import UserRepository
 security = HTTPBearer()
 
 
-async def get_db_provider(request: Request) -> DatabaseProvider:
+def get_db_provider(request: Request) -> DatabaseProvider:
     """Get the database provider from the app state."""
-    return request.app.state.container.db_provider()
+    provider: DatabaseProvider = cast("DatabaseProvider", request.app.state.container.db_provider())
+    return provider
 
 
 async def get_db_session(
@@ -47,7 +49,7 @@ async def get_current_user(
     try:
         user_id = int(user_id_str)
     except ValueError:
-        raise credentials_exception
+        raise credentials_exception from None
 
     repo = UserRepository(session)
     user = await repo.get_by_id(user_id)
@@ -83,7 +85,9 @@ async def get_current_user_optional(
     return await repo.get_by_id(user_id)
 
 
-def require_permissions(*required_permissions: str):
+def require_permissions(
+    *required_permissions: str,
+) -> Callable[..., Coroutine[Any, Any, User]]:
     """Dependency factory that checks if user has required permissions."""
 
     async def check_permissions(

@@ -40,4 +40,3 @@ Mentor Validation, and Path Creation screens shown in `docs/Upskills 01-16.pdf`.
   `user_path_assignments`.
 - `user_path_assignments` can be referenced from `log_entries` to capture
   approvals/rejections or other events tied to a specific path.
-

@@ -137,4 +137,3 @@ CREATE TABLE log_entries (
   related_user_path_assignment_id INTEGER
     REFERENCES user_path_assignments(user_path_assignment_id)
 );
-

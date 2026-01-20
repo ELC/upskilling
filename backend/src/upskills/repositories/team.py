@@ -28,9 +28,7 @@ class TeamRepository(BaseRepository[Team]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_all_with_details(
-        self, *, skip: int = 0, limit: int = 100
-    ) -> list[Team]:
+    async def get_all_with_details(self, *, skip: int = 0, limit: int = 100) -> list[Team]:
         """Get all teams with manager and member details."""
         stmt = (
             select(Team)
@@ -95,10 +93,6 @@ class TeamRepository(BaseRepository[Team]):
 
     async def get_team_members(self, team_id: int) -> list[User]:
         """Get all members of a team."""
-        stmt = (
-            select(User)
-            .join(TeamMember)
-            .where(TeamMember.team_id == team_id)
-        )
+        stmt = select(User).join(TeamMember).where(TeamMember.team_id == team_id)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())

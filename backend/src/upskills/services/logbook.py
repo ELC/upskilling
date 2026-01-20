@@ -1,11 +1,16 @@
 """Logbook service."""
 
 from datetime import date
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from upskills.models.db.progress import LogEntry
-from upskills.models.domain.progress import LogEntryDetailResponse, LogEntryResponse
+from upskills.models.domain.progress import (
+    LogEntryCreateInput,
+    LogEntryDetailResponse,
+    LogEntryResponse,
+)
 from upskills.repositories.progress import LogEntryRepository, UserCareerPathRepository
 
 
@@ -23,9 +28,7 @@ class LogbookService:
         entry_type: str | None = None,
     ) -> list[LogEntryDetailResponse]:
         """Get log entries for a career path."""
-        entries = await self._log_repo.get_by_career_path(
-            user_career_path_id, entry_type
-        )
+        entries = await self._log_repo.get_by_career_path(user_career_path_id, entry_type)
         return [self._entry_to_detail_response(e) for e in entries]
 
     async def get_entry(self, log_entry_id: int) -> LogEntryDetailResponse | None:
@@ -37,27 +40,16 @@ class LogbookService:
 
     async def create_entry(
         self,
-        user_id: int,
-        user_career_path_id: int,
-        entry_type: str,
-        entry_date: date,
-        notes: str,
-        related_user_path_assignment_id: int | None = None,
+        data: LogEntryCreateInput,
     ) -> LogEntryResponse:
         """Create a new log entry."""
         # Verify career path exists
-        career_path = await self._career_path_repo.get_by_id(user_career_path_id)
+        career_path = await self._career_path_repo.get_by_id(data.user_career_path_id)
         if not career_path:
-            raise ValueError("Career path not found")
+            msg = "Career path not found"
+            raise ValueError(msg)
 
-        entry = await self._log_repo.create({
-            "user_id": user_id,
-            "user_career_path_id": user_career_path_id,
-            "entry_type": entry_type,
-            "entry_date": entry_date,
-            "notes": notes,
-            "related_user_path_assignment_id": related_user_path_assignment_id,
-        })
+        entry = await self._log_repo.create(data.model_dump())
 
         return self._entry_to_response(entry)
 
@@ -73,7 +65,7 @@ class LogbookService:
         if not entry:
             return None
 
-        update_data = {}
+        update_data: dict[str, Any] = {}
         if entry_type is not None:
             update_data["entry_type"] = entry_type
         if entry_date is not None:
@@ -95,7 +87,8 @@ class LogbookService:
         await self._log_repo.delete(entry)
         return True
 
-    def _entry_to_response(self, entry: LogEntry) -> LogEntryResponse:
+    @staticmethod
+    def _entry_to_response(entry: LogEntry) -> LogEntryResponse:
         """Convert LogEntry to response."""
         return LogEntryResponse(
             log_entry_id=entry.log_entry_id,
@@ -107,7 +100,8 @@ class LogbookService:
             related_user_path_assignment_id=entry.related_user_path_assignment_id,
         )
 
-    def _entry_to_detail_response(self, entry: LogEntry) -> LogEntryDetailResponse:
+    @staticmethod
+    def _entry_to_detail_response(entry: LogEntry) -> LogEntryDetailResponse:
         """Convert LogEntry to detailed response."""
         path_name = None
         if entry.related_path_assignment and entry.related_path_assignment.path_template:

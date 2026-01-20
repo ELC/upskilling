@@ -1,8 +1,8 @@
 """SQLite database provider implementation."""
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -61,7 +61,11 @@ class SQLiteProvider(DatabaseProvider):
 
     @asynccontextmanager
     async def session(self) -> AsyncIterator[AsyncSession]:
-        """Provide a transactional scope around a series of operations."""
+        """Provide a transactional scope around a series of operations.
+
+        Yields:
+            AsyncSession: Database session for operations.
+        """
         session = self._session_factory()
         try:
             yield session

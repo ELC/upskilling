@@ -1,7 +1,7 @@
 """Progress tracking Pydantic domain models."""
 
 from datetime import date, datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import Field
 
@@ -9,7 +9,7 @@ from upskills.models.domain.base import DomainModel
 from upskills.models.domain.career import PathStepResponse, PathTemplateResponse
 
 
-class ProgressStatus(str, Enum):
+class ProgressStatus(StrEnum):
     """Status values for progress tracking."""
 
     PENDING = "Pending"
@@ -17,7 +17,7 @@ class ProgressStatus(str, Enum):
     COMPLETED = "Completed"
 
 
-class ValidationStatus(str, Enum):
+class ValidationStatus(StrEnum):
     """Mentor validation status values."""
 
     PENDING = "Pending"
@@ -25,7 +25,7 @@ class ValidationStatus(str, Enum):
     REJECTED = "Rejected"
 
 
-class LogEntryType(str, Enum):
+class LogEntryType(StrEnum):
     """Log entry type values."""
 
     MEETING = "Meeting/Conversation"
@@ -137,8 +137,8 @@ class UserPathAssignmentResponse(DomainModel):
 class UserPathAssignmentDetailResponse(UserPathAssignmentResponse):
     """Detailed response model for a path assignment with related data."""
 
-    path_template: PathTemplateResponse
-    step_progress: list[UserStepProgressResponse] = []
+    path_template: PathTemplateResponse | None = None
+    step_progress: list[UserStepProgressResponse] = Field(default_factory=list)
 
 
 class UserCareerPathResponse(DomainModel):
@@ -157,7 +157,7 @@ class UserCareerPathDetailResponse(UserCareerPathResponse):
 
     career_name: str
     career_specialization: str | None
-    path_assignments: list[UserPathAssignmentResponse] = []
+    path_assignments: list[UserPathAssignmentResponse] = Field(default_factory=list)
 
 
 class LogEntryResponse(DomainModel):
@@ -206,3 +206,28 @@ class DashboardStats(DomainModel):
     paths_remaining: int
     overall_progress: int
     skills_obtained: int
+
+
+# === Input Models ===
+
+
+class LogEntryCreateInput(DomainModel):
+    """Input model for creating a log entry."""
+
+    user_id: int
+    user_career_path_id: int
+    entry_type: str
+    entry_date: date
+    notes: str
+    related_user_path_assignment_id: int | None = None
+
+
+class StepProgressUpdateInput(DomainModel):
+    """Input model for updating step progress."""
+
+    status: str | None = None
+    progress_percent: int | None = None
+    planned_start_date: date | None = None
+    planned_end_date: date | None = None
+    actual_start_date: date | None = None
+    actual_end_date: date | None = None

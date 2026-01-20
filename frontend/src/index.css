@@ -6,10 +6,10 @@
   html {
     @apply bg-dark-950 text-dark-100;
   }
-  
+
   body {
     @apply min-h-screen font-sans antialiased;
-    background: 
+    background:
       radial-gradient(ellipse at 20% 20%, rgba(230, 117, 10, 0.08) 0%, transparent 50%),
       radial-gradient(ellipse at 80% 80%, rgba(236, 72, 153, 0.06) 0%, transparent 50%),
       #020617;
@@ -20,38 +20,38 @@
   .btn {
     @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
   }
-  
+
   .btn-primary {
     @apply bg-primary-600 text-white hover:bg-primary-500 active:bg-primary-700;
   }
-  
+
   .btn-secondary {
     @apply bg-dark-800 text-dark-100 border border-dark-700 hover:bg-dark-700;
   }
-  
+
   .btn-ghost {
     @apply text-dark-300 hover:text-dark-100 hover:bg-dark-800;
   }
-  
+
   .input {
     @apply w-full px-4 py-2.5 bg-dark-900 border border-dark-700 rounded-lg;
     @apply text-dark-100 placeholder-dark-500;
     @apply focus:outline-none focus:ring-2 focus:ring-primary-600/50 focus:border-primary-600;
     @apply transition-all duration-200;
   }
-  
+
   .card {
     @apply bg-dark-900/60 backdrop-blur-sm border border-dark-800 rounded-xl p-6;
   }
-  
+
   .card-hover {
     @apply hover:border-dark-700 hover:bg-dark-900/80 transition-all duration-200;
   }
-  
+
   .progress-bar {
     @apply h-2 bg-dark-800 rounded-full overflow-hidden;
   }
-  
+
   .progress-bar-fill {
     @apply h-full bg-gradient-to-r from-primary-600 to-secondary-600 rounded-full;
     @apply transition-all duration-500 ease-out;

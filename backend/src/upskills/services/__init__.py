@@ -9,11 +9,11 @@ from upskills.services.user import UserService
 
 __all__ = [
     "AuthService",
-    "UserService",
-    "TeamService",
     "CareerService",
-    "PathTemplateService",
-    "PathStepService",
-    "ProgressService",
     "LogbookService",
+    "PathStepService",
+    "PathTemplateService",
+    "ProgressService",
+    "TeamService",
+    "UserService",
 ]

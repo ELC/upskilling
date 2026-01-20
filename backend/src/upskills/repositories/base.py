@@ -1,6 +1,6 @@
 """Base repository with common CRUD operations."""
 
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +10,7 @@ from upskills.models.db.base import Base
 ModelType = TypeVar("ModelType", bound=Base)
 
 
-class BaseRepository(Generic[ModelType]):
+class BaseRepository[ModelType: Base]:
     """Base repository providing common CRUD operations.
 
     This follows the Repository pattern to abstract data access logic.
@@ -138,9 +138,7 @@ class BaseRepository(Generic[ModelType]):
         """
         from sqlalchemy import exists as sql_exists
 
-        conditions = [
-            getattr(self._model, key) == value for key, value in kwargs.items()
-        ]
+        conditions = [getattr(self._model, key) == value for key, value in kwargs.items()]
         stmt = select(sql_exists().where(*conditions))
         result = await self._session.execute(stmt)
         return result.scalar() or False

@@ -2,8 +2,6 @@
 
 from dependency_injector import containers, providers
 
-from upskills.core.config import Settings
-from upskills.db.provider import DatabaseProvider
 from upskills.db.sqlite import SQLiteProvider
 
 

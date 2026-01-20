@@ -18,12 +18,12 @@ from upskills.services.career import CareerService
 router = APIRouter()
 
 
-@router.get("", response_model=PaginatedResponse[CareerResponse])
+@router.get("")
 async def list_careers(
     session: DbSession,
     current_user: CurrentUser,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[CareerResponse]:
     """List all careers."""
     service = CareerService(session)
@@ -41,7 +41,7 @@ async def list_careers(
     )
 
 
-@router.post("", response_model=CareerResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_career(
     data: CareerCreate,
     session: DbSession,
@@ -57,7 +57,7 @@ async def create_career(
     return result
 
 
-@router.get("/{career_id}", response_model=CareerWithPathsResponse)
+@router.get("/{career_id}")
 async def get_career(
     career_id: int,
     session: DbSession,
@@ -76,7 +76,7 @@ async def get_career(
     return result
 
 
-@router.put("/{career_id}", response_model=CareerResponse)
+@router.put("/{career_id}")
 async def update_career(
     career_id: int,
     data: CareerUpdate,
@@ -101,7 +101,7 @@ async def update_career(
     return result
 
 
-@router.delete("/{career_id}", response_model=MessageResponse)
+@router.delete("/{career_id}")
 async def delete_career(
     career_id: int,
     session: DbSession,

@@ -5,7 +5,6 @@ from pydantic import Field
 from upskills.models.domain.base import DomainModel
 from upskills.models.domain.user import UserResponse
 
-
 # === Request Models ===
 
 
@@ -58,7 +57,7 @@ class TeamWithMembersResponse(TeamResponse):
     """Response model for a team with its members."""
 
     manager: UserResponse
-    members: list[TeamMemberResponse] = []
+    members: list[TeamMemberResponse] = Field(default_factory=list)
 
 
 class TeamListResponse(DomainModel):

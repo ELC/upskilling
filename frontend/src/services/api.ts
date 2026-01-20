@@ -51,21 +51,21 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       try {
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
           const response = await axios.post<TokenResponse>(`${API_BASE_URL}/auth/refresh`, {
             refresh_token: refreshToken,
           });
-          
+
           const { access_token, refresh_token } = response.data;
           localStorage.setItem('access_token', access_token);
           localStorage.setItem('refresh_token', refresh_token);
-          
+
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${access_token}`;
           }
@@ -78,7 +78,7 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -89,27 +89,27 @@ export const authApi = {
     const response = await api.post<AuthResponse>('/auth/login', data);
     return response.data;
   },
-  
+
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await api.post<AuthResponse>('/auth/register', data);
     return response.data;
   },
-  
+
   refresh: async (refreshToken: string): Promise<TokenResponse> => {
     const response = await api.post<TokenResponse>('/auth/refresh', { refresh_token: refreshToken });
     return response.data;
   },
-  
+
   me: async (): Promise<User> => {
     const response = await api.get<User>('/auth/me');
     return response.data;
   },
-  
+
   requestPasswordReset: async (email: string): Promise<MessageResponse> => {
     const response = await api.post<MessageResponse>('/auth/password-reset-request', { email });
     return response.data;
   },
-  
+
   resetPassword: async (token: string, newPassword: string): Promise<MessageResponse> => {
     const response = await api.post<MessageResponse>('/auth/password-reset', {
       token,
@@ -125,12 +125,12 @@ export const usersApi = {
     const response = await api.get<UserWithPermissions>('/users/me');
     return response.data;
   },
-  
+
   updateMe: async (data: Partial<User>): Promise<User> => {
     const response = await api.put<User>('/users/me', data);
     return response.data;
   },
-  
+
   changePassword: async (currentPassword: string, newPassword: string): Promise<MessageResponse> => {
     const response = await api.post<MessageResponse>('/users/me/change-password', {
       current_password: currentPassword,
@@ -138,14 +138,14 @@ export const usersApi = {
     });
     return response.data;
   },
-  
+
   list: async (page = 1, pageSize = 20): Promise<PaginatedResponse<User>> => {
     const response = await api.get<PaginatedResponse<User>>('/users', {
       params: { page, page_size: pageSize },
     });
     return response.data;
   },
-  
+
   get: async (userId: number): Promise<User> => {
     const response = await api.get<User>(`/users/${userId}`);
     return response.data;
@@ -160,32 +160,32 @@ export const teamsApi = {
     });
     return response.data;
   },
-  
+
   getMyTeams: async (): Promise<TeamWithMembers[]> => {
     const response = await api.get<TeamWithMembers[]>('/teams/my-teams');
     return response.data;
   },
-  
+
   get: async (teamId: number): Promise<TeamWithMembers> => {
     const response = await api.get<TeamWithMembers>(`/teams/${teamId}`);
     return response.data;
   },
-  
+
   create: async (data: { name: string; manager_user_id: number }): Promise<TeamWithMembers> => {
     const response = await api.post<TeamWithMembers>('/teams', data);
     return response.data;
   },
-  
+
   update: async (teamId: number, data: Partial<Team>): Promise<TeamWithMembers> => {
     const response = await api.put<TeamWithMembers>(`/teams/${teamId}`, data);
     return response.data;
   },
-  
+
   addMember: async (teamId: number, userId: number): Promise<MessageResponse> => {
     const response = await api.post<MessageResponse>(`/teams/${teamId}/members`, { user_id: userId });
     return response.data;
   },
-  
+
   removeMember: async (teamId: number, userId: number): Promise<MessageResponse> => {
     const response = await api.delete<MessageResponse>(`/teams/${teamId}/members/${userId}`);
     return response.data;
@@ -200,12 +200,12 @@ export const careersApi = {
     });
     return response.data;
   },
-  
+
   get: async (careerId: number): Promise<CareerWithPaths> => {
     const response = await api.get<CareerWithPaths>(`/careers/${careerId}`);
     return response.data;
   },
-  
+
   create: async (data: { name: string; specialization?: string }): Promise<Career> => {
     const response = await api.post<Career>('/careers', data);
     return response.data;
@@ -220,22 +220,22 @@ export const pathsApi = {
     });
     return response.data;
   },
-  
+
   get: async (pathId: number): Promise<PathTemplateWithSteps> => {
     const response = await api.get<PathTemplateWithSteps>(`/paths/${pathId}`);
     return response.data;
   },
-  
+
   create: async (data: Partial<PathTemplate>): Promise<PathTemplate> => {
     const response = await api.post<PathTemplate>('/paths', data);
     return response.data;
   },
-  
+
   getSteps: async (pathId: number): Promise<PathStep[]> => {
     const response = await api.get<PathStep[]>(`/paths/${pathId}/steps`);
     return response.data;
   },
-  
+
   createStep: async (pathId: number, data: Partial<PathStep>): Promise<PathStep> => {
     const response = await api.post<PathStep>(`/paths/${pathId}/steps`, data);
     return response.data;
@@ -248,17 +248,17 @@ export const progressApi = {
     const response = await api.get<DashboardStats>('/progress/dashboard');
     return response.data;
   },
-  
+
   getCareerPaths: async (): Promise<UserCareerPathDetail[]> => {
     const response = await api.get<UserCareerPathDetail[]>('/progress/career-paths');
     return response.data;
   },
-  
+
   getCareerPath: async (careerPathId: number): Promise<UserCareerPathDetail> => {
     const response = await api.get<UserCareerPathDetail>(`/progress/career-paths/${careerPathId}`);
     return response.data;
   },
-  
+
   assignCareerPath: async (data: {
     user_id: number;
     career_id: number;
@@ -268,12 +268,12 @@ export const progressApi = {
     const response = await api.post<UserCareerPath>('/progress/career-paths', data);
     return response.data;
   },
-  
+
   getAssignment: async (assignmentId: number): Promise<UserPathAssignmentDetail> => {
     const response = await api.get<UserPathAssignmentDetail>(`/progress/assignments/${assignmentId}`);
     return response.data;
   },
-  
+
   assignPath: async (data: {
     user_career_path_id: number;
     path_template_id: number;
@@ -283,37 +283,37 @@ export const progressApi = {
     const response = await api.post<UserPathAssignment>('/progress/assignments', data);
     return response.data;
   },
-  
+
   updateAssignment: async (assignmentId: number, data: Partial<UserPathAssignment>): Promise<UserPathAssignment> => {
     const response = await api.put<UserPathAssignment>(`/progress/assignments/${assignmentId}`, data);
     return response.data;
   },
-  
+
   getStepProgress: async (assignmentId: number): Promise<UserStepProgress[]> => {
     const response = await api.get<UserStepProgress[]>(`/progress/assignments/${assignmentId}/steps`);
     return response.data;
   },
-  
+
   updateStepProgress: async (progressId: number, data: Partial<UserStepProgress>): Promise<UserStepProgress> => {
     const response = await api.put<UserStepProgress>(`/progress/steps/${progressId}`, data);
     return response.data;
   },
-  
+
   getPendingValidations: async (): Promise<UserPathAssignmentDetail[]> => {
     const response = await api.get<UserPathAssignmentDetail[]>('/progress/pending-validations');
     return response.data;
   },
-  
+
   approveAssignment: async (assignmentId: number): Promise<UserPathAssignment> => {
     const response = await api.post<UserPathAssignment>(`/progress/assignments/${assignmentId}/approve`);
     return response.data;
   },
-  
+
   rejectAssignment: async (assignmentId: number): Promise<UserPathAssignment> => {
     const response = await api.post<UserPathAssignment>(`/progress/assignments/${assignmentId}/reject`);
     return response.data;
   },
-  
+
   getTeamProgress: async (): Promise<MenteeProgressSummary[]> => {
     const response = await api.get<MenteeProgressSummary[]>('/progress/team-progress');
     return response.data;
@@ -326,17 +326,17 @@ export const logbookApi = {
     const response = await api.get<LogEntryDetail[]>(`/logbook/career-path/${careerPathId}`);
     return response.data;
   },
-  
+
   createEntry: async (data: Partial<LogEntry>): Promise<LogEntry> => {
     const response = await api.post<LogEntry>('/logbook', data);
     return response.data;
   },
-  
+
   updateEntry: async (entryId: number, data: Partial<LogEntry>): Promise<LogEntry> => {
     const response = await api.put<LogEntry>(`/logbook/${entryId}`, data);
     return response.data;
   },
-  
+
   deleteEntry: async (entryId: number): Promise<MessageResponse> => {
     const response = await api.delete<MessageResponse>(`/logbook/${entryId}`);
     return response.data;

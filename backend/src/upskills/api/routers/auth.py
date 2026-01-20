@@ -1,9 +1,8 @@
 """Authentication router."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, status
 
-from upskills.core.dependencies import DbSession, CurrentUser
+from upskills.core.dependencies import CurrentUser, DbSession
 from upskills.models.domain.auth import (
     AuthResponse,
     LoginRequest,
@@ -11,18 +10,18 @@ from upskills.models.domain.auth import (
     RegisterRequest,
     TokenResponse,
 )
+from upskills.models.domain.base import MessageResponse
 from upskills.models.domain.user import (
     PasswordReset,
     PasswordResetRequest,
     UserResponse,
 )
-from upskills.models.domain.base import MessageResponse
 from upskills.services.auth import AuthService
 
 router = APIRouter()
 
 
-@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     data: RegisterRequest,
     session: DbSession,
@@ -43,10 +42,10 @@ async def register(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login")
 async def login(
     data: LoginRequest,
     session: DbSession,
@@ -60,10 +59,10 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh")
 async def refresh_tokens(
     data: RefreshTokenRequest,
     session: DbSession,
@@ -77,10 +76,10 @@ async def refresh_tokens(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.post("/password-reset-request", response_model=MessageResponse)
+@router.post("/password-reset-request")
 async def request_password_reset(
     data: PasswordResetRequest,
     session: DbSession,
@@ -103,7 +102,7 @@ async def request_password_reset(
     )
 
 
-@router.post("/password-reset", response_model=MessageResponse)
+@router.post("/password-reset")
 async def reset_password(
     data: PasswordReset,
     session: DbSession,
@@ -117,35 +116,36 @@ async def reset_password(
 
         if success:
             return MessageResponse(message="Password has been reset successfully.")
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to reset password.",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to reset password.",
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me")
 async def get_current_user_info(
     current_user: CurrentUser,
 ) -> UserResponse:
     """Get the current authenticated user's information."""
     from upskills.models.domain.user import RoleResponse
 
-    roles = []
+    roles: list[RoleResponse] = []
     if current_user.roles:
-        for user_role in current_user.roles:
-            if user_role.role:
-                roles.append(RoleResponse(
-                    role_id=user_role.role.role_id,
-                    name=user_role.role.name,
-                    description=user_role.role.description,
-                    max_active_paths=user_role.role.max_active_paths,
-                ))
+        roles.extend(
+            RoleResponse(
+                role_id=user_role.role.role_id,
+                name=user_role.role.name,
+                description=user_role.role.description,
+                max_active_paths=user_role.role.max_active_paths,
+            )
+            for user_role in current_user.roles
+            if user_role.role
+        )
 
     return UserResponse(
         user_id=current_user.user_id,

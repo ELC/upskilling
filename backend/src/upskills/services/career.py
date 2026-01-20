@@ -1,14 +1,20 @@
 """Career and path template services."""
 
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from upskills.models.db.career import Career, PathTemplate, PathTemplateStep
 from upskills.models.domain.career import (
     CareerResponse,
     CareerWithPathsResponse,
+    PathStepCreateInput,
     PathStepDependencyResponse,
     PathStepResponse,
+    PathStepUpdateInput,
+    PathTemplateCreateInput,
     PathTemplateResponse,
+    PathTemplateUpdateInput,
     PathTemplateWithStepsResponse,
 )
 from upskills.repositories.career import (
@@ -65,7 +71,7 @@ class CareerService:
         if not career:
             return None
 
-        update_data = {}
+        update_data: dict[str, Any] = {}
         if name is not None:
             update_data["name"] = name
         if specialization is not None:
@@ -85,7 +91,8 @@ class CareerService:
         await self._career_repo.delete(career)
         return True
 
-    def _career_to_response(self, career: Career) -> CareerResponse:
+    @staticmethod
+    def _career_to_response(career: Career) -> CareerResponse:
         """Convert Career to CareerResponse."""
         return CareerResponse(
             career_id=career.career_id,
@@ -93,7 +100,8 @@ class CareerService:
             specialization=career.specialization,
         )
 
-    def _career_to_response_with_paths(self, career: Career) -> CareerWithPathsResponse:
+    @staticmethod
+    def _career_to_response_with_paths(career: Career) -> CareerWithPathsResponse:
         """Convert Career to CareerWithPathsResponse."""
         paths = []
         if career.path_templates:
@@ -149,54 +157,29 @@ class PathTemplateService:
 
     async def create_path(
         self,
-        career_id: int,
-        name: str,
-        description: str,
-        duration_hours: int,
-        default_start_offset_days: int | None = None,
-        default_deadline_offset_days: int | None = None,
+        data: PathTemplateCreateInput,
     ) -> PathTemplateResponse:
         """Create a new path template."""
         # Verify career exists
-        career = await self._career_repo.get_by_id(career_id)
+        career = await self._career_repo.get_by_id(data.career_id)
         if not career:
-            raise ValueError("Career not found")
+            msg = "Career not found"
+            raise ValueError(msg)
 
-        path = await self._path_repo.create({
-            "career_id": career_id,
-            "name": name,
-            "description": description,
-            "duration_hours": duration_hours,
-            "default_start_offset_days": default_start_offset_days,
-            "default_deadline_offset_days": default_deadline_offset_days,
-        })
+        path = await self._path_repo.create(data.model_dump())
         return self._path_to_response(path)
 
     async def update_path(
         self,
         path_template_id: int,
-        name: str | None = None,
-        description: str | None = None,
-        duration_hours: int | None = None,
-        default_start_offset_days: int | None = None,
-        default_deadline_offset_days: int | None = None,
+        data: PathTemplateUpdateInput,
     ) -> PathTemplateResponse | None:
         """Update a path template."""
         path = await self._path_repo.get_by_id(path_template_id)
         if not path:
             return None
 
-        update_data = {}
-        if name is not None:
-            update_data["name"] = name
-        if description is not None:
-            update_data["description"] = description
-        if duration_hours is not None:
-            update_data["duration_hours"] = duration_hours
-        if default_start_offset_days is not None:
-            update_data["default_start_offset_days"] = default_start_offset_days
-        if default_deadline_offset_days is not None:
-            update_data["default_deadline_offset_days"] = default_deadline_offset_days
+        update_data = data.model_dump(exclude_unset=True)
 
         if update_data:
             path = await self._path_repo.update(path, update_data)
@@ -212,7 +195,8 @@ class PathTemplateService:
         await self._path_repo.delete(path)
         return True
 
-    def _path_to_response(self, path: PathTemplate) -> PathTemplateResponse:
+    @staticmethod
+    def _path_to_response(path: PathTemplate) -> PathTemplateResponse:
         """Convert PathTemplate to PathTemplateResponse."""
         return PathTemplateResponse(
             path_template_id=path.path_template_id,
@@ -224,31 +208,36 @@ class PathTemplateService:
             default_deadline_offset_days=path.default_deadline_offset_days,
         )
 
-    def _path_to_response_with_steps(
-        self, path: PathTemplate
-    ) -> PathTemplateWithStepsResponse:
+    @staticmethod
+    def _path_to_response_with_steps(path: PathTemplate) -> PathTemplateWithStepsResponse:
         """Convert PathTemplate to PathTemplateWithStepsResponse."""
-        steps = []
+        steps: list[PathStepResponse] = []
         if path.steps:
             for step in path.steps:
-                deps = []
+                deps: list[PathStepDependencyResponse] = []
                 if step.dependencies:
-                    for dep in step.dependencies:
-                        deps.append(PathStepDependencyResponse(
+                    deps.extend(
+                        PathStepDependencyResponse(
                             depends_on_step_id=dep.depends_on_step_id,
-                            depends_on_step_name=dep.depends_on_step.name if dep.depends_on_step else "",
-                        ))
+                            depends_on_step_name=dep.depends_on_step.name
+                            if dep.depends_on_step
+                            else "",
+                        )
+                        for dep in step.dependencies
+                    )
 
-                steps.append(PathStepResponse(
-                    step_id=step.step_id,
-                    path_template_id=step.path_template_id,
-                    step_order=step.step_order,
-                    name=step.name,
-                    description=step.description,
-                    duration_hours=step.duration_hours,
-                    course_link=step.course_link,
-                    dependencies=deps,
-                ))
+                steps.append(
+                    PathStepResponse(
+                        step_id=step.step_id,
+                        path_template_id=step.path_template_id,
+                        step_order=step.step_order,
+                        name=step.name,
+                        description=step.description,
+                        duration_hours=step.duration_hours,
+                        course_link=step.course_link,
+                        dependencies=deps,
+                    )
+                )
 
         return PathTemplateWithStepsResponse(
             path_template_id=path.path_template_id,
@@ -284,54 +273,29 @@ class PathStepService:
 
     async def create_step(
         self,
-        path_template_id: int,
-        step_order: int,
-        name: str,
-        description: str | None = None,
-        duration_hours: int | None = None,
-        course_link: str | None = None,
+        data: PathStepCreateInput,
     ) -> PathStepResponse:
         """Create a new step."""
         # Verify path exists
-        path = await self._path_repo.get_by_id(path_template_id)
+        path = await self._path_repo.get_by_id(data.path_template_id)
         if not path:
-            raise ValueError("Path template not found")
+            msg = "Path template not found"
+            raise ValueError(msg)
 
-        step = await self._step_repo.create({
-            "path_template_id": path_template_id,
-            "step_order": step_order,
-            "name": name,
-            "description": description,
-            "duration_hours": duration_hours,
-            "course_link": course_link,
-        })
+        step = await self._step_repo.create(data.model_dump())
         return self._step_to_response(step)
 
     async def update_step(
         self,
         step_id: int,
-        step_order: int | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        duration_hours: int | None = None,
-        course_link: str | None = None,
+        data: PathStepUpdateInput,
     ) -> PathStepResponse | None:
         """Update a step."""
         step = await self._step_repo.get_by_id(step_id)
         if not step:
             return None
 
-        update_data = {}
-        if step_order is not None:
-            update_data["step_order"] = step_order
-        if name is not None:
-            update_data["name"] = name
-        if description is not None:
-            update_data["description"] = description
-        if duration_hours is not None:
-            update_data["duration_hours"] = duration_hours
-        if course_link is not None:
-            update_data["course_link"] = course_link
+        update_data = data.model_dump(exclude_unset=True)
 
         if update_data:
             step = await self._step_repo.update(step, update_data)
@@ -357,15 +321,18 @@ class PathStepService:
         await self._step_repo.remove_dependency(step_id, depends_on_step_id)
         return True
 
-    def _step_to_response(self, step: PathTemplateStep) -> PathStepResponse:
+    @staticmethod
+    def _step_to_response(step: PathTemplateStep) -> PathStepResponse:
         """Convert PathTemplateStep to PathStepResponse."""
-        deps = []
+        deps: list[PathStepDependencyResponse] = []
         if step.dependencies:
-            for dep in step.dependencies:
-                deps.append(PathStepDependencyResponse(
+            deps.extend(
+                PathStepDependencyResponse(
                     depends_on_step_id=dep.depends_on_step_id,
                     depends_on_step_name=dep.depends_on_step.name if dep.depends_on_step else "",
-                ))
+                )
+                for dep in step.dependencies
+            )
 
         return PathStepResponse(
             step_id=step.step_id,

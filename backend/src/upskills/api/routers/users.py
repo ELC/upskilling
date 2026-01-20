@@ -18,12 +18,12 @@ from upskills.services.user import UserService
 router = APIRouter()
 
 
-@router.get("", response_model=PaginatedResponse[UserResponse])
+@router.get("")
 async def list_users(
     session: DbSession,
     _: Annotated[User, Depends(require_permissions("team.view"))],
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[UserResponse]:
     """List all users (requires team.view permission)."""
     service = UserService(session)
@@ -41,7 +41,7 @@ async def list_users(
     )
 
 
-@router.get("/me", response_model=UserWithPermissions)
+@router.get("/me")
 async def get_my_profile(
     current_user: CurrentUser,
     session: DbSession,
@@ -59,7 +59,7 @@ async def get_my_profile(
     return result
 
 
-@router.put("/me", response_model=UserResponse)
+@router.put("/me")
 async def update_my_profile(
     data: UserUpdate,
     current_user: CurrentUser,
@@ -88,10 +88,10 @@ async def update_my_profile(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.post("/me/change-password", response_model=MessageResponse)
+@router.post("/me/change-password")
 async def change_my_password(
     data: PasswordChange,
     current_user: CurrentUser,
@@ -110,19 +110,18 @@ async def change_my_password(
 
         if success:
             return MessageResponse(message="Password changed successfully.")
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to change password.",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to change password.",
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}")
 async def get_user(
     user_id: int,
     session: DbSession,
@@ -141,7 +140,7 @@ async def get_user(
     return result
 
 
-@router.delete("/{user_id}", response_model=MessageResponse)
+@router.delete("/{user_id}")
 async def delete_user(
     user_id: int,
     session: DbSession,
@@ -161,7 +160,7 @@ async def delete_user(
     return MessageResponse(message="User deleted successfully.")
 
 
-@router.post("/{user_id}/roles/{role_name}", response_model=MessageResponse)
+@router.post("/{user_id}/roles/{role_name}")
 async def assign_role_to_user(
     user_id: int,
     role_name: str,
@@ -179,10 +178,10 @@ async def assign_role_to_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.delete("/{user_id}/roles/{role_name}", response_model=MessageResponse)
+@router.delete("/{user_id}/roles/{role_name}")
 async def remove_role_from_user(
     user_id: int,
     role_name: str,
@@ -200,4 +199,4 @@ async def remove_role_from_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e

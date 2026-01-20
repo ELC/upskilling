@@ -2,13 +2,14 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
 from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse
 from upskills.models.domain.progress import (
     LogEntryCreate,
+    LogEntryCreateInput,
     LogEntryDetailResponse,
     LogEntryResponse,
     LogEntryUpdate,
@@ -18,7 +19,7 @@ from upskills.services.logbook import LogbookService
 router = APIRouter()
 
 
-@router.get("/career-path/{career_path_id}", response_model=list[LogEntryDetailResponse])
+@router.get("/career-path/{career_path_id}")
 async def get_logbook_entries(
     career_path_id: int,
     current_user: CurrentUser,
@@ -30,7 +31,7 @@ async def get_logbook_entries(
     return await service.get_entries_for_career_path(career_path_id, entry_type)
 
 
-@router.post("", response_model=LogEntryResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_logbook_entry(
     data: LogEntryCreate,
     session: DbSession,
@@ -40,7 +41,7 @@ async def create_logbook_entry(
     service = LogbookService(session)
 
     try:
-        result = await service.create_entry(
+        input_data = LogEntryCreateInput(
             user_id=data.user_id,
             user_career_path_id=data.user_career_path_id,
             entry_type=data.entry_type.value,
@@ -48,16 +49,17 @@ async def create_logbook_entry(
             notes=data.notes,
             related_user_path_assignment_id=data.related_user_path_assignment_id,
         )
+        result = await service.create_entry(input_data)
         await session.commit()
         return result
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.get("/{log_entry_id}", response_model=LogEntryDetailResponse)
+@router.get("/{log_entry_id}")
 async def get_logbook_entry(
     log_entry_id: int,
     current_user: CurrentUser,
@@ -76,7 +78,7 @@ async def get_logbook_entry(
     return result
 
 
-@router.put("/{log_entry_id}", response_model=LogEntryResponse)
+@router.put("/{log_entry_id}")
 async def update_logbook_entry(
     log_entry_id: int,
     data: LogEntryUpdate,
@@ -102,7 +104,7 @@ async def update_logbook_entry(
     return result
 
 
-@router.delete("/{log_entry_id}", response_model=MessageResponse)
+@router.delete("/{log_entry_id}")
 async def delete_logbook_entry(
     log_entry_id: int,
     session: DbSession,

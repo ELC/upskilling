@@ -29,10 +29,5 @@ repos:
           - fastapi>=0.115.0
         args: [--ignore-missing-imports]
 
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.15.0
-    hooks:
-      - id: eslint
-        files: ^frontend/src/
-        types: [file]
-        types_or: [javascript, jsx, ts, tsx]
+  # ESLint for frontend - run via `cd frontend && npm run lint`
+  # Removed from pre-commit due to node_modules path issues

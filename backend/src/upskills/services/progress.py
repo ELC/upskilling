@@ -1,6 +1,7 @@
 """Progress tracking services."""
 
 from datetime import date
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +10,7 @@ from upskills.models.domain.career import PathStepResponse, PathTemplateResponse
 from upskills.models.domain.progress import (
     DashboardStats,
     MenteeProgressSummary,
+    StepProgressUpdateInput,
     UserCareerPathDetailResponse,
     UserCareerPathResponse,
     UserPathAssignmentDetailResponse,
@@ -62,7 +64,8 @@ class ProgressService:
         # Verify user exists
         user = await self._user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError("User not found")
+            msg = "User not found"
+            raise ValueError(msg)
 
         path = await self._career_path_repo.create({
             "user_id": user_id,
@@ -85,7 +88,7 @@ class ProgressService:
         if not path:
             return None
 
-        update_data = {}
+        update_data: dict[str, Any] = {}
         if start_date:
             update_data["start_date"] = start_date
         if end_date:
@@ -125,12 +128,14 @@ class ProgressService:
         # Verify career path exists
         career_path = await self._career_path_repo.get_by_id(user_career_path_id)
         if not career_path:
-            raise ValueError("Career path not found")
+            msg = "Career path not found"
+            raise ValueError(msg)
 
         # Verify path template exists
         template = await self._path_template_repo.get_by_id(path_template_id)
         if not template:
-            raise ValueError("Path template not found")
+            msg = "Path template not found"
+            raise ValueError(msg)
 
         assignment = await self._assignment_repo.create({
             "user_career_path_id": user_career_path_id,
@@ -165,7 +170,7 @@ class ProgressService:
         if not assignment:
             return None
 
-        update_data = {}
+        update_data: dict[str, Any] = {}
         if status:
             update_data["status"] = status
         if mentor_validation_status:
@@ -186,9 +191,7 @@ class ProgressService:
 
     # === Step Progress ===
 
-    async def get_step_progress(
-        self, assignment_id: int
-    ) -> list[UserStepProgressResponse]:
+    async def get_step_progress(self, assignment_id: int) -> list[UserStepProgressResponse]:
         """Get step progress for an assignment."""
         progress_list = await self._step_progress_repo.get_by_assignment(assignment_id)
         return [self._step_progress_to_response(p) for p in progress_list]
@@ -196,31 +199,14 @@ class ProgressService:
     async def update_step_progress(
         self,
         progress_id: int,
-        status: str | None = None,
-        progress_percent: int | None = None,
-        planned_start_date: date | None = None,
-        planned_end_date: date | None = None,
-        actual_start_date: date | None = None,
-        actual_end_date: date | None = None,
+        data: StepProgressUpdateInput,
     ) -> UserStepProgressResponse | None:
         """Update step progress."""
         progress = await self._step_progress_repo.get_by_id(progress_id)
         if not progress:
             return None
 
-        update_data = {}
-        if status is not None:
-            update_data["status"] = status
-        if progress_percent is not None:
-            update_data["progress_percent"] = progress_percent
-        if planned_start_date is not None:
-            update_data["planned_start_date"] = planned_start_date
-        if planned_end_date is not None:
-            update_data["planned_end_date"] = planned_end_date
-        if actual_start_date is not None:
-            update_data["actual_start_date"] = actual_start_date
-        if actual_end_date is not None:
-            update_data["actual_end_date"] = actual_end_date
+        update_data = data.model_dump(exclude_unset=True)
 
         if update_data:
             progress = await self._step_progress_repo.update(progress, update_data)
@@ -255,7 +241,9 @@ class ProgressService:
         if career_path.path_assignments:
             for assignment in career_path.path_assignments:
                 if assignment.status == "In Progress":
-                    current_path_name = assignment.path_template.name if assignment.path_template else None
+                    current_path_name = (
+                        assignment.path_template.name if assignment.path_template else None
+                    )
                     current_path_progress = assignment.progress_percent
                 elif assignment.status == "Pending":
                     paths_remaining += 1
@@ -297,18 +285,20 @@ class ProgressService:
                     if a.status == "Completed" and a.mentor_validation_status == "Pending":
                         pending += 1
 
-            summaries.append(MenteeProgressSummary(
-                user_id=user.user_id,
-                full_name=user.full_name,
-                email=user.email,
-                career_name=career_path.career.name if career_path.career else "Unknown",
-                start_date=career_path.start_date,
-                end_date=career_path.end_date,
-                overall_progress_percent=career_path.overall_progress_percent,
-                paths_completed=completed,
-                paths_total=total,
-                pending_validation=pending,
-            ))
+            summaries.append(
+                MenteeProgressSummary(
+                    user_id=user.user_id,
+                    full_name=user.full_name,
+                    email=user.email,
+                    career_name=career_path.career.name if career_path.career else "Unknown",
+                    start_date=career_path.start_date,
+                    end_date=career_path.end_date,
+                    overall_progress_percent=career_path.overall_progress_percent,
+                    paths_completed=completed,
+                    paths_total=total,
+                    pending_validation=pending,
+                )
+            )
 
         return summaries
 
@@ -329,14 +319,23 @@ class ProgressService:
 
         # Check if all steps are completed
         all_completed = all(sp.status == "Completed" for sp in assignment.step_progress)
-        new_status = "Completed" if all_completed else (
-            "In Progress" if any(sp.status != "Pending" for sp in assignment.step_progress) else "Pending"
+        new_status = (
+            "Completed"
+            if all_completed
+            else (
+                "In Progress"
+                if any(sp.status != "Pending" for sp in assignment.step_progress)
+                else "Pending"
+            )
         )
 
-        await self._assignment_repo.update(assignment, {
-            "progress_percent": new_progress,
-            "status": new_status,
-        })
+        await self._assignment_repo.update(
+            assignment,
+            {
+                "progress_percent": new_progress,
+                "status": new_status,
+            },
+        )
 
         # Recalculate career path progress
         await self._recalculate_career_progress(assignment.user_career_path_id)
@@ -354,11 +353,15 @@ class ProgressService:
         total_progress = sum(a.progress_percent for a in career_path.path_assignments)
         new_progress = total_progress // total_assignments
 
-        await self._career_path_repo.update(career_path, {
-            "overall_progress_percent": new_progress,
-        })
+        await self._career_path_repo.update(
+            career_path,
+            {
+                "overall_progress_percent": new_progress,
+            },
+        )
 
-    def _career_path_to_response(self, path: UserCareerPath) -> UserCareerPathResponse:
+    @staticmethod
+    def _career_path_to_response(path: UserCareerPath) -> UserCareerPathResponse:
         """Convert UserCareerPath to response."""
         return UserCareerPathResponse(
             user_career_path_id=path.user_career_path_id,
@@ -389,9 +392,8 @@ class ProgressService:
             path_assignments=assignments,
         )
 
-    def _assignment_to_response(
-        self, assignment: UserPathAssignment
-    ) -> UserPathAssignmentResponse:
+    @staticmethod
+    def _assignment_to_response(assignment: UserPathAssignment) -> UserPathAssignmentResponse:
         """Convert UserPathAssignment to response."""
         return UserPathAssignmentResponse(
             user_path_assignment_id=assignment.user_path_assignment_id,
@@ -437,9 +439,8 @@ class ProgressService:
             step_progress=step_progress,
         )
 
-    def _step_progress_to_response(
-        self, progress: UserStepProgress
-    ) -> UserStepProgressResponse:
+    @staticmethod
+    def _step_progress_to_response(progress: UserStepProgress) -> UserStepProgressResponse:
         """Convert UserStepProgress to response."""
         step = None
         if progress.step:

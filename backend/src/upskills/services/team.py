@@ -1,5 +1,7 @@
 """Team service."""
 
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from upskills.models.db.team import Team
@@ -46,9 +48,7 @@ class TeamService:
             for t in teams
         ], total
 
-    async def get_teams_by_manager(
-        self, manager_user_id: int
-    ) -> list[TeamWithMembersResponse]:
+    async def get_teams_by_manager(self, manager_user_id: int) -> list[TeamWithMembersResponse]:
         """Get all teams managed by a user."""
         teams = await self._team_repo.get_teams_by_manager(manager_user_id)
         return [self._team_to_response(t) for t in teams]
@@ -74,7 +74,8 @@ class TeamService:
         # Verify manager exists
         manager = await self._user_repo.get_by_id(manager_user_id)
         if not manager:
-            raise ValueError("Manager user not found")
+            msg = "Manager user not found"
+            raise ValueError(msg)
 
         team = await self._team_repo.create({
             "name": name,
@@ -82,8 +83,11 @@ class TeamService:
         })
 
         # Reload with relationships
-        team = await self._team_repo.get_by_id(team.team_id)
-        return self._team_to_response(team)
+        reloaded_team = await self._team_repo.get_by_id(team.team_id)
+        if not reloaded_team:
+            msg = "Failed to reload team after creation"
+            raise RuntimeError(msg)
+        return self._team_to_response(reloaded_team)
 
     async def update_team(
         self,
@@ -99,9 +103,10 @@ class TeamService:
         if manager_user_id:
             manager = await self._user_repo.get_by_id(manager_user_id)
             if not manager:
-                raise ValueError("Manager user not found")
+                msg = "Manager user not found"
+                raise ValueError(msg)
 
-        update_data = {}
+        update_data: dict[str, Any] = {}
         if name is not None:
             update_data["name"] = name
         if manager_user_id is not None:
@@ -109,7 +114,9 @@ class TeamService:
 
         if update_data:
             team = await self._team_repo.update(team, update_data)
-            team = await self._team_repo.get_by_id(team.team_id)
+            reloaded = await self._team_repo.get_by_id(team.team_id)
+            if reloaded:
+                team = reloaded
 
         return self._team_to_response(team)
 
@@ -127,16 +134,19 @@ class TeamService:
         # Verify team exists
         team = await self._team_repo.get_by_id(team_id)
         if not team:
-            raise ValueError("Team not found")
+            msg = "Team not found"
+            raise ValueError(msg)
 
         # Verify user exists
         user = await self._user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError("User not found")
+            msg = "User not found"
+            raise ValueError(msg)
 
         # Check if already a member
         if await self._team_repo.is_member(team_id, user_id):
-            raise ValueError("User is already a member of this team")
+            msg = "User is already a member of this team"
+            raise ValueError(msg)
 
         await self._team_repo.add_member(team_id, user_id)
         return True
@@ -161,39 +171,52 @@ class TeamService:
             for m in members
         ]
 
-    def _team_to_response(self, team: Team) -> TeamWithMembersResponse:
+    @staticmethod
+    def _team_to_response(team: Team) -> TeamWithMembersResponse:
         """Convert a Team model to TeamWithMembersResponse."""
         from upskills.models.domain.user import RoleResponse
 
-        manager_roles = []
+        manager_roles: list[RoleResponse] = []
         if team.manager and team.manager.roles:
-            for user_role in team.manager.roles:
-                if user_role.role:
-                    manager_roles.append(RoleResponse(
-                        role_id=user_role.role.role_id,
-                        name=user_role.role.name,
-                        description=user_role.role.description,
-                        max_active_paths=user_role.role.max_active_paths,
-                    ))
+            manager_roles.extend(
+                RoleResponse(
+                    role_id=user_role.role.role_id,
+                    name=user_role.role.name,
+                    description=user_role.role.description,
+                    max_active_paths=user_role.role.max_active_paths,
+                )
+                for user_role in team.manager.roles
+                if user_role.role
+            )
 
-        manager_response = UserResponse(
-            user_id=team.manager.user_id,
-            full_name=team.manager.full_name,
-            email=team.manager.email,
-            bio=team.manager.bio,
-            created_at=team.manager.created_at,
-            roles=manager_roles,
-        ) if team.manager else None
+        manager_response = (
+            UserResponse(
+                user_id=team.manager.user_id,
+                full_name=team.manager.full_name,
+                email=team.manager.email,
+                bio=team.manager.bio,
+                created_at=team.manager.created_at,
+                roles=manager_roles,
+            )
+            if team.manager
+            else None
+        )
 
-        members = []
+        members: list[TeamMemberResponse] = []
         if team.members:
-            for tm in team.members:
-                if tm.user:
-                    members.append(TeamMemberResponse(
-                        user_id=tm.user.user_id,
-                        full_name=tm.user.full_name,
-                        email=tm.user.email,
-                    ))
+            members.extend(
+                TeamMemberResponse(
+                    user_id=tm.user.user_id,
+                    full_name=tm.user.full_name,
+                    email=tm.user.email,
+                )
+                for tm in team.members
+                if tm.user
+            )
+
+        if not manager_response:
+            msg = "Team manager not found"
+            raise RuntimeError(msg)
 
         return TeamWithMembersResponse(
             team_id=team.team_id,

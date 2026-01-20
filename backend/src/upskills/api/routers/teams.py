@@ -22,12 +22,12 @@ from upskills.services.team import TeamService
 router = APIRouter()
 
 
-@router.get("", response_model=PaginatedResponse[TeamListResponse])
+@router.get("")
 async def list_teams(
     session: DbSession,
     _: Annotated[User, Depends(require_permissions("team.view"))],
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[TeamListResponse]:
     """List all teams (requires team.view permission)."""
     service = TeamService(session)
@@ -45,7 +45,7 @@ async def list_teams(
     )
 
 
-@router.get("/my-teams", response_model=list[TeamWithMembersResponse])
+@router.get("/my-teams")
 async def get_my_managed_teams(
     current_user: CurrentUser,
     session: DbSession,
@@ -55,7 +55,7 @@ async def get_my_managed_teams(
     return await service.get_teams_by_manager(current_user.user_id)
 
 
-@router.get("/member-of", response_model=list[TeamResponse])
+@router.get("/member-of")
 async def get_teams_im_member_of(
     current_user: CurrentUser,
     session: DbSession,
@@ -65,7 +65,7 @@ async def get_teams_im_member_of(
     return await service.get_teams_for_user(current_user.user_id)
 
 
-@router.post("", response_model=TeamWithMembersResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_team(
     data: TeamCreate,
     session: DbSession,
@@ -85,10 +85,10 @@ async def create_team(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.get("/{team_id}", response_model=TeamWithMembersResponse)
+@router.get("/{team_id}")
 async def get_team(
     team_id: int,
     session: DbSession,
@@ -107,7 +107,7 @@ async def get_team(
     return result
 
 
-@router.put("/{team_id}", response_model=TeamWithMembersResponse)
+@router.put("/{team_id}")
 async def update_team(
     team_id: int,
     data: TeamUpdate,
@@ -136,10 +136,10 @@ async def update_team(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.delete("/{team_id}", response_model=MessageResponse)
+@router.delete("/{team_id}")
 async def delete_team(
     team_id: int,
     session: DbSession,
@@ -159,7 +159,7 @@ async def delete_team(
     return MessageResponse(message="Team deleted successfully.")
 
 
-@router.get("/{team_id}/members", response_model=list[TeamMemberResponse])
+@router.get("/{team_id}/members")
 async def get_team_members(
     team_id: int,
     session: DbSession,
@@ -170,7 +170,7 @@ async def get_team_members(
     return await service.get_team_members(team_id)
 
 
-@router.post("/{team_id}/members", response_model=MessageResponse)
+@router.post("/{team_id}/members")
 async def add_team_member(
     team_id: int,
     data: TeamMemberAdd,
@@ -188,10 +188,10 @@ async def add_team_member(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.post("/{team_id}/members/bulk", response_model=MessageResponse)
+@router.post("/{team_id}/members/bulk")
 async def add_team_members_bulk(
     team_id: int,
     data: TeamMemberBulkAdd,
@@ -206,7 +206,7 @@ async def add_team_members_bulk(
         try:
             await service.add_member(team_id, user_id)
         except ValueError as e:
-            errors.append(f"User {user_id}: {str(e)}")
+            errors.append(f"User {user_id}: {e!s}")
 
     await session.commit()
 
@@ -219,7 +219,7 @@ async def add_team_members_bulk(
     return MessageResponse(message=f"Added {len(data.user_ids)} members to team.")
 
 
-@router.delete("/{team_id}/members/{user_id}", response_model=MessageResponse)
+@router.delete("/{team_id}/members/{user_id}")
 async def remove_team_member(
     team_id: int,
     user_id: int,

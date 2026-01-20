@@ -277,4 +277,3 @@ INSERT INTO log_entries (
     'Initial product discovery notes logged.', NULL),
   (8, 4, 4, 'General', '2025-03-05',
     'Started frontend ramp-up for supplemental learning.', 10);
-

@@ -1,9 +1,10 @@
 """Progress tracking repositories."""
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from upskills.models.db.career import PathTemplate
 from upskills.models.db.progress import (
     LogEntry,
     UserCareerPath,
@@ -80,9 +81,7 @@ class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
         stmt = (
             select(UserPathAssignment)
             .options(
-                selectinload(UserPathAssignment.path_template).selectinload(
-                    "steps"
-                ),
+                selectinload(UserPathAssignment.path_template).selectinload(PathTemplate.steps),
                 selectinload(UserPathAssignment.step_progress),
             )
             .where(UserPathAssignment.user_path_assignment_id == assignment_id)
@@ -90,9 +89,7 @@ class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_career_path(
-        self, user_career_path_id: int
-    ) -> list[UserPathAssignment]:
+    async def get_by_career_path(self, user_career_path_id: int) -> list[UserPathAssignment]:
         """Get all path assignments for a career path."""
         stmt = (
             select(UserPathAssignment)
@@ -114,9 +111,7 @@ class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
             select(UserPathAssignment)
             .options(
                 selectinload(UserPathAssignment.path_template),
-                selectinload(UserPathAssignment.user_career_path).selectinload(
-                    UserCareerPath.user
-                ),
+                selectinload(UserPathAssignment.user_career_path).selectinload(UserCareerPath.user),
             )
             .where(
                 UserPathAssignment.status == "Completed",
@@ -126,9 +121,7 @@ class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
-    async def count_completed_for_career_path(
-        self, user_career_path_id: int
-    ) -> tuple[int, int]:
+    async def count_completed_for_career_path(self, user_career_path_id: int) -> tuple[int, int]:
         """Count completed and total assignments for a career path."""
         total_stmt = (
             select(func.count())
@@ -168,9 +161,7 @@ class UserStepProgressRepository(BaseRepository[UserStepProgress]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_assignment(
-        self, user_path_assignment_id: int
-    ) -> list[UserStepProgress]:
+    async def get_by_assignment(self, user_path_assignment_id: int) -> list[UserStepProgress]:
         """Get all step progress for an assignment."""
         stmt = (
             select(UserStepProgress)
@@ -181,9 +172,7 @@ class UserStepProgressRepository(BaseRepository[UserStepProgress]):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_or_create(
-        self, user_path_assignment_id: int, step_id: int
-    ) -> UserStepProgress:
+    async def get_or_create(self, user_path_assignment_id: int, step_id: int) -> UserStepProgress:
         """Get existing step progress or create a new one."""
         stmt = select(UserStepProgress).where(
             UserStepProgress.user_path_assignment_id == user_path_assignment_id,

@@ -61,7 +61,8 @@ class UserService:
         if email and email != user.email:
             existing = await self._user_repo.get_by_email(email)
             if existing:
-                raise ValueError("Email already in use")
+                msg = "Email already in use"
+                raise ValueError(msg)
 
         update_data = {}
         if full_name is not None:
@@ -88,11 +89,10 @@ class UserService:
             return False
 
         if not verify_password(current_password, user.password_hash):
-            raise ValueError("Current password is incorrect")
+            msg = "Current password is incorrect"
+            raise ValueError(msg)
 
-        await self._user_repo.update(user, {
-            "password_hash": hash_password(new_password)
-        })
+        await self._user_repo.update(user, {"password_hash": hash_password(new_password)})
         return True
 
     async def delete_user(self, user_id: int) -> bool:
@@ -108,7 +108,8 @@ class UserService:
         """Assign a role to a user."""
         role = await self._role_repo.get_by_name(role_name)
         if not role:
-            raise ValueError(f"Role '{role_name}' not found")
+            msg = f"Role '{role_name}' not found"
+            raise ValueError(msg)
 
         await self._user_repo.assign_role(user_id, role.role_id)
         return True
@@ -117,23 +118,27 @@ class UserService:
         """Remove a role from a user."""
         role = await self._role_repo.get_by_name(role_name)
         if not role:
-            raise ValueError(f"Role '{role_name}' not found")
+            msg = f"Role '{role_name}' not found"
+            raise ValueError(msg)
 
         await self._user_repo.remove_role(user_id, role.role_id)
         return True
 
-    def _user_to_response(self, user: User) -> UserResponse:
+    @staticmethod
+    def _user_to_response(user: User) -> UserResponse:
         """Convert a User model to UserResponse."""
-        roles = []
+        roles: list[RoleResponse] = []
         if user.roles:
-            for user_role in user.roles:
-                if user_role.role:
-                    roles.append(RoleResponse(
-                        role_id=user_role.role.role_id,
-                        name=user_role.role.name,
-                        description=user_role.role.description,
-                        max_active_paths=user_role.role.max_active_paths,
-                    ))
+            roles.extend(
+                RoleResponse(
+                    role_id=user_role.role.role_id,
+                    name=user_role.role.name,
+                    description=user_role.role.description,
+                    max_active_paths=user_role.role.max_active_paths,
+                )
+                for user_role in user.roles
+                if user_role.role
+            )
 
         return UserResponse(
             user_id=user.user_id,

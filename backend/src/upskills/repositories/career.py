@@ -19,9 +19,7 @@ class CareerRepository(BaseRepository[Career]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Career)
 
-    async def get_by_id(
-        self, career_id: int, id_column: str = "career_id"
-    ) -> Career | None:
+    async def get_by_id(self, career_id: int, id_column: str = "career_id") -> Career | None:
         """Get career by ID with path templates."""
         stmt = (
             select(Career)
@@ -31,16 +29,9 @@ class CareerRepository(BaseRepository[Career]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_all_with_paths(
-        self, *, skip: int = 0, limit: int = 100
-    ) -> list[Career]:
+    async def get_all_with_paths(self, *, skip: int = 0, limit: int = 100) -> list[Career]:
         """Get all careers with their path templates."""
-        stmt = (
-            select(Career)
-            .options(selectinload(Career.path_templates))
-            .offset(skip)
-            .limit(limit)
-        )
+        stmt = select(Career).options(selectinload(Career.path_templates)).offset(skip).limit(limit)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
@@ -59,9 +50,7 @@ class PathTemplateRepository(BaseRepository[PathTemplate]):
             select(PathTemplate)
             .options(
                 selectinload(PathTemplate.career),
-                selectinload(PathTemplate.steps).selectinload(
-                    PathTemplateStep.dependencies
-                ),
+                selectinload(PathTemplate.steps).selectinload(PathTemplateStep.dependencies),
             )
             .where(PathTemplate.path_template_id == path_template_id)
         )
@@ -79,9 +68,7 @@ class PathTemplateRepository(BaseRepository[PathTemplate]):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_all_with_details(
-        self, *, skip: int = 0, limit: int = 100
-    ) -> list[PathTemplate]:
+    async def get_all_with_details(self, *, skip: int = 0, limit: int = 100) -> list[PathTemplate]:
         """Get all path templates with career and steps."""
         stmt = (
             select(PathTemplate)
@@ -102,9 +89,7 @@ class PathStepRepository(BaseRepository[PathTemplateStep]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, PathTemplateStep)
 
-    async def get_by_id(
-        self, step_id: int, id_column: str = "step_id"
-    ) -> PathTemplateStep | None:
+    async def get_by_id(self, step_id: int, id_column: str = "step_id") -> PathTemplateStep | None:
         """Get step by ID with dependencies."""
         stmt = (
             select(PathTemplateStep)
@@ -114,9 +99,7 @@ class PathStepRepository(BaseRepository[PathTemplateStep]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_path_template(
-        self, path_template_id: int
-    ) -> list[PathTemplateStep]:
+    async def get_by_path_template(self, path_template_id: int) -> list[PathTemplateStep]:
         """Get all steps for a path template, ordered by step_order."""
         stmt = (
             select(PathTemplateStep)

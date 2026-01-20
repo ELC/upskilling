@@ -9,8 +9,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from upskills.models.db.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from upskills.models.db.team import Team, TeamMember
     from upskills.models.db.progress import LogEntry, UserCareerPath
+    from upskills.models.db.team import Team, TeamMember
 
 
 class User(Base, TimestampMixin):

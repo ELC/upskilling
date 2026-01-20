@@ -9,11 +9,15 @@ from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse, PaginatedResponse
 from upskills.models.domain.career import (
     PathStepCreate,
+    PathStepCreateInput,
     PathStepResponse,
     PathStepUpdate,
+    PathStepUpdateInput,
     PathTemplateCreate,
+    PathTemplateCreateInput,
     PathTemplateResponse,
     PathTemplateUpdate,
+    PathTemplateUpdateInput,
     PathTemplateWithStepsResponse,
     StepDependencyCreate,
 )
@@ -25,21 +29,19 @@ router = APIRouter()
 # === Path Templates ===
 
 
-@router.get("", response_model=PaginatedResponse[PathTemplateResponse])
+@router.get("")
 async def list_paths(
     session: DbSession,
     current_user: CurrentUser,
     career_id: int | None = None,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[PathTemplateResponse]:
     """List all path templates, optionally filtered by career."""
     service = PathTemplateService(session)
     skip = (page - 1) * page_size
 
-    paths, total = await service.get_all_paths(
-        skip=skip, limit=page_size, career_id=career_id
-    )
+    paths, total = await service.get_all_paths(skip=skip, limit=page_size, career_id=career_id)
     total_pages = (total + page_size - 1) // page_size if total > 0 else 1
 
     return PaginatedResponse(
@@ -51,7 +53,7 @@ async def list_paths(
     )
 
 
-@router.post("", response_model=PathTemplateResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_path(
     data: PathTemplateCreate,
     session: DbSession,
@@ -61,7 +63,7 @@ async def create_path(
     service = PathTemplateService(session)
 
     try:
-        result = await service.create_path(
+        input_data = PathTemplateCreateInput(
             career_id=data.career_id,
             name=data.name,
             description=data.description,
@@ -69,16 +71,17 @@ async def create_path(
             default_start_offset_days=data.default_start_offset_days,
             default_deadline_offset_days=data.default_deadline_offset_days,
         )
+        result = await service.create_path(input_data)
         await session.commit()
         return result
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.get("/{path_id}", response_model=PathTemplateWithStepsResponse)
+@router.get("/{path_id}")
 async def get_path(
     path_id: int,
     session: DbSession,
@@ -97,7 +100,7 @@ async def get_path(
     return result
 
 
-@router.put("/{path_id}", response_model=PathTemplateResponse)
+@router.put("/{path_id}")
 async def update_path(
     path_id: int,
     data: PathTemplateUpdate,
@@ -106,14 +109,14 @@ async def update_path(
 ) -> PathTemplateResponse:
     """Update a path template (requires path_template.update permission)."""
     service = PathTemplateService(session)
-    result = await service.update_path(
-        path_id,
+    input_data = PathTemplateUpdateInput(
         name=data.name,
         description=data.description,
         duration_hours=data.duration_hours,
         default_start_offset_days=data.default_start_offset_days,
         default_deadline_offset_days=data.default_deadline_offset_days,
     )
+    result = await service.update_path(path_id, input_data)
     await session.commit()
 
     if not result:
@@ -125,7 +128,7 @@ async def update_path(
     return result
 
 
-@router.delete("/{path_id}", response_model=MessageResponse)
+@router.delete("/{path_id}")
 async def delete_path(
     path_id: int,
     session: DbSession,
@@ -148,7 +151,7 @@ async def delete_path(
 # === Steps ===
 
 
-@router.get("/{path_id}/steps", response_model=list[PathStepResponse])
+@router.get("/{path_id}/steps")
 async def list_steps(
     path_id: int,
     session: DbSession,
@@ -159,7 +162,7 @@ async def list_steps(
     return await service.get_steps_for_path(path_id)
 
 
-@router.post("/{path_id}/steps", response_model=PathStepResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{path_id}/steps", status_code=status.HTTP_201_CREATED)
 async def create_step(
     path_id: int,
     data: PathStepCreate,
@@ -170,7 +173,7 @@ async def create_step(
     service = PathStepService(session)
 
     try:
-        result = await service.create_step(
+        input_data = PathStepCreateInput(
             path_template_id=path_id,
             step_order=data.step_order,
             name=data.name,
@@ -178,16 +181,17 @@ async def create_step(
             duration_hours=data.duration_hours,
             course_link=data.course_link,
         )
+        result = await service.create_step(input_data)
         await session.commit()
         return result
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
-@router.get("/steps/{step_id}", response_model=PathStepResponse)
+@router.get("/steps/{step_id}")
 async def get_step(
     step_id: int,
     session: DbSession,
@@ -206,7 +210,7 @@ async def get_step(
     return result
 
 
-@router.put("/steps/{step_id}", response_model=PathStepResponse)
+@router.put("/steps/{step_id}")
 async def update_step(
     step_id: int,
     data: PathStepUpdate,
@@ -215,14 +219,14 @@ async def update_step(
 ) -> PathStepResponse:
     """Update a step (requires path_content.add permission)."""
     service = PathStepService(session)
-    result = await service.update_step(
-        step_id,
+    input_data = PathStepUpdateInput(
         step_order=data.step_order,
         name=data.name,
         description=data.description,
         duration_hours=data.duration_hours,
         course_link=data.course_link,
     )
+    result = await service.update_step(step_id, input_data)
     await session.commit()
 
     if not result:
@@ -234,7 +238,7 @@ async def update_step(
     return result
 
 
-@router.delete("/steps/{step_id}", response_model=MessageResponse)
+@router.delete("/steps/{step_id}")
 async def delete_step(
     step_id: int,
     session: DbSession,
@@ -257,7 +261,7 @@ async def delete_step(
 # === Step Dependencies ===
 
 
-@router.post("/steps/{step_id}/dependencies", response_model=MessageResponse)
+@router.post("/steps/{step_id}/dependencies")
 async def add_step_dependency(
     step_id: int,
     data: StepDependencyCreate,
@@ -271,7 +275,7 @@ async def add_step_dependency(
     return MessageResponse(message="Dependency added successfully.")
 
 
-@router.delete("/steps/{step_id}/dependencies/{depends_on_step_id}", response_model=MessageResponse)
+@router.delete("/steps/{step_id}/dependencies/{depends_on_step_id}")
 async def remove_step_dependency(
     step_id: int,
     depends_on_step_id: int,

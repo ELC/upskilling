@@ -6,7 +6,6 @@ from pydantic import EmailStr, Field
 
 from upskills.models.domain.base import DomainModel
 
-
 # === Request Models ===
 
 
@@ -75,13 +74,13 @@ class UserResponse(DomainModel):
     email: str
     bio: str | None
     created_at: datetime
-    roles: list[RoleResponse] = []
+    roles: list[RoleResponse] = Field(default_factory=list)
 
 
 class UserWithPermissions(UserResponse):
     """User response with full permission details."""
 
-    permissions: list[str] = []
+    permissions: list[str] = Field(default_factory=list)
 
 
 # === Internal Models ===
