@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
 import { progressApi } from '../services/api';
 import type { UserCareerPathDetail, UserPathAssignment } from '../types';
-import { Calendar, ChevronRight, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { ExternalLink, Eye, Check, Plus } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import StatusBadge from '../components/StatusBadge';
+import ActionMenu from '../components/ActionMenu';
+import SlideOutPanel from '../components/SlideOutPanel';
 
 export default function DevelopmentPlansPage() {
   const [careerPaths, setCareerPaths] = useState<UserCareerPathDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAssignment, setSelectedAssignment] = useState<UserPathAssignment | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   useEffect(() => {
     const fetchPaths = async () => {
@@ -23,53 +28,14 @@ export default function DevelopmentPlansPage() {
     fetchPaths();
   }, []);
 
-  const getStatusIcon = (status: string, validationStatus: string) => {
-    if (validationStatus === 'Approved') {
-      return <CheckCircle className="w-5 h-5 text-green-400" />;
-    }
-    if (status === 'Completed') {
-      return <Clock className="w-5 h-5 text-yellow-400" />;
-    }
-    if (status === 'In Progress') {
-      return <AlertCircle className="w-5 h-5 text-primary-400" />;
-    }
-    return <Clock className="w-5 h-5 text-dark-500" />;
+  const handleViewDetails = (assignment: UserPathAssignment) => {
+    setSelectedAssignment(assignment);
+    setIsPanelOpen(true);
   };
 
-  const getStatusBadge = (status: string, validationStatus: string) => {
-    if (validationStatus === 'Approved') {
-      return (
-        <span className="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-400 rounded-full">
-          Approved
-        </span>
-      );
-    }
-    if (validationStatus === 'Rejected') {
-      return (
-        <span className="px-2 py-1 text-xs font-medium bg-red-500/20 text-red-400 rounded-full">
-          Rejected
-        </span>
-      );
-    }
-    if (status === 'Completed') {
-      return (
-        <span className="px-2 py-1 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full">
-          Pending Review
-        </span>
-      );
-    }
-    if (status === 'In Progress') {
-      return (
-        <span className="px-2 py-1 text-xs font-medium bg-primary-500/20 text-primary-400 rounded-full">
-          In Progress
-        </span>
-      );
-    }
-    return (
-      <span className="px-2 py-1 text-xs font-medium bg-dark-700 text-dark-400 rounded-full">
-        Pending
-      </span>
-    );
+  const handleMarkCompleted = (assignment: UserPathAssignment) => {
+    // TODO: Implement mark as completed
+    console.log('Mark completed:', assignment);
   };
 
   if (isLoading) {
@@ -80,116 +46,266 @@ export default function DevelopmentPlansPage() {
     );
   }
 
+  // Get current path (first in-progress assignment)
+  const currentCareer = careerPaths[0];
+  const currentPath = currentCareer?.pathAssignments?.find(a => a.status === 'In Progress');
+  const pathsRemaining = currentCareer?.pathAssignments?.filter(a => a.status !== 'Completed').length || 0;
+  const pathsCompleted = currentCareer?.pathAssignments?.filter(a => a.status === 'Completed').length || 0;
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-dark-100">Development Plans</h1>
-        <p className="mt-2 text-dark-400">
-          Track your career progress and assigned learning paths.
-        </p>
-      </div>
-
       {careerPaths.length === 0 ? (
         <div className="card text-center py-12">
-          <div className="w-16 h-16 rounded-2xl bg-dark-800 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">📋</span>
           </div>
-          <h3 className="text-lg font-medium text-dark-100 mb-2">No development plans yet</h3>
-          <p className="text-dark-500">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No development plans yet</h3>
+          <p className="text-gray-500">
             Your mentor will assign you a career path to get started.
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {careerPaths.map((careerPath) => (
-            <div key={careerPath.userCareerPathId} className="card">
-              {/* Career path header */}
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-600/30 to-secondary-600/30 flex items-center justify-center">
-                    <span className="text-2xl">🎯</span>
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-dark-100">
-                      {careerPath.careerName}
-                    </h2>
-                    {careerPath.careerSpecialization && (
-                      <p className="text-dark-400">{careerPath.careerSpecialization}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-dark-100">
-                    {careerPath.overallProgressPercent}%
-                  </p>
-                  <p className="text-dark-500 text-sm">overall progress</p>
-                </div>
-              </div>
+        <>
+          {/* Career Overview Card */}
+          {currentCareer && (
+            <div className="card">
+              {/* Career Title */}
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                {currentCareer.careerName}
+              </h1>
+              {currentCareer.careerSpecialization && (
+                <p className="text-gray-500 mb-6">
+                  Specialization: {currentCareer.careerSpecialization}
+                </p>
+              )}
 
-              {/* Progress bar */}
-              <div className="mb-6">
-                <div className="progress-bar h-3">
+              {/* Overall Progress */}
+              <div className="mb-8">
+                <p className="text-sm text-gray-500 mb-2">Progress</p>
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-1">
                   <div
-                    className="progress-bar-fill"
-                    style={{ width: `${careerPath.overallProgressPercent}%` }}
+                    className="bg-gray-800 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${currentCareer.overallProgressPercent}%` }}
                   />
                 </div>
+                <p className="text-sm text-gray-500">{currentCareer.overallProgressPercent}%</p>
               </div>
 
-              {/* Dates */}
-              <div className="flex items-center gap-6 mb-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-dark-500" />
-                  <span className="text-dark-400">Started:</span>
-                  <span className="text-dark-200">
-                    {new Date(careerPath.startDate).toLocaleDateString()}
-                  </span>
+              {/* Current Path and Stats */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Current Path */}
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Current Path</p>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                    {currentPath ? `Path #${currentPath.pathTemplateId}` : 'No active path'}
+                  </h2>
+                  {currentPath && (
+                    <>
+                      <p className="text-sm text-gray-500 mb-2">Progress</p>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                        <div
+                          className="bg-primary-500 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${currentPath.progressPercent}%` }}
+                        />
+                      </div>
+                      <p className="text-sm text-gray-500 mb-4">{currentPath.progressPercent}%</p>
+                      <button className="btn btn-primary">
+                        Continue Path
+                      </button>
+                    </>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-dark-500" />
-                  <span className="text-dark-400">Target:</span>
-                  <span className="text-dark-200">
-                    {new Date(careerPath.endDate).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
 
-              {/* Path assignments */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-dark-400 uppercase tracking-wider">
-                  Learning Paths
-                </h3>
-                {careerPath.pathAssignments.map((assignment) => (
-                  <div
-                    key={assignment.userPathAssignmentId}
-                    className="flex items-center justify-between p-4 bg-dark-800/50 rounded-lg hover:bg-dark-800 transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-4">
-                      {getStatusIcon(assignment.status, assignment.mentorValidationStatus)}
-                      <div>
-                        <p className="font-medium text-dark-100">
-                          Path #{assignment.pathTemplateId}
-                        </p>
-                        <p className="text-sm text-dark-500">
-                          {new Date(assignment.startDate).toLocaleDateString()} -{' '}
-                          {new Date(assignment.deadline).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-medium text-dark-100">{assignment.progressPercent}%</p>
-                        {getStatusBadge(assignment.status, assignment.mentorValidationStatus)}
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-dark-500 group-hover:text-dark-300 transition-colors" />
-                    </div>
+                {/* Stats */}
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Paths Remaining</p>
+                    <p className="text-4xl font-bold text-gray-900">{pathsRemaining}</p>
                   </div>
-                ))}
+                  <div className="border-t border-gray-200 pt-4">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Skills Obtained</p>
+                    <p className="text-gray-500">-</p>
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
+          )}
+
+          {/* Assigned Paths Table */}
+          {currentCareer && (
+            <div className="card">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-semibold text-primary-500">
+                  My Assigned Career Path: {currentCareer.careerName}
+                </h2>
+                <button className="btn btn-outline">
+                  <Plus className="w-4 h-4" />
+                  Add Path
+                </button>
+              </div>
+              <p className="text-gray-500 text-sm mb-6">
+                Complete all assigned paths and courses. Start date: {new Date(currentCareer.startDate).toLocaleDateString()}, 
+                Deadline: {new Date(currentCareer.endDate).toLocaleDateString()}
+              </p>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Path #</th>
+                      <th>Path Name</th>
+                      <th>Start Date</th>
+                      <th>Deadline</th>
+                      <th>Associated Paths</th>
+                      <th>Mentor Validation</th>
+                      <th>Link</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentCareer.pathAssignments.map((assignment, index) => (
+                      <tr key={assignment.userPathAssignmentId}>
+                        <td className="font-medium text-gray-900">
+                          {index === currentCareer.pathAssignments.length - 1 ? 'Final' : index + 1}
+                        </td>
+                        <td>
+                          <div>
+                            <p className="font-semibold text-gray-900">
+                              {index === currentCareer.pathAssignments.length - 1 
+                                ? 'Final Project' 
+                                : `Path #${assignment.pathTemplateId}`}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {index === currentCareer.pathAssignments.length - 1
+                                ? 'Complete the final project for this career path'
+                                : 'Learning path assignment'}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="text-gray-600">
+                          {new Date(assignment.startDate).toLocaleDateString()}
+                        </td>
+                        <td className="text-gray-600">
+                          {new Date(assignment.deadline).toLocaleDateString()}
+                        </td>
+                        <td className="text-gray-500">
+                          {index === 0 ? 'None' : index === currentCareer.pathAssignments.length - 1 ? 'All paths must be completed' : `Path #${currentCareer.pathAssignments[index - 1]?.pathTemplateId}`}
+                        </td>
+                        <td>
+                          <StatusBadge 
+                            status={
+                              assignment.mentorValidationStatus === 'Approved' 
+                                ? 'approved' 
+                                : assignment.mentorValidationStatus === 'Rejected'
+                                  ? 'rejected'
+                                  : 'pending'
+                            }
+                          />
+                        </td>
+                        <td>
+                          {index < currentCareer.pathAssignments.length - 1 && (
+                            <a href="#" className="text-primary-500 hover:text-primary-600 flex items-center gap-1">
+                              Open Course
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                          {index === currentCareer.pathAssignments.length - 1 && (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td>
+                          <ActionMenu
+                            items={[
+                              {
+                                label: 'View Details',
+                                onClick: () => handleViewDetails(assignment),
+                                icon: <Eye className="w-4 h-4" />,
+                              },
+                              {
+                                label: 'Mark Completed',
+                                onClick: () => handleMarkCompleted(assignment),
+                                icon: <Check className="w-4 h-4" />,
+                              },
+                            ]}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       )}
+
+      {/* Slide-out Panel for Path Details */}
+      <SlideOutPanel
+        isOpen={isPanelOpen}
+        onClose={() => setIsPanelOpen(false)}
+        title={`Path #${selectedAssignment?.pathTemplateId || ''}`}
+      >
+        {selectedAssignment && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-900">Path Information</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Path Number:</p>
+                <p className="text-gray-900">{selectedAssignment.pathTemplateId}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-gray-500">Description:</p>
+                <p className="text-gray-900">Learning path assignment for career development.</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-gray-500">Duration:</p>
+                <p className="text-gray-900">40 hours</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-gray-500">Start Date:</p>
+                <p className="text-gray-900">{new Date(selectedAssignment.startDate).toLocaleDateString()}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-gray-500">Deadline:</p>
+                <p className="text-gray-900">{new Date(selectedAssignment.deadline).toLocaleDateString()}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-gray-500">Associated Paths:</p>
+                <p className="text-gray-900">None</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-gray-500">Mentor Validation:</p>
+                <p className="text-gray-900">{selectedAssignment.mentorValidationStatus.toLowerCase()}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-gray-500">Course Link:</p>
+                <a href="#" className="text-primary-500 hover:text-primary-600">
+                  https://learn.pwc.com/courses/path-{selectedAssignment.pathTemplateId}
+                </a>
+              </div>
+            </div>
+
+            <button 
+              className="w-full btn btn-primary mt-8"
+              onClick={() => {
+                handleMarkCompleted(selectedAssignment);
+                setIsPanelOpen(false);
+              }}
+            >
+              Mark as Done
+            </button>
+          </div>
+        )}
+      </SlideOutPanel>
     </div>
   );
 }

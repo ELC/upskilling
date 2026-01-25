@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { teamsApi, progressApi } from '../services/api';
 import type { TeamWithMembers, MenteeProgressSummary } from '../types';
-import { Users, UserPlus, TrendingUp, AlertCircle, ChevronRight } from 'lucide-react';
+import { UserPlus, Users } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import StatusBadge from '../components/StatusBadge';
 
 export default function TeamManagementPage() {
   const [teams, setTeams] = useState<TeamWithMembers[]>([]);
   const [teamProgress, setTeamProgress] = useState<MenteeProgressSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedTeam, setSelectedTeam] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,9 +19,6 @@ export default function TeamManagementPage() {
         ]);
         setTeams(teamsData);
         setTeamProgress(progressData);
-        if (teamsData.length > 0) {
-          setSelectedTeam(teamsData[0].teamId);
-        }
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -32,8 +29,6 @@ export default function TeamManagementPage() {
     fetchData();
   }, []);
 
-  const currentTeam = teams.find((t) => t.teamId === selectedTeam);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -42,159 +37,135 @@ export default function TeamManagementPage() {
     );
   }
 
+  // Calculate overview metrics
+  const avgProgress = teamProgress.length > 0
+    ? Math.round(teamProgress.reduce((sum, p) => sum + p.overallProgressPercent, 0) / teamProgress.length)
+    : 0;
+  
+  const totalPathsCompleted = teamProgress.reduce((sum, p) => sum + p.pathsCompleted, 0);
+  const totalPaths = teamProgress.reduce((sum, p) => sum + p.pathsTotal, 0);
+
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-dark-100">Team Management</h1>
-          <p className="mt-2 text-dark-400">Manage your team members and track their progress.</p>
-        </div>
-        <button className="btn btn-primary flex items-center gap-2">
-          <UserPlus className="w-4 h-4" />
-          Add Member
-        </button>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
+        <p className="mt-1 text-gray-500">
+          Manage your team members, assign career paths, set deadlines, and track progress
+        </p>
       </div>
 
       {teams.length === 0 ? (
         <div className="card text-center py-12">
-          <div className="w-16 h-16 rounded-2xl bg-dark-800 flex items-center justify-center mx-auto mb-4">
-            <Users className="w-8 h-8 text-dark-500" />
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-dark-100 mb-2">No teams yet</h3>
-          <p className="text-dark-500">You don't manage any teams currently.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No teams yet</h3>
+          <p className="text-gray-500">You don't manage any teams currently.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Team selector */}
-          <div className="lg:col-span-1 space-y-4">
-            <h2 className="text-sm font-medium text-dark-400 uppercase tracking-wider">
-              Your Teams
-            </h2>
-            {teams.map((team) => (
-              <button
-                key={team.teamId}
-                onClick={() => setSelectedTeam(team.teamId)}
-                className={`w-full card card-hover text-left ${
-                  selectedTeam === team.teamId ? 'border-primary-600/50 bg-dark-900/80' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600/30 to-secondary-600/30 flex items-center justify-center">
-                      <Users className="w-5 h-5 text-primary-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-dark-100">{team.name}</h3>
-                      <p className="text-dark-500 text-sm">{team.members.length} members</p>
-                    </div>
-                  </div>
-                  <ChevronRight
-                    className={`w-5 h-5 ${
-                      selectedTeam === team.teamId ? 'text-primary-400' : 'text-dark-500'
-                    }`}
-                  />
-                </div>
+        <>
+          {/* Mentees Section */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Mentees</h2>
+              <button className="btn btn-primary">
+                <UserPlus className="w-4 h-4" />
+                Add Mentee
               </button>
-            ))}
-          </div>
+            </div>
 
-          {/* Team details and progress */}
-          <div className="lg:col-span-2 space-y-6">
-            {currentTeam && (
-              <>
-                {/* Team header */}
-                <div className="card">
-                  <h2 className="text-xl font-semibold text-dark-100 mb-4">{currentTeam.name}</h2>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-dark-800/50 rounded-lg">
-                      <p className="text-2xl font-bold text-dark-100">
-                        {currentTeam.members.length}
-                      </p>
-                      <p className="text-dark-500 text-sm">Members</p>
+            {teamProgress.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">
+                No mentees assigned yet.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {teamProgress.map((member) => (
+                  <div
+                    key={member.userId}
+                    className="border border-gray-200 rounded-xl p-5 hover:shadow-card-hover transition-shadow"
+                  >
+                    {/* Avatar and Info */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-primary-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-semibold text-lg">
+                          {member.fullName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-gray-900 truncate">{member.fullName}</h3>
+                        <p className="text-sm text-gray-500 truncate">{member.email}</p>
+                        <p className="text-sm text-gray-400">{member.careerName}</p>
+                      </div>
                     </div>
-                    <div className="text-center p-4 bg-dark-800/50 rounded-lg">
-                      <p className="text-2xl font-bold text-primary-400">
-                        {teamProgress.filter((p) => p.pendingValidation > 0).length}
-                      </p>
-                      <p className="text-dark-500 text-sm">Pending Reviews</p>
+
+                    {/* Stats */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Paths Completed</span>
+                        <span className="font-medium text-gray-900">
+                          {member.pathsCompleted}/{member.pathsTotal}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Overall Progress</span>
+                        <span className="font-medium text-gray-900">
+                          {member.overallProgressPercent}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm items-center">
+                        <span className="text-gray-500">Status</span>
+                        <StatusBadge status={member.overallProgressPercent === 100 ? 'completed' : 'in_progress'} />
+                      </div>
                     </div>
-                    <div className="text-center p-4 bg-dark-800/50 rounded-lg">
-                      <p className="text-2xl font-bold text-green-400">
-                        {Math.round(
-                          teamProgress.reduce((sum, p) => sum + p.overallProgressPercent, 0) /
-                            (teamProgress.length || 1)
-                        )}
-                        %
-                      </p>
-                      <p className="text-dark-500 text-sm">Avg Progress</p>
-                    </div>
+
+                    {/* Action Button */}
+                    <button className="w-full btn btn-primary flex items-center justify-center gap-2">
+                      <Users className="w-4 h-4" />
+                      View Mentee Details
+                    </button>
                   </div>
-                </div>
-
-                {/* Team members progress */}
-                <div className="card">
-                  <h3 className="text-lg font-semibold text-dark-100 mb-4">Member Progress</h3>
-                  <div className="space-y-4">
-                    {teamProgress.length === 0 ? (
-                      <p className="text-dark-500 text-center py-8">
-                        No progress data available for team members.
-                      </p>
-                    ) : (
-                      teamProgress.map((member) => (
-                        <div
-                          key={member.userId}
-                          className="p-4 bg-dark-800/50 rounded-lg hover:bg-dark-800 transition-colors"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-secondary-600 flex items-center justify-center">
-                                <span className="text-white font-medium">
-                                  {member.fullName.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-dark-100">{member.fullName}</h4>
-                                <p className="text-dark-500 text-sm">{member.careerName}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {member.pendingValidation > 0 && (
-                                <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full">
-                                  <AlertCircle className="w-3 h-3" />
-                                  {member.pendingValidation} pending
-                                </span>
-                              )}
-                              <span className="text-lg font-bold text-dark-100">
-                                {member.overallProgressPercent}%
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="progress-bar mb-2">
-                            <div
-                              className="progress-bar-fill"
-                              style={{ width: `${member.overallProgressPercent}%` }}
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between text-xs text-dark-500">
-                            <span>
-                              {member.pathsCompleted}/{member.pathsTotal} paths completed
-                            </span>
-                            <span>
-                              {new Date(member.startDate).toLocaleDateString()} -{' '}
-                              {new Date(member.endDate).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </>
+                ))}
+              </div>
             )}
           </div>
-        </div>
+
+          {/* Mentees Progress Overview */}
+          <div className="card">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Mentees Progress Overview</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Average Progress */}
+              <div className="text-center p-6 border border-gray-200 rounded-xl">
+                <p className="text-sm text-gray-500 mb-3">Mentees Average Progress</p>
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
+                  <div
+                    className="bg-primary-500 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${avgProgress}%` }}
+                  />
+                </div>
+                <p className="text-2xl font-bold text-primary-500">{avgProgress}%</p>
+              </div>
+
+              {/* Paths Completed */}
+              <div className="text-center p-6 border border-gray-200 rounded-xl">
+                <p className="text-sm text-gray-500 mb-3">Paths Completed</p>
+                <p className="text-2xl font-bold text-primary-500">
+                  {totalPathsCompleted}/{totalPaths}
+                </p>
+                <p className="text-sm text-gray-400 mt-1">Average per mentee</p>
+              </div>
+
+              {/* Total Mentees */}
+              <div className="text-center p-6 border border-gray-200 rounded-xl">
+                <p className="text-sm text-gray-500 mb-3">Total Mentees</p>
+                <p className="text-2xl font-bold text-primary-500">{teamProgress.length}</p>
+                <p className="text-sm text-gray-400 mt-1">Active assignments</p>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

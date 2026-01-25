@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { progressApi } from '../services/api';
 import type { DashboardStats } from '../types';
-import { TrendingUp, Target, Award, Clock } from 'lucide-react';
+import { TrendingUp, Target, Award, Clock, BookOpen, GraduationCap, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function DashboardPage() {
@@ -37,10 +38,10 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Welcome section */}
       <div>
-        <h1 className="text-3xl font-bold text-dark-100">
+        <h1 className="text-2xl font-bold text-gray-900">
           Welcome back, {user?.fullName?.split(' ')[0]}!
         </h1>
-        <p className="mt-2 text-dark-400">
+        <p className="mt-1 text-gray-500">
           Track your progress and continue your career development journey.
         </p>
       </div>
@@ -49,12 +50,12 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="card card-hover">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary-600/20 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-primary-400" />
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-primary-500" />
             </div>
             <div>
-              <p className="text-dark-500 text-sm">Overall Progress</p>
-              <p className="text-2xl font-bold text-dark-100">{stats?.overallProgress || 0}%</p>
+              <p className="text-gray-500 text-sm">Overall Progress</p>
+              <p className="text-2xl font-bold text-gray-900">{stats?.overallProgress || 0}%</p>
             </div>
           </div>
           <div className="mt-4 progress-bar">
@@ -67,12 +68,12 @@ export default function DashboardPage() {
 
         <div className="card card-hover">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-secondary-600/20 flex items-center justify-center">
-              <Target className="w-6 h-6 text-secondary-400" />
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
+              <Target className="w-6 h-6 text-primary-500" />
             </div>
             <div>
-              <p className="text-dark-500 text-sm">Current Path</p>
-              <p className="text-lg font-semibold text-dark-100 truncate max-w-[150px]">
+              <p className="text-gray-500 text-sm">Current Path</p>
+              <p className="text-lg font-semibold text-gray-900 truncate max-w-[150px]">
                 {stats?.currentPath || 'No active path'}
               </p>
             </div>
@@ -87,24 +88,24 @@ export default function DashboardPage() {
 
         <div className="card card-hover">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center">
-              <Award className="w-6 h-6 text-green-400" />
+            <div className="w-12 h-12 rounded-xl bg-success-100 flex items-center justify-center">
+              <Award className="w-6 h-6 text-success-500" />
             </div>
             <div>
-              <p className="text-dark-500 text-sm">Skills Obtained</p>
-              <p className="text-2xl font-bold text-dark-100">{stats?.skillsObtained || 0}</p>
+              <p className="text-gray-500 text-sm">Skills Obtained</p>
+              <p className="text-2xl font-bold text-gray-900">{stats?.skillsObtained || 0}</p>
             </div>
           </div>
         </div>
 
         <div className="card card-hover">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center">
-              <Clock className="w-6 h-6 text-blue-400" />
+            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+              <Clock className="w-6 h-6 text-gray-500" />
             </div>
             <div>
-              <p className="text-dark-500 text-sm">Paths Remaining</p>
-              <p className="text-2xl font-bold text-dark-100">{stats?.pathsRemaining || 0}</p>
+              <p className="text-gray-500 text-sm">Paths Remaining</p>
+              <p className="text-2xl font-bold text-gray-900">{stats?.pathsRemaining || 0}</p>
             </div>
           </div>
         </div>
@@ -113,14 +114,14 @@ export default function DashboardPage() {
       {/* Current career */}
       {stats?.currentCareer && (
         <div className="card">
-          <h2 className="text-xl font-semibold text-dark-100 mb-4">Current Career Track</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Career Track</h2>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-600/30 to-secondary-600/30 flex items-center justify-center">
-              <span className="text-2xl">🎯</span>
+            <div className="w-14 h-14 rounded-xl bg-primary-100 flex items-center justify-center">
+              <Target className="w-7 h-7 text-primary-500" />
             </div>
             <div>
-              <h3 className="text-lg font-medium text-dark-100">{stats.currentCareer}</h3>
-              <p className="text-dark-400">
+              <h3 className="text-lg font-medium text-gray-900">{stats.currentCareer}</h3>
+              <p className="text-gray-500">
                 {stats.currentPath
                   ? `Currently working on: ${stats.currentPath}`
                   : 'Ready to start your next path'}
@@ -132,56 +133,56 @@ export default function DashboardPage() {
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <a
-          href="/development-plans"
+        <Link
+          to="/development-plans"
           className="card card-hover group cursor-pointer"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary-600/20 flex items-center justify-center group-hover:bg-primary-600/30 transition-colors">
-              <span className="text-xl">📚</span>
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center group-hover:bg-primary-200 transition-colors">
+              <BookOpen className="w-6 h-6 text-primary-500" />
             </div>
             <div>
-              <h3 className="text-dark-100 font-medium group-hover:text-primary-400 transition-colors">
+              <h3 className="text-gray-900 font-medium group-hover:text-primary-500 transition-colors">
                 View Development Plans
               </h3>
-              <p className="text-dark-500 text-sm">Track your assigned paths</p>
+              <p className="text-gray-500 text-sm">Track your assigned paths</p>
             </div>
           </div>
-        </a>
+        </Link>
 
-        <a
-          href="/learning-paths"
+        <Link
+          to="/learning-paths"
           className="card card-hover group cursor-pointer"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-secondary-600/20 flex items-center justify-center group-hover:bg-secondary-600/30 transition-colors">
-              <span className="text-xl">🎓</span>
+            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center group-hover:bg-primary-200 transition-colors">
+              <GraduationCap className="w-6 h-6 text-primary-500" />
             </div>
             <div>
-              <h3 className="text-dark-100 font-medium group-hover:text-secondary-400 transition-colors">
+              <h3 className="text-gray-900 font-medium group-hover:text-primary-500 transition-colors">
                 Browse Learning Paths
               </h3>
-              <p className="text-dark-500 text-sm">Explore available courses</p>
+              <p className="text-gray-500 text-sm">Explore available courses</p>
             </div>
           </div>
-        </a>
+        </Link>
 
-        <a
-          href="/my-bio"
+        <Link
+          to="/my-bio"
           className="card card-hover group cursor-pointer"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center group-hover:bg-blue-600/30 transition-colors">
-              <span className="text-xl">👤</span>
+            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+              <User className="w-6 h-6 text-gray-500" />
             </div>
             <div>
-              <h3 className="text-dark-100 font-medium group-hover:text-blue-400 transition-colors">
+              <h3 className="text-gray-900 font-medium group-hover:text-gray-700 transition-colors">
                 Update Profile
               </h3>
-              <p className="text-dark-500 text-sm">Manage your bio and settings</p>
+              <p className="text-gray-500 text-sm">Manage your bio and settings</p>
             </div>
           </div>
-        </a>
+        </Link>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { progressApi } from '../services/api';
 import type { UserPathAssignmentDetail } from '../types';
 import { CheckCircle, XCircle, Clock, User, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import StatusBadge from '../components/StatusBadge';
 
 export default function MentorValidationPage() {
   const [pendingAssignments, setPendingAssignments] = useState<UserPathAssignmentDetail[]>([]);
@@ -64,8 +65,8 @@ export default function MentorValidationPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-dark-100">Mentor Validation</h1>
-        <p className="mt-2 text-dark-400">
+        <h1 className="text-2xl font-bold text-gray-900">Mentor Validation</h1>
+        <p className="mt-1 text-gray-500">
           Review and validate completed learning paths from your mentees.
         </p>
       </div>
@@ -73,12 +74,12 @@ export default function MentorValidationPage() {
       {/* Stats */}
       <div className="card">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-yellow-600/20 flex items-center justify-center">
-            <Clock className="w-6 h-6 text-yellow-400" />
+          <div className="w-12 h-12 rounded-xl bg-warning-100 flex items-center justify-center">
+            <Clock className="w-6 h-6 text-warning-500" />
           </div>
           <div>
-            <p className="text-dark-500 text-sm">Pending Validations</p>
-            <p className="text-2xl font-bold text-dark-100">{pendingAssignments.length}</p>
+            <p className="text-gray-500 text-sm">Pending Validations</p>
+            <p className="text-2xl font-bold text-gray-900">{pendingAssignments.length}</p>
           </div>
         </div>
       </div>
@@ -86,11 +87,11 @@ export default function MentorValidationPage() {
       {/* Pending validations list */}
       {pendingAssignments.length === 0 ? (
         <div className="card text-center py-12">
-          <div className="w-16 h-16 rounded-2xl bg-dark-800 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-400" />
+          <div className="w-16 h-16 rounded-2xl bg-success-100 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-success-500" />
           </div>
-          <h3 className="text-lg font-medium text-dark-100 mb-2">All caught up!</h3>
-          <p className="text-dark-500">No pending validations at the moment.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
+          <p className="text-gray-500">No pending validations at the moment.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -107,46 +108,44 @@ export default function MentorValidationPage() {
                 }
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-600/30 to-secondary-600/30 flex items-center justify-center">
-                    <User className="w-6 h-6 text-primary-400" />
+                  <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
+                    <User className="w-6 h-6 text-primary-500" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-dark-100">
+                    <h3 className="text-lg font-semibold text-gray-900">
                       {assignment.pathTemplate?.name || `Path #${assignment.pathTemplateId}`}
                     </h3>
-                    <p className="text-dark-400 text-sm">
+                    <p className="text-gray-500 text-sm">
                       Completed on {new Date(assignment.deadline).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="px-3 py-1 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full">
-                    Pending Review
-                  </span>
+                  <StatusBadge status="pending">Pending Review</StatusBadge>
                   {expandedId === assignment.userPathAssignmentId ? (
-                    <ChevronUp className="w-5 h-5 text-dark-500" />
+                    <ChevronUp className="w-5 h-5 text-gray-400" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-dark-500" />
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
                   )}
                 </div>
               </div>
 
               {/* Expanded details */}
               {expandedId === assignment.userPathAssignmentId && (
-                <div className="mt-6 pt-6 border-t border-dark-800">
+                <div className="mt-6 pt-6 border-t border-gray-200">
                   {/* Assignment details */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-dark-500" />
-                      <span className="text-dark-400 text-sm">Start:</span>
-                      <span className="text-dark-200 text-sm">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-500 text-sm">Start:</span>
+                      <span className="text-gray-900 text-sm">
                         {new Date(assignment.startDate).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-dark-500" />
-                      <span className="text-dark-400 text-sm">Deadline:</span>
-                      <span className="text-dark-200 text-sm">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-500 text-sm">Deadline:</span>
+                      <span className="text-gray-900 text-sm">
                         {new Date(assignment.deadline).toLocaleDateString()}
                       </span>
                     </div>
@@ -155,22 +154,22 @@ export default function MentorValidationPage() {
                   {/* Step progress */}
                   {assignment.stepProgress && assignment.stepProgress.length > 0 && (
                     <div className="mb-6">
-                      <h4 className="text-sm font-medium text-dark-400 uppercase tracking-wider mb-3">
+                      <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                         Completed Steps
                       </h4>
                       <div className="space-y-2">
                         {assignment.stepProgress.map((sp) => (
                           <div
                             key={sp.userStepProgressId}
-                            className="flex items-center justify-between p-3 bg-dark-800/50 rounded-lg"
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                           >
                             <div className="flex items-center gap-3">
-                              <CheckCircle className="w-4 h-4 text-green-400" />
-                              <span className="text-dark-200 text-sm">
+                              <CheckCircle className="w-4 h-4 text-success-500" />
+                              <span className="text-gray-900 text-sm">
                                 {sp.step?.name || `Step #${sp.stepId}`}
                               </span>
                             </div>
-                            <span className="text-dark-400 text-sm">{sp.progressPercent}%</span>
+                            <span className="text-gray-500 text-sm">{sp.progressPercent}%</span>
                           </div>
                         ))}
                       </div>
@@ -200,7 +199,7 @@ export default function MentorValidationPage() {
                         handleReject(assignment.userPathAssignmentId);
                       }}
                       disabled={actionLoading === assignment.userPathAssignmentId}
-                      className="btn bg-red-600/20 text-red-400 hover:bg-red-600/30 flex items-center gap-2"
+                      className="btn btn-danger flex items-center gap-2"
                     >
                       <XCircle className="w-4 h-4" />
                       Reject

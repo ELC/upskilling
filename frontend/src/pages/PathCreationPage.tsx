@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { careersApi, pathsApi } from '../services/api';
 import type { Career, PathTemplate, PathTemplateWithSteps } from '../types';
-import { Plus, Edit2, Trash2, BookOpen, Clock, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { Plus, BookOpen, Clock, ExternalLink, Save, X } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ActionMenu from '../components/ActionMenu';
 
 export default function PathCreationPage() {
   const [careers, setCareers] = useState<Career[]>([]);
   const [paths, setPaths] = useState<PathTemplate[]>([]);
-  const [selectedPath, setSelectedPath] = useState<PathTemplateWithSteps | null>(null);
+  const [selectedCareer, setSelectedCareer] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [expandedPathId, setExpandedPathId] = useState<number | null>(null);
 
   // Form state
   const [showNewPathForm, setShowNewPathForm] = useState(false);
@@ -32,26 +32,13 @@ export default function PathCreationPage() {
       ]);
       setCareers(careersRes.items);
       setPaths(pathsRes.items);
+      if (careersRes.items.length > 0) {
+        setSelectedCareer(careersRes.items[0].careerId);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleExpandPath = async (pathId: number) => {
-    if (expandedPathId === pathId) {
-      setExpandedPathId(null);
-      setSelectedPath(null);
-      return;
-    }
-
-    try {
-      const pathData = await pathsApi.get(pathId);
-      setSelectedPath(pathData);
-      setExpandedPathId(pathId);
-    } catch (error) {
-      console.error('Failed to fetch path details:', error);
     }
   };
 
@@ -67,6 +54,12 @@ export default function PathCreationPage() {
     }
   };
 
+  const filteredPaths = selectedCareer
+    ? paths.filter((p) => p.careerId === selectedCareer)
+    : paths;
+
+  const seniorityLevels = ['Junior', 'Semi Senior', 'Senior', 'Lead'];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -77,28 +70,29 @@ export default function PathCreationPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-dark-100">Path Creation</h1>
-          <p className="mt-2 text-dark-400">Create and manage learning path templates.</p>
-        </div>
-        <button
-          onClick={() => setShowNewPathForm(true)}
-          className="btn btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          New Path
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Path Creation</h1>
+        <p className="mt-1 text-gray-500">
+          Manage career path structure: add, edit, or remove paths for different career types
+        </p>
       </div>
 
-      {/* New path form */}
+      {/* New path form modal */}
       {showNewPathForm && (
         <div className="card">
-          <h2 className="text-lg font-semibold text-dark-100 mb-4">Create New Path</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Create New Path</h2>
+            <button
+              onClick={() => setShowNewPathForm(false)}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
           <form onSubmit={handleCreatePath} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-dark-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Path Name
                 </label>
                 <input
@@ -111,13 +105,13 @@ export default function PathCreationPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-dark-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Career Track
                 </label>
                 <select
                   value={newPath.careerId}
                   onChange={(e) => setNewPath({ ...newPath, careerId: parseInt(e.target.value) })}
-                  className="input"
+                  className="select"
                   required
                 >
                   <option value={0}>Select a career...</option>
@@ -131,7 +125,7 @@ export default function PathCreationPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-dark-300 mb-2">Description</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
                 value={newPath.description}
                 onChange={(e) => setNewPath({ ...newPath, description: e.target.value })}
@@ -142,7 +136,7 @@ export default function PathCreationPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-dark-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Duration (hours)
               </label>
               <input
@@ -157,7 +151,7 @@ export default function PathCreationPage() {
               />
             </div>
 
-            <div className="flex items-center gap-3 pt-4 border-t border-dark-800">
+            <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
               <button type="submit" className="btn btn-primary flex items-center gap-2">
                 <Save className="w-4 h-4" />
                 Create Path
@@ -174,138 +168,117 @@ export default function PathCreationPage() {
         </div>
       )}
 
-      {/* Career sections */}
-      {careers.map((career) => {
-        const careerPaths = paths.filter((p) => p.careerId === career.careerId);
-        if (careerPaths.length === 0) return null;
-
-        return (
-          <div key={career.careerId} className="space-y-4">
-            <h2 className="text-lg font-semibold text-dark-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary-500" />
-              {career.name}
-              <span className="text-dark-500 font-normal text-sm">
-                ({careerPaths.length} paths)
-              </span>
-            </h2>
-
-            <div className="space-y-3">
-              {careerPaths.map((path) => (
-                <div key={path.pathTemplateId} className="card">
-                  <div
-                    className="flex items-center justify-between cursor-pointer"
-                    onClick={() => handleExpandPath(path.pathTemplateId)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-600/30 to-secondary-600/30 flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-primary-400" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-dark-100">{path.name}</h3>
-                        <div className="flex items-center gap-3 text-dark-500 text-sm">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            {path.durationHours} hours
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Edit functionality would go here
-                        }}
-                        className="p-2 text-dark-500 hover:text-dark-100 hover:bg-dark-800 rounded-lg transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      {expandedPathId === path.pathTemplateId ? (
-                        <ChevronUp className="w-5 h-5 text-dark-500" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-dark-500" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Expanded path details */}
-                  {expandedPathId === path.pathTemplateId && selectedPath && (
-                    <div className="mt-6 pt-6 border-t border-dark-800">
-                      <p className="text-dark-400 mb-4">{selectedPath.description}</p>
-
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-sm font-medium text-dark-400 uppercase tracking-wider">
-                          Steps ({selectedPath.steps.length})
-                        </h4>
-                        <button className="btn btn-secondary btn-sm flex items-center gap-2">
-                          <Plus className="w-4 h-4" />
-                          Add Step
-                        </button>
-                      </div>
-
-                      {selectedPath.steps.length === 0 ? (
-                        <p className="text-dark-500 text-center py-8">
-                          No steps defined yet. Add steps to complete this path template.
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {selectedPath.steps.map((step, index) => (
-                            <div
-                              key={step.stepId}
-                              className="flex items-center justify-between p-4 bg-dark-800/50 rounded-lg"
-                            >
-                              <div className="flex items-center gap-4">
-                                <span className="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center text-dark-300 text-sm font-medium">
-                                  {index + 1}
-                                </span>
-                                <div>
-                                  <p className="font-medium text-dark-100">{step.name}</p>
-                                  {step.durationHours && (
-                                    <p className="text-dark-500 text-sm">
-                                      {step.durationHours} hours
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <button className="p-2 text-dark-500 hover:text-dark-100 hover:bg-dark-700 rounded-lg transition-colors">
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button className="p-2 text-dark-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+      {/* Main content card */}
+      <div className="card">
+        {/* Filter and Add button */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <span className="text-gray-600 text-sm">Filter by Career:</span>
+            <select
+              value={selectedCareer || ''}
+              onChange={(e) => setSelectedCareer(e.target.value ? parseInt(e.target.value) : null)}
+              className="select w-auto"
+            >
+              {careers.map((career) => (
+                <option key={career.careerId} value={career.careerId}>
+                  {career.name}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
-        );
-      })}
-
-      {paths.length === 0 && (
-        <div className="card text-center py-12">
-          <div className="w-16 h-16 rounded-2xl bg-dark-800 flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-dark-500" />
-          </div>
-          <h3 className="text-lg font-medium text-dark-100 mb-2">No paths created yet</h3>
-          <p className="text-dark-500 mb-6">
-            Create your first learning path template to get started.
-          </p>
           <button
             onClick={() => setShowNewPathForm(true)}
-            className="btn btn-primary inline-flex items-center gap-2"
+            className="btn btn-outline flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Create Path
+            Add Path
           </button>
         </div>
-      )}
+
+        {/* Paths table */}
+        {filteredPaths.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No paths created yet</h3>
+            <p className="text-gray-500 mb-6">
+              Create your first learning path template to get started.
+            </p>
+            <button
+              onClick={() => setShowNewPathForm(true)}
+              className="btn btn-primary inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create Path
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Seniority</th>
+                  <th>Path Name</th>
+                  <th>Description</th>
+                  <th>Start Date</th>
+                  <th>Deadline</th>
+                  <th>Duration</th>
+                  <th>Link</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPaths.map((path, index) => (
+                  <tr key={path.pathTemplateId}>
+                    <td className="text-gray-600">
+                      {seniorityLevels[index % seniorityLevels.length]}
+                    </td>
+                    <td>
+                      <span className="font-semibold text-gray-900">{path.name}</span>
+                    </td>
+                    <td className="text-gray-500 max-w-xs truncate">
+                      {path.description}
+                    </td>
+                    <td className="text-gray-600">
+                      {new Date().toLocaleDateString()}
+                    </td>
+                    <td className="text-gray-600">
+                      {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                    </td>
+                    <td className="text-gray-600">{path.durationHours} hours</td>
+                    <td>
+                      <a href="#" className="text-primary-500 hover:text-primary-600 flex items-center gap-1">
+                        Open Link
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </td>
+                    <td>
+                      <ActionMenu
+                        items={[
+                          {
+                            label: 'Edit Path',
+                            onClick: () => console.log('Edit', path.pathTemplateId),
+                          },
+                          {
+                            label: 'View Steps',
+                            onClick: () => console.log('View Steps', path.pathTemplateId),
+                          },
+                          {
+                            label: 'Delete',
+                            onClick: () => console.log('Delete', path.pathTemplateId),
+                            danger: true,
+                          },
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

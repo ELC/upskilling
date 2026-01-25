@@ -42,18 +42,18 @@ export default function MyBioPage() {
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
-        <h1 className="text-3xl font-bold text-dark-100">My Profile</h1>
-        <p className="mt-2 text-dark-400">Manage your account information and bio.</p>
+        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+        <p className="mt-1 text-gray-500">Manage your account information and bio.</p>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+        <div className="p-4 bg-danger-50 border border-danger-200 rounded-lg text-danger-600 text-sm">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+        <div className="p-4 bg-success-50 border border-success-200 rounded-lg text-success-600 text-sm">
           {success}
         </div>
       )}
@@ -62,19 +62,19 @@ export default function MyBioPage() {
       <div className="card">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-600 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-primary-500 flex items-center justify-center">
               <span className="text-white text-3xl font-bold">
                 {user?.fullName?.charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-dark-100">{user?.fullName}</h2>
-              <p className="text-dark-400">{user?.email}</p>
+              <h2 className="text-xl font-semibold text-gray-900">{user?.fullName}</h2>
+              <p className="text-gray-500">{user?.email}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {user?.roles.map((role) => (
                   <span
                     key={role.roleId}
-                    className="px-2 py-1 text-xs font-medium bg-primary-600/20 text-primary-400 rounded-full"
+                    className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded-full"
                   >
                     {role.name}
                   </span>
@@ -96,7 +96,7 @@ export default function MyBioPage() {
         <div className="space-y-6">
           {/* Full name */}
           <div>
-            <label className="block text-sm font-medium text-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               <User className="w-4 h-4 inline mr-2" />
               Full Name
             </label>
@@ -109,23 +109,23 @@ export default function MyBioPage() {
                 placeholder="Your full name"
               />
             ) : (
-              <p className="text-dark-100 py-2">{user?.fullName}</p>
+              <p className="text-gray-900 py-2">{user?.fullName}</p>
             )}
           </div>
 
           {/* Email (read-only) */}
           <div>
-            <label className="block text-sm font-medium text-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               <Mail className="w-4 h-4 inline mr-2" />
               Email Address
             </label>
-            <p className="text-dark-100 py-2">{user?.email}</p>
-            <p className="text-xs text-dark-500">Email cannot be changed</p>
+            <p className="text-gray-900 py-2">{user?.email}</p>
+            <p className="text-xs text-gray-500">Email cannot be changed</p>
           </div>
 
           {/* Bio */}
           <div>
-            <label className="block text-sm font-medium text-dark-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               <Shield className="w-4 h-4 inline mr-2" />
               Bio
             </label>
@@ -137,7 +137,7 @@ export default function MyBioPage() {
                 placeholder="Tell us about yourself, your experience, and your career goals..."
               />
             ) : (
-              <p className="text-dark-400 py-2">
+              <p className="text-gray-500 py-2">
                 {user?.bio || 'No bio added yet. Click Edit to add one!'}
               </p>
             )}
@@ -145,7 +145,7 @@ export default function MyBioPage() {
 
           {/* Action buttons */}
           {isEditing && (
-            <div className="flex items-center gap-3 pt-4 border-t border-dark-800">
+            <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
               <button
                 onClick={handleSave}
                 disabled={isLoading}
@@ -173,11 +173,11 @@ export default function MyBioPage() {
 
       {/* Account info */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-dark-100 mb-4">Account Information</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
         <div className="space-y-4">
-          <div className="flex justify-between items-center py-3 border-b border-dark-800">
-            <span className="text-dark-400">Member since</span>
-            <span className="text-dark-100">
+          <div className="flex justify-between items-center py-3 border-b border-gray-200">
+            <span className="text-gray-500">Member since</span>
+            <span className="text-gray-900">
               {user?.createdAt
                 ? new Date(user.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -188,8 +188,8 @@ export default function MyBioPage() {
             </span>
           </div>
           <div className="flex justify-between items-center py-3">
-            <span className="text-dark-400">Roles</span>
-            <span className="text-dark-100">
+            <span className="text-gray-500">Roles</span>
+            <span className="text-gray-900">
               {user?.roles.map((r) => r.name).join(', ') || 'No roles assigned'}
             </span>
           </div>
