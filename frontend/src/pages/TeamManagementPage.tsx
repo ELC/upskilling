@@ -1,32 +1,58 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { teamsApi, progressApi } from '../services/api';
-import type { TeamWithMembers, MenteeProgressSummary } from '../types';
+import type { TeamWithMembers, MenteeProgressSummary, TeamMember } from '../types';
 import { UserPlus, Users } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import StatusBadge from '../components/StatusBadge';
+import AssignCareerPathModal from '../components/AssignCareerPathModal';
+import MenteeDetailsPanel from '../components/MenteeDetailsPanel';
 
 export default function TeamManagementPage() {
   const [teams, setTeams] = useState<TeamWithMembers[]>([]);
   const [teamProgress, setTeamProgress] = useState<MenteeProgressSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [teamsData, progressData] = await Promise.all([
-          teamsApi.getMyTeams(),
-          progressApi.getTeamProgress(),
-        ]);
-        setTeams(teamsData);
-        setTeamProgress(progressData);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Modal and panel state
+  const [showAssignCareerModal, setShowAssignCareerModal] = useState(false);
+  const [showMenteePanel, setShowMenteePanel] = useState(false);
+  const [selectedMentee, setSelectedMentee] = useState<MenteeProgressSummary | null>(null);
 
+  const fetchData = useCallback(async () => {
+    try {
+      const [teamsData, progressData] = await Promise.all([
+        teamsApi.getMyTeams(),
+        progressApi.getTeamProgress(),
+      ]);
+      setTeams(teamsData);
+      setTeamProgress(progressData);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
     fetchData();
+  }, [fetchData]);
+
+  const handleAssignCareerSuccess = () => {
+    fetchData();
+  };
+
+  const handleViewMenteeDetails = (member: MenteeProgressSummary) => {
+    setSelectedMentee(member);
+    setShowMenteePanel(true);
+  };
+
+  // Get all unique team members for the assign modal
+  const allTeamMembers: TeamMember[] = teams.reduce((acc: TeamMember[], team) => {
+    team.members.forEach((member) => {
+      if (!acc.find((m) => m.userId === member.userId)) {
+        acc.push(member);
+      }
+    });
+    return acc;
   }, []);
 
   if (isLoading) {
@@ -69,16 +95,28 @@ export default function TeamManagementPage() {
           <div className="card">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Mentees</h2>
-              <button className="btn btn-primary">
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowAssignCareerModal(true)}
+              >
                 <UserPlus className="w-4 h-4" />
                 Add Mentee
               </button>
             </div>
 
             {teamProgress.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                No mentees assigned yet.
-              </p>
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">
+                  No mentees with development plans yet.
+                </p>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setShowAssignCareerModal(true)}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Assign Development Plan
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {teamProgress.map((member) => (
@@ -121,7 +159,10 @@ export default function TeamManagementPage() {
                     </div>
 
                     {/* Action Button */}
-                    <button className="w-full btn btn-primary flex items-center justify-center gap-2">
+                    <button 
+                      className="w-full btn btn-primary flex items-center justify-center gap-2"
+                      onClick={() => handleViewMenteeDetails(member)}
+                    >
                       <Users className="w-4 h-4" />
                       View Mentee Details
                     </button>
@@ -167,6 +208,21 @@ export default function TeamManagementPage() {
           </div>
         </>
       )}
+
+      {/* Assign Career Path Modal */}
+      <AssignCareerPathModal
+        isOpen={showAssignCareerModal}
+        onClose={() => setShowAssignCareerModal(false)}
+        onSuccess={handleAssignCareerSuccess}
+        teamMembers={allTeamMembers}
+      />
+
+      {/* Mentee Details Panel */}
+      <MenteeDetailsPanel
+        isOpen={showMenteePanel}
+        onClose={() => setShowMenteePanel(false)}
+        mentee={selectedMentee}
+      />
     </div>
   );
 }
