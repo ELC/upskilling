@@ -21,9 +21,10 @@ export default function LoginPage() {
     try {
       await login({ email, password });
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle Pydantic validation errors (array of objects) vs string errors
-      const detail = err.response?.data?.detail;
+      const axiosError = err as { response?: { data?: { detail?: string | Array<{ msg?: string }> } } };
+      const detail = axiosError.response?.data?.detail;
       let errorMessage = 'Failed to sign in. Please try again.';
       if (typeof detail === 'string') {
         errorMessage = detail;

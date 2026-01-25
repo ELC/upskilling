@@ -102,7 +102,7 @@ export default function DevelopmentPlansPage() {
       ) : (
         <div className="space-y-6">
           {careerPaths.map((careerPath) => (
-            <div key={careerPath.user_career_path_id} className="card">
+            <div key={careerPath.userCareerPathId} className="card">
               {/* Career path header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
@@ -111,16 +111,16 @@ export default function DevelopmentPlansPage() {
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-dark-100">
-                      {careerPath.career_name}
+                      {careerPath.careerName}
                     </h2>
-                    {careerPath.career_specialization && (
-                      <p className="text-dark-400">{careerPath.career_specialization}</p>
+                    {careerPath.careerSpecialization && (
+                      <p className="text-dark-400">{careerPath.careerSpecialization}</p>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-dark-100">
-                    {careerPath.overall_progress_percent}%
+                    {careerPath.overallProgressPercent}%
                   </p>
                   <p className="text-dark-500 text-sm">overall progress</p>
                 </div>
@@ -131,7 +131,7 @@ export default function DevelopmentPlansPage() {
                 <div className="progress-bar h-3">
                   <div
                     className="progress-bar-fill"
-                    style={{ width: `${careerPath.overall_progress_percent}%` }}
+                    style={{ width: `${careerPath.overallProgressPercent}%` }}
                   />
                 </div>
               </div>
@@ -142,14 +142,14 @@ export default function DevelopmentPlansPage() {
                   <Calendar className="w-4 h-4 text-dark-500" />
                   <span className="text-dark-400">Started:</span>
                   <span className="text-dark-200">
-                    {new Date(careerPath.start_date).toLocaleDateString()}
+                    {new Date(careerPath.startDate).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-dark-500" />
                   <span className="text-dark-400">Target:</span>
                   <span className="text-dark-200">
-                    {new Date(careerPath.end_date).toLocaleDateString()}
+                    {new Date(careerPath.endDate).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -159,27 +159,27 @@ export default function DevelopmentPlansPage() {
                 <h3 className="text-sm font-medium text-dark-400 uppercase tracking-wider">
                   Learning Paths
                 </h3>
-                {careerPath.path_assignments.map((assignment) => (
+                {careerPath.pathAssignments.map((assignment) => (
                   <div
-                    key={assignment.user_path_assignment_id}
+                    key={assignment.userPathAssignmentId}
                     className="flex items-center justify-between p-4 bg-dark-800/50 rounded-lg hover:bg-dark-800 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-4">
-                      {getStatusIcon(assignment.status, assignment.mentor_validation_status)}
+                      {getStatusIcon(assignment.status, assignment.mentorValidationStatus)}
                       <div>
                         <p className="font-medium text-dark-100">
-                          Path #{assignment.path_template_id}
+                          Path #{assignment.pathTemplateId}
                         </p>
                         <p className="text-sm text-dark-500">
-                          {new Date(assignment.start_date).toLocaleDateString()} -{' '}
+                          {new Date(assignment.startDate).toLocaleDateString()} -{' '}
                           {new Date(assignment.deadline).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="font-medium text-dark-100">{assignment.progress_percent}%</p>
-                        {getStatusBadge(assignment.status, assignment.mentor_validation_status)}
+                        <p className="font-medium text-dark-100">{assignment.progressPercent}%</p>
+                        {getStatusBadge(assignment.status, assignment.mentorValidationStatus)}
                       </div>
                       <ChevronRight className="w-5 h-5 text-dark-500 group-hover:text-dark-300 transition-colors" />
                     </div>

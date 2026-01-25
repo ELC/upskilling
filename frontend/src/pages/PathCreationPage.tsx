@@ -16,8 +16,8 @@ export default function PathCreationPage() {
   const [newPath, setNewPath] = useState({
     name: '',
     description: '',
-    career_id: 0,
-    duration_hours: 0,
+    careerId: 0,
+    durationHours: 0,
   });
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function PathCreationPage() {
     try {
       await pathsApi.create(newPath);
       setShowNewPathForm(false);
-      setNewPath({ name: '', description: '', career_id: 0, duration_hours: 0 });
+      setNewPath({ name: '', description: '', careerId: 0, durationHours: 0 });
       fetchData();
     } catch (error) {
       console.error('Failed to create path:', error);
@@ -115,14 +115,14 @@ export default function PathCreationPage() {
                   Career Track
                 </label>
                 <select
-                  value={newPath.career_id}
-                  onChange={(e) => setNewPath({ ...newPath, career_id: parseInt(e.target.value) })}
+                  value={newPath.careerId}
+                  onChange={(e) => setNewPath({ ...newPath, careerId: parseInt(e.target.value) })}
                   className="input"
                   required
                 >
                   <option value={0}>Select a career...</option>
                   {careers.map((career) => (
-                    <option key={career.career_id} value={career.career_id}>
+                    <option key={career.careerId} value={career.careerId}>
                       {career.name}
                     </option>
                   ))}
@@ -147,9 +147,9 @@ export default function PathCreationPage() {
               </label>
               <input
                 type="number"
-                value={newPath.duration_hours || ''}
+                value={newPath.durationHours || ''}
                 onChange={(e) =>
-                  setNewPath({ ...newPath, duration_hours: parseInt(e.target.value) || 0 })
+                  setNewPath({ ...newPath, durationHours: parseInt(e.target.value) || 0 })
                 }
                 className="input w-32"
                 min="1"
@@ -176,11 +176,11 @@ export default function PathCreationPage() {
 
       {/* Career sections */}
       {careers.map((career) => {
-        const careerPaths = paths.filter((p) => p.career_id === career.career_id);
+        const careerPaths = paths.filter((p) => p.careerId === career.careerId);
         if (careerPaths.length === 0) return null;
 
         return (
-          <div key={career.career_id} className="space-y-4">
+          <div key={career.careerId} className="space-y-4">
             <h2 className="text-lg font-semibold text-dark-100 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-primary-500" />
               {career.name}
@@ -191,10 +191,10 @@ export default function PathCreationPage() {
 
             <div className="space-y-3">
               {careerPaths.map((path) => (
-                <div key={path.path_template_id} className="card">
+                <div key={path.pathTemplateId} className="card">
                   <div
                     className="flex items-center justify-between cursor-pointer"
-                    onClick={() => handleExpandPath(path.path_template_id)}
+                    onClick={() => handleExpandPath(path.pathTemplateId)}
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-600/30 to-secondary-600/30 flex items-center justify-center">
@@ -205,7 +205,7 @@ export default function PathCreationPage() {
                         <div className="flex items-center gap-3 text-dark-500 text-sm">
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
-                            {path.duration_hours} hours
+                            {path.durationHours} hours
                           </span>
                         </div>
                       </div>
@@ -220,7 +220,7 @@ export default function PathCreationPage() {
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      {expandedPathId === path.path_template_id ? (
+                      {expandedPathId === path.pathTemplateId ? (
                         <ChevronUp className="w-5 h-5 text-dark-500" />
                       ) : (
                         <ChevronDown className="w-5 h-5 text-dark-500" />
@@ -229,7 +229,7 @@ export default function PathCreationPage() {
                   </div>
 
                   {/* Expanded path details */}
-                  {expandedPathId === path.path_template_id && selectedPath && (
+                  {expandedPathId === path.pathTemplateId && selectedPath && (
                     <div className="mt-6 pt-6 border-t border-dark-800">
                       <p className="text-dark-400 mb-4">{selectedPath.description}</p>
 
@@ -251,7 +251,7 @@ export default function PathCreationPage() {
                         <div className="space-y-2">
                           {selectedPath.steps.map((step, index) => (
                             <div
-                              key={step.step_id}
+                              key={step.stepId}
                               className="flex items-center justify-between p-4 bg-dark-800/50 rounded-lg"
                             >
                               <div className="flex items-center gap-4">
@@ -260,9 +260,9 @@ export default function PathCreationPage() {
                                 </span>
                                 <div>
                                   <p className="font-medium text-dark-100">{step.name}</p>
-                                  {step.duration_hours && (
+                                  {step.durationHours && (
                                     <p className="text-dark-500 text-sm">
-                                      {step.duration_hours} hours
+                                      {step.durationHours} hours
                                     </p>
                                   )}
                                 </div>

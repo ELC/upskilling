@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 export default function MyBioPage() {
   const { user, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [fullName, setFullName] = useState(user?.full_name || '');
+  const [fullName, setFullName] = useState(user?.fullName || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,19 +19,21 @@ export default function MyBioPage() {
     setIsLoading(true);
 
     try {
-      await usersApi.updateMe({ full_name: fullName, bio });
+      await usersApi.updateMe({ fullName, bio });
       await refreshUser();
       setSuccess('Profile updated successfully!');
       setIsEditing(false);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update profile.');
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })
+        .response?.data?.detail;
+      setError(detail || 'Failed to update profile.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setFullName(user?.full_name || '');
+    setFullName(user?.fullName || '');
     setBio(user?.bio || '');
     setIsEditing(false);
     setError('');
@@ -62,16 +64,16 @@ export default function MyBioPage() {
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-600 to-secondary-600 flex items-center justify-center">
               <span className="text-white text-3xl font-bold">
-                {user?.full_name?.charAt(0).toUpperCase()}
+                {user?.fullName?.charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-dark-100">{user?.full_name}</h2>
+              <h2 className="text-xl font-semibold text-dark-100">{user?.fullName}</h2>
               <p className="text-dark-400">{user?.email}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {user?.roles.map((role) => (
                   <span
-                    key={role.role_id}
+                    key={role.roleId}
                     className="px-2 py-1 text-xs font-medium bg-primary-600/20 text-primary-400 rounded-full"
                   >
                     {role.name}
@@ -107,7 +109,7 @@ export default function MyBioPage() {
                 placeholder="Your full name"
               />
             ) : (
-              <p className="text-dark-100 py-2">{user?.full_name}</p>
+              <p className="text-dark-100 py-2">{user?.fullName}</p>
             )}
           </div>
 
@@ -176,8 +178,8 @@ export default function MyBioPage() {
           <div className="flex justify-between items-center py-3 border-b border-dark-800">
             <span className="text-dark-400">Member since</span>
             <span className="text-dark-100">
-              {user?.created_at
-                ? new Date(user.created_at).toLocaleDateString('en-US', {
+              {user?.createdAt
+                ? new Date(user.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

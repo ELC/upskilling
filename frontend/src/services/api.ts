@@ -113,7 +113,7 @@ export const authApi = {
   resetPassword: async (token: string, newPassword: string): Promise<MessageResponse> => {
     const response = await api.post<MessageResponse>('/auth/password-reset', {
       token,
-      new_password: newPassword,
+      newPassword,
     });
     return response.data;
   },
@@ -133,15 +133,15 @@ export const usersApi = {
 
   changePassword: async (currentPassword: string, newPassword: string): Promise<MessageResponse> => {
     const response = await api.post<MessageResponse>('/users/me/change-password', {
-      current_password: currentPassword,
-      new_password: newPassword,
+      currentPassword,
+      newPassword,
     });
     return response.data;
   },
 
   list: async (page = 1, pageSize = 20): Promise<PaginatedResponse<User>> => {
     const response = await api.get<PaginatedResponse<User>>('/users', {
-      params: { page, page_size: pageSize },
+      params: { page, pageSize },
     });
     return response.data;
   },
@@ -156,7 +156,7 @@ export const usersApi = {
 export const teamsApi = {
   list: async (page = 1, pageSize = 20): Promise<PaginatedResponse<TeamListItem>> => {
     const response = await api.get<PaginatedResponse<TeamListItem>>('/teams', {
-      params: { page, page_size: pageSize },
+      params: { page, pageSize },
     });
     return response.data;
   },
@@ -171,7 +171,7 @@ export const teamsApi = {
     return response.data;
   },
 
-  create: async (data: { name: string; manager_user_id: number }): Promise<TeamWithMembers> => {
+  create: async (data: { name: string; managerUserId: number }): Promise<TeamWithMembers> => {
     const response = await api.post<TeamWithMembers>('/teams', data);
     return response.data;
   },
@@ -182,7 +182,7 @@ export const teamsApi = {
   },
 
   addMember: async (teamId: number, userId: number): Promise<MessageResponse> => {
-    const response = await api.post<MessageResponse>(`/teams/${teamId}/members`, { user_id: userId });
+    const response = await api.post<MessageResponse>(`/teams/${teamId}/members`, { userId });
     return response.data;
   },
 
@@ -196,7 +196,7 @@ export const teamsApi = {
 export const careersApi = {
   list: async (page = 1, pageSize = 20): Promise<PaginatedResponse<Career>> => {
     const response = await api.get<PaginatedResponse<Career>>('/careers', {
-      params: { page, page_size: pageSize },
+      params: { page, pageSize },
     });
     return response.data;
   },
@@ -216,7 +216,7 @@ export const careersApi = {
 export const pathsApi = {
   list: async (page = 1, pageSize = 20, careerId?: number): Promise<PaginatedResponse<PathTemplate>> => {
     const response = await api.get<PaginatedResponse<PathTemplate>>('/paths', {
-      params: { page, page_size: pageSize, career_id: careerId },
+      params: { page, pageSize, careerId },
     });
     return response.data;
   },
@@ -260,10 +260,10 @@ export const progressApi = {
   },
 
   assignCareerPath: async (data: {
-    user_id: number;
-    career_id: number;
-    start_date: string;
-    end_date: string;
+    userId: number;
+    careerId: number;
+    startDate: string;
+    endDate: string;
   }): Promise<UserCareerPath> => {
     const response = await api.post<UserCareerPath>('/progress/career-paths', data);
     return response.data;
@@ -275,9 +275,9 @@ export const progressApi = {
   },
 
   assignPath: async (data: {
-    user_career_path_id: number;
-    path_template_id: number;
-    start_date: string;
+    userCareerPathId: number;
+    pathTemplateId: number;
+    startDate: string;
     deadline: string;
   }): Promise<UserPathAssignment> => {
     const response = await api.post<UserPathAssignment>('/progress/assignments', data);

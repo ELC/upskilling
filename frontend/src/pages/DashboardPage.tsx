@@ -38,7 +38,7 @@ export default function DashboardPage() {
       {/* Welcome section */}
       <div>
         <h1 className="text-3xl font-bold text-dark-100">
-          Welcome back, {user?.full_name?.split(' ')[0]}!
+          Welcome back, {user?.fullName?.split(' ')[0]}!
         </h1>
         <p className="mt-2 text-dark-400">
           Track your progress and continue your career development journey.
@@ -54,13 +54,13 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-dark-500 text-sm">Overall Progress</p>
-              <p className="text-2xl font-bold text-dark-100">{stats?.overall_progress || 0}%</p>
+              <p className="text-2xl font-bold text-dark-100">{stats?.overallProgress || 0}%</p>
             </div>
           </div>
           <div className="mt-4 progress-bar">
             <div
               className="progress-bar-fill"
-              style={{ width: `${stats?.overall_progress || 0}%` }}
+              style={{ width: `${stats?.overallProgress || 0}%` }}
             />
           </div>
         </div>
@@ -73,14 +73,14 @@ export default function DashboardPage() {
             <div>
               <p className="text-dark-500 text-sm">Current Path</p>
               <p className="text-lg font-semibold text-dark-100 truncate max-w-[150px]">
-                {stats?.current_path || 'No active path'}
+                {stats?.currentPath || 'No active path'}
               </p>
             </div>
           </div>
           <div className="mt-4 progress-bar">
             <div
               className="progress-bar-fill"
-              style={{ width: `${stats?.current_path_progress || 0}%` }}
+              style={{ width: `${stats?.currentPathProgress || 0}%` }}
             />
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-dark-500 text-sm">Skills Obtained</p>
-              <p className="text-2xl font-bold text-dark-100">{stats?.skills_obtained || 0}</p>
+              <p className="text-2xl font-bold text-dark-100">{stats?.skillsObtained || 0}</p>
             </div>
           </div>
         </div>
@@ -104,14 +104,14 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-dark-500 text-sm">Paths Remaining</p>
-              <p className="text-2xl font-bold text-dark-100">{stats?.paths_remaining || 0}</p>
+              <p className="text-2xl font-bold text-dark-100">{stats?.pathsRemaining || 0}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Current career */}
-      {stats?.current_career && (
+      {stats?.currentCareer && (
         <div className="card">
           <h2 className="text-xl font-semibold text-dark-100 mb-4">Current Career Track</h2>
           <div className="flex items-center gap-4">
@@ -119,10 +119,10 @@ export default function DashboardPage() {
               <span className="text-2xl">🎯</span>
             </div>
             <div>
-              <h3 className="text-lg font-medium text-dark-100">{stats.current_career}</h3>
+              <h3 className="text-lg font-medium text-dark-100">{stats.currentCareer}</h3>
               <p className="text-dark-400">
-                {stats.current_path
-                  ? `Currently working on: ${stats.current_path}`
+                {stats.currentPath
+                  ? `Currently working on: ${stats.currentPath}`
                   : 'Ready to start your next path'}
               </p>
             </div>

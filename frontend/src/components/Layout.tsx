@@ -15,19 +15,25 @@ import {
 import { useState } from 'react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Development Plans', href: '/development-plans', icon: BookOpen },
-  { name: 'Learning Paths', href: '/learning-paths', icon: GraduationCap },
-  { name: 'My Bio', href: '/my-bio', icon: User },
-  { name: 'Mentor Validation', href: '/mentor-validation', icon: CheckSquare },
-  { name: 'Team Management', href: '/team-management', icon: Users },
-  { name: 'Path Creation', href: '/path-creation', icon: PlusSquare },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: null },
+  { name: 'Development Plans', href: '/development-plans', icon: BookOpen, roles: null },
+  { name: 'Learning Paths', href: '/learning-paths', icon: GraduationCap, roles: null },
+  { name: 'My Bio', href: '/my-bio', icon: User, roles: null },
+  { name: 'Mentor Validation', href: '/mentor-validation', icon: CheckSquare, roles: ['admin', 'mentor'] },
+  { name: 'Team Management', href: '/team-management', icon: Users, roles: ['admin', 'mentor'] },
+  { name: 'Path Creation', href: '/path-creation', icon: PlusSquare, roles: ['admin', 'path_creator'] },
 ];
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Filter navigation items based on user's roles
+  const filteredNavigation = navigation.filter((item) => {
+    if (!item.roles) return true; // null means accessible to all
+    return user?.roles?.some((role) => item.roles.includes(role.name));
+  });
 
   const handleLogout = () => {
     logout();
@@ -74,7 +80,7 @@ export default function Layout() {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {navigation.map((item) => (
+            {filteredNavigation.map((item) => (
               <NavLink
                 key={item.name}
                 to={item.href}
@@ -98,11 +104,11 @@ export default function Layout() {
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-secondary-600 flex items-center justify-center">
                 <span className="text-white font-medium">
-                  {user?.full_name?.charAt(0).toUpperCase()}
+                  {user?.fullName?.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-dark-100 truncate">{user?.full_name}</p>
+                <p className="text-sm font-medium text-dark-100 truncate">{user?.fullName}</p>
                 <p className="text-xs text-dark-500 truncate">{user?.email}</p>
               </div>
             </div>

@@ -1,17 +1,17 @@
 // User types
 export interface Role {
-  role_id: number;
+  roleId: number;
   name: string;
   description: string | null;
-  max_active_paths: number | null;
+  maxActivePaths: number | null;
 }
 
 export interface User {
-  user_id: number;
-  full_name: string;
+  userId: number;
+  fullName: string;
   email: string;
   bio: string | null;
-  created_at: string;
+  createdAt: string;
   roles: Role[];
 }
 
@@ -26,7 +26,7 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  full_name: string;
+  fullName: string;
   email: string;
   password: string;
   bio?: string;
@@ -45,14 +45,14 @@ export interface AuthResponse {
 
 // Team types
 export interface Team {
-  team_id: number;
+  teamId: number;
   name: string;
-  manager_user_id: number;
+  managerUserId: number;
 }
 
 export interface TeamMember {
-  user_id: number;
-  full_name: string;
+  userId: number;
+  fullName: string;
   email: string;
 }
 
@@ -62,47 +62,47 @@ export interface TeamWithMembers extends Team {
 }
 
 export interface TeamListItem {
-  team_id: number;
+  teamId: number;
   name: string;
-  member_count: number;
-  manager_name: string;
+  memberCount: number;
+  managerName: string;
 }
 
 // Career types
 export interface Career {
-  career_id: number;
+  careerId: number;
   name: string;
   specialization: string | null;
 }
 
 export interface CareerWithPaths extends Career {
-  path_templates: PathTemplate[];
+  pathTemplates: PathTemplate[];
 }
 
 // Path types
 export interface PathTemplate {
-  path_template_id: number;
-  career_id: number;
+  pathTemplateId: number;
+  careerId: number;
   name: string;
   description: string;
-  duration_hours: number;
-  default_start_offset_days: number | null;
-  default_deadline_offset_days: number | null;
+  durationHours: number;
+  defaultStartOffsetDays: number | null;
+  defaultDeadlineOffsetDays: number | null;
 }
 
 export interface PathStepDependency {
-  depends_on_step_id: number;
-  depends_on_step_name: string;
+  dependsOnStepId: number;
+  dependsOnStepName: string;
 }
 
 export interface PathStep {
-  step_id: number;
-  path_template_id: number;
-  step_order: number;
+  stepId: number;
+  pathTemplateId: number;
+  stepOrder: number;
   name: string;
   description: string | null;
-  duration_hours: number | null;
-  course_link: string | null;
+  durationHours: number | null;
+  courseLink: string | null;
   dependencies: PathStepDependency[];
 }
 
@@ -112,86 +112,86 @@ export interface PathTemplateWithSteps extends PathTemplate {
 
 // Progress types
 export interface UserCareerPath {
-  user_career_path_id: number;
-  user_id: number;
-  career_id: number;
-  start_date: string;
-  end_date: string;
-  overall_progress_percent: number;
+  userCareerPathId: number;
+  userId: number;
+  careerId: number;
+  startDate: string;
+  endDate: string;
+  overallProgressPercent: number;
 }
 
 export interface UserCareerPathDetail extends UserCareerPath {
-  career_name: string;
-  career_specialization: string | null;
-  path_assignments: UserPathAssignment[];
+  careerName: string;
+  careerSpecialization: string | null;
+  pathAssignments: UserPathAssignment[];
 }
 
 export interface UserPathAssignment {
-  user_path_assignment_id: number;
-  user_career_path_id: number;
-  path_template_id: number;
-  start_date: string;
+  userPathAssignmentId: number;
+  userCareerPathId: number;
+  pathTemplateId: number;
+  startDate: string;
   deadline: string;
   status: 'Pending' | 'In Progress' | 'Completed';
-  progress_percent: number;
-  mentor_validation_status: 'Pending' | 'Approved' | 'Rejected';
+  progressPercent: number;
+  mentorValidationStatus: 'Pending' | 'Approved' | 'Rejected';
 }
 
 export interface UserPathAssignmentDetail extends UserPathAssignment {
-  path_template: PathTemplate;
-  step_progress: UserStepProgress[];
+  pathTemplate: PathTemplate;
+  stepProgress: UserStepProgress[];
 }
 
 export interface UserStepProgress {
-  user_step_progress_id: number;
-  user_path_assignment_id: number;
-  step_id: number;
+  userStepProgressId: number;
+  userPathAssignmentId: number;
+  stepId: number;
   status: 'Pending' | 'In Progress' | 'Completed';
-  progress_percent: number;
-  planned_start_date: string | null;
-  planned_end_date: string | null;
-  actual_start_date: string | null;
-  actual_end_date: string | null;
-  updated_at: string;
+  progressPercent: number;
+  plannedStartDate: string | null;
+  plannedEndDate: string | null;
+  actualStartDate: string | null;
+  actualEndDate: string | null;
+  updatedAt: string;
   step: PathStep | null;
 }
 
 export interface DashboardStats {
-  current_career: string | null;
-  current_path: string | null;
-  current_path_progress: number;
-  paths_remaining: number;
-  overall_progress: number;
-  skills_obtained: number;
+  currentCareer: string | null;
+  currentPath: string | null;
+  currentPathProgress: number;
+  pathsRemaining: number;
+  overallProgress: number;
+  skillsObtained: number;
 }
 
 export interface MenteeProgressSummary {
-  user_id: number;
-  full_name: string;
+  userId: number;
+  fullName: string;
   email: string;
-  career_name: string;
-  start_date: string;
-  end_date: string;
-  overall_progress_percent: number;
-  paths_completed: number;
-  paths_total: number;
-  pending_validation: number;
+  careerName: string;
+  startDate: string;
+  endDate: string;
+  overallProgressPercent: number;
+  pathsCompleted: number;
+  pathsTotal: number;
+  pendingValidation: number;
 }
 
 // Log entry types
 export interface LogEntry {
-  log_entry_id: number;
-  user_id: number;
-  user_career_path_id: number;
-  entry_type: string;
-  entry_date: string;
+  logEntryId: number;
+  userId: number;
+  userCareerPathId: number;
+  entryType: string;
+  entryDate: string;
   notes: string;
-  related_user_path_assignment_id: number | null;
+  relatedUserPathAssignmentId: number | null;
 }
 
 export interface LogEntryDetail extends LogEntry {
-  user_name: string;
-  path_name: string | null;
+  userName: string;
+  pathName: string | null;
 }
 
 // API response types
@@ -199,8 +199,8 @@ export interface PaginatedResponse<T> {
   items: T[];
   total: number;
   page: number;
-  page_size: number;
-  total_pages: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface MessageResponse {

@@ -32,10 +32,12 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await register({ full_name: fullName, email, password });
+      await register({ fullName, email, password });
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create account. Please try again.');
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })
+        .response?.data?.detail;
+      setError(detail || 'Failed to create account. Please try again.');
     } finally {
       setIsLoading(false);
     }

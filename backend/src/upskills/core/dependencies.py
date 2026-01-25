@@ -1,6 +1,6 @@
 """FastAPI dependencies for authentication and authorization."""
 
-from collections.abc import Callable, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine
 from typing import Annotated, Any, cast
 
 from fastapi import Depends, HTTPException, Request, status
@@ -24,9 +24,13 @@ def get_db_provider(request: Request) -> DatabaseProvider:
 
 async def get_db_session(
     db_provider: Annotated[DatabaseProvider, Depends(get_db_provider)],
-) -> AsyncSession:
-    """Get a database session."""
-    return await db_provider.get_session()
+) -> AsyncIterator[AsyncSession]:
+    """Get a database session with proper cleanup."""
+    session = await db_provider.get_session()
+    try:
+        yield session
+    finally:
+        await session.close()
 
 
 async def get_current_user(

@@ -30,7 +30,7 @@ export default function LearningPathsPage() {
   }, []);
 
   const filteredPaths = selectedCareer
-    ? paths.filter((p) => p.career_id === selectedCareer)
+    ? paths.filter((p) => p.careerId === selectedCareer)
     : paths;
 
   if (isLoading) {
@@ -68,10 +68,10 @@ export default function LearningPathsPage() {
         </button>
         {careers.map((career) => (
           <button
-            key={career.career_id}
-            onClick={() => setSelectedCareer(career.career_id)}
+            key={career.careerId}
+            onClick={() => setSelectedCareer(career.careerId)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedCareer === career.career_id
+              selectedCareer === career.careerId
                 ? 'bg-primary-600 text-white'
                 : 'bg-dark-800 text-dark-300 hover:bg-dark-700'
             }`}
@@ -97,10 +97,10 @@ export default function LearningPathsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPaths.map((path) => {
-            const career = careers.find((c) => c.career_id === path.career_id);
+            const career = careers.find((c) => c.careerId === path.careerId);
             return (
               <div
-                key={path.path_template_id}
+                key={path.pathTemplateId}
                 className="card card-hover group cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-4">
@@ -120,7 +120,7 @@ export default function LearningPathsPage() {
                 <div className="flex items-center justify-between pt-4 border-t border-dark-800">
                   <div className="flex items-center gap-2 text-dark-500">
                     <Clock className="w-4 h-4" />
-                    <span className="text-sm">{path.duration_hours} hours</span>
+                    <span className="text-sm">{path.durationHours} hours</span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-dark-500 group-hover:text-primary-400 transition-colors" />
                 </div>

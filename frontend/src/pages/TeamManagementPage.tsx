@@ -20,7 +20,7 @@ export default function TeamManagementPage() {
         setTeams(teamsData);
         setTeamProgress(progressData);
         if (teamsData.length > 0) {
-          setSelectedTeam(teamsData[0].team_id);
+          setSelectedTeam(teamsData[0].teamId);
         }
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -32,7 +32,7 @@ export default function TeamManagementPage() {
     fetchData();
   }, []);
 
-  const currentTeam = teams.find((t) => t.team_id === selectedTeam);
+  const currentTeam = teams.find((t) => t.teamId === selectedTeam);
 
   if (isLoading) {
     return (
@@ -72,10 +72,10 @@ export default function TeamManagementPage() {
             </h2>
             {teams.map((team) => (
               <button
-                key={team.team_id}
-                onClick={() => setSelectedTeam(team.team_id)}
+                key={team.teamId}
+                onClick={() => setSelectedTeam(team.teamId)}
                 className={`w-full card card-hover text-left ${
-                  selectedTeam === team.team_id ? 'border-primary-600/50 bg-dark-900/80' : ''
+                  selectedTeam === team.teamId ? 'border-primary-600/50 bg-dark-900/80' : ''
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -90,7 +90,7 @@ export default function TeamManagementPage() {
                   </div>
                   <ChevronRight
                     className={`w-5 h-5 ${
-                      selectedTeam === team.team_id ? 'text-primary-400' : 'text-dark-500'
+                      selectedTeam === team.teamId ? 'text-primary-400' : 'text-dark-500'
                     }`}
                   />
                 </div>
@@ -114,14 +114,14 @@ export default function TeamManagementPage() {
                     </div>
                     <div className="text-center p-4 bg-dark-800/50 rounded-lg">
                       <p className="text-2xl font-bold text-primary-400">
-                        {teamProgress.filter((p) => p.pending_validation > 0).length}
+                        {teamProgress.filter((p) => p.pendingValidation > 0).length}
                       </p>
                       <p className="text-dark-500 text-sm">Pending Reviews</p>
                     </div>
                     <div className="text-center p-4 bg-dark-800/50 rounded-lg">
                       <p className="text-2xl font-bold text-green-400">
                         {Math.round(
-                          teamProgress.reduce((sum, p) => sum + p.overall_progress_percent, 0) /
+                          teamProgress.reduce((sum, p) => sum + p.overallProgressPercent, 0) /
                             (teamProgress.length || 1)
                         )}
                         %
@@ -142,30 +142,30 @@ export default function TeamManagementPage() {
                     ) : (
                       teamProgress.map((member) => (
                         <div
-                          key={member.user_id}
+                          key={member.userId}
                           className="p-4 bg-dark-800/50 rounded-lg hover:bg-dark-800 transition-colors"
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-secondary-600 flex items-center justify-center">
                                 <span className="text-white font-medium">
-                                  {member.full_name.charAt(0).toUpperCase()}
+                                  {member.fullName.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                               <div>
-                                <h4 className="font-medium text-dark-100">{member.full_name}</h4>
-                                <p className="text-dark-500 text-sm">{member.career_name}</p>
+                                <h4 className="font-medium text-dark-100">{member.fullName}</h4>
+                                <p className="text-dark-500 text-sm">{member.careerName}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
-                              {member.pending_validation > 0 && (
+                              {member.pendingValidation > 0 && (
                                 <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full">
                                   <AlertCircle className="w-3 h-3" />
-                                  {member.pending_validation} pending
+                                  {member.pendingValidation} pending
                                 </span>
                               )}
                               <span className="text-lg font-bold text-dark-100">
-                                {member.overall_progress_percent}%
+                                {member.overallProgressPercent}%
                               </span>
                             </div>
                           </div>
@@ -173,17 +173,17 @@ export default function TeamManagementPage() {
                           <div className="progress-bar mb-2">
                             <div
                               className="progress-bar-fill"
-                              style={{ width: `${member.overall_progress_percent}%` }}
+                              style={{ width: `${member.overallProgressPercent}%` }}
                             />
                           </div>
 
                           <div className="flex items-center justify-between text-xs text-dark-500">
                             <span>
-                              {member.paths_completed}/{member.paths_total} paths completed
+                              {member.pathsCompleted}/{member.pathsTotal} paths completed
                             </span>
                             <span>
-                              {new Date(member.start_date).toLocaleDateString()} -{' '}
-                              {new Date(member.end_date).toLocaleDateString()}
+                              {new Date(member.startDate).toLocaleDateString()} -{' '}
+                              {new Date(member.endDate).toLocaleDateString()}
                             </span>
                           </div>
                         </div>

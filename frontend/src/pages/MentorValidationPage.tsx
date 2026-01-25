@@ -30,7 +30,7 @@ export default function MentorValidationPage() {
     try {
       await progressApi.approveAssignment(assignmentId);
       setPendingAssignments((prev) =>
-        prev.filter((a) => a.user_path_assignment_id !== assignmentId)
+        prev.filter((a) => a.userPathAssignmentId !== assignmentId)
       );
     } catch (error) {
       console.error('Failed to approve:', error);
@@ -44,7 +44,7 @@ export default function MentorValidationPage() {
     try {
       await progressApi.rejectAssignment(assignmentId);
       setPendingAssignments((prev) =>
-        prev.filter((a) => a.user_path_assignment_id !== assignmentId)
+        prev.filter((a) => a.userPathAssignmentId !== assignmentId)
       );
     } catch (error) {
       console.error('Failed to reject:', error);
@@ -95,14 +95,14 @@ export default function MentorValidationPage() {
       ) : (
         <div className="space-y-4">
           {pendingAssignments.map((assignment) => (
-            <div key={assignment.user_path_assignment_id} className="card">
+            <div key={assignment.userPathAssignmentId} className="card">
               <div
                 className="flex items-start justify-between cursor-pointer"
                 onClick={() =>
                   setExpandedId(
-                    expandedId === assignment.user_path_assignment_id
+                    expandedId === assignment.userPathAssignmentId
                       ? null
-                      : assignment.user_path_assignment_id
+                      : assignment.userPathAssignmentId
                   )
                 }
               >
@@ -112,7 +112,7 @@ export default function MentorValidationPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-dark-100">
-                      {assignment.path_template?.name || `Path #${assignment.path_template_id}`}
+                      {assignment.pathTemplate?.name || `Path #${assignment.pathTemplateId}`}
                     </h3>
                     <p className="text-dark-400 text-sm">
                       Completed on {new Date(assignment.deadline).toLocaleDateString()}
@@ -123,7 +123,7 @@ export default function MentorValidationPage() {
                   <span className="px-3 py-1 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full">
                     Pending Review
                   </span>
-                  {expandedId === assignment.user_path_assignment_id ? (
+                  {expandedId === assignment.userPathAssignmentId ? (
                     <ChevronUp className="w-5 h-5 text-dark-500" />
                   ) : (
                     <ChevronDown className="w-5 h-5 text-dark-500" />
@@ -132,7 +132,7 @@ export default function MentorValidationPage() {
               </div>
 
               {/* Expanded details */}
-              {expandedId === assignment.user_path_assignment_id && (
+              {expandedId === assignment.userPathAssignmentId && (
                 <div className="mt-6 pt-6 border-t border-dark-800">
                   {/* Assignment details */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
@@ -140,7 +140,7 @@ export default function MentorValidationPage() {
                       <Calendar className="w-4 h-4 text-dark-500" />
                       <span className="text-dark-400 text-sm">Start:</span>
                       <span className="text-dark-200 text-sm">
-                        {new Date(assignment.start_date).toLocaleDateString()}
+                        {new Date(assignment.startDate).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -153,24 +153,24 @@ export default function MentorValidationPage() {
                   </div>
 
                   {/* Step progress */}
-                  {assignment.step_progress && assignment.step_progress.length > 0 && (
+                  {assignment.stepProgress && assignment.stepProgress.length > 0 && (
                     <div className="mb-6">
                       <h4 className="text-sm font-medium text-dark-400 uppercase tracking-wider mb-3">
                         Completed Steps
                       </h4>
                       <div className="space-y-2">
-                        {assignment.step_progress.map((sp) => (
+                        {assignment.stepProgress.map((sp) => (
                           <div
-                            key={sp.user_step_progress_id}
+                            key={sp.userStepProgressId}
                             className="flex items-center justify-between p-3 bg-dark-800/50 rounded-lg"
                           >
                             <div className="flex items-center gap-3">
                               <CheckCircle className="w-4 h-4 text-green-400" />
                               <span className="text-dark-200 text-sm">
-                                {sp.step?.name || `Step #${sp.step_id}`}
+                                {sp.step?.name || `Step #${sp.stepId}`}
                               </span>
                             </div>
-                            <span className="text-dark-400 text-sm">{sp.progress_percent}%</span>
+                            <span className="text-dark-400 text-sm">{sp.progressPercent}%</span>
                           </div>
                         ))}
                       </div>
@@ -182,12 +182,12 @@ export default function MentorValidationPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleApprove(assignment.user_path_assignment_id);
+                        handleApprove(assignment.userPathAssignmentId);
                       }}
-                      disabled={actionLoading === assignment.user_path_assignment_id}
+                      disabled={actionLoading === assignment.userPathAssignmentId}
                       className="btn btn-primary flex items-center gap-2"
                     >
-                      {actionLoading === assignment.user_path_assignment_id ? (
+                      {actionLoading === assignment.userPathAssignmentId ? (
                         <LoadingSpinner size="sm" />
                       ) : (
                         <CheckCircle className="w-4 h-4" />
@@ -197,9 +197,9 @@ export default function MentorValidationPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleReject(assignment.user_path_assignment_id);
+                        handleReject(assignment.userPathAssignmentId);
                       }}
-                      disabled={actionLoading === assignment.user_path_assignment_id}
+                      disabled={actionLoading === assignment.userPathAssignmentId}
                       className="btn bg-red-600/20 text-red-400 hover:bg-red-600/30 flex items-center gap-2"
                     >
                       <XCircle className="w-4 h-4" />
