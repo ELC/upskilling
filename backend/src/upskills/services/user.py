@@ -140,7 +140,14 @@ class UserService:
 
     @staticmethod
     def _user_to_response(user: User) -> UserResponse:
-        """Convert a User model to UserResponse."""
+        """Convert a User model to UserResponse.
+
+        Args:
+            user: The User database model to convert.
+
+        Returns:
+            UserResponse: The converted user response object.
+        """
         roles: list[RoleResponse] = []
         if user.roles:
             roles.extend(
