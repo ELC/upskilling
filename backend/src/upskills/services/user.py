@@ -97,7 +97,7 @@ class UserService:
 
     async def delete_user(self, user_id: int) -> bool:
         """Delete a user.
-        
+
         Raises:
             ValueError: If user is part of a team or has career paths assigned.
         """
