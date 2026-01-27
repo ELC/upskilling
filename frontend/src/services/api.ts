@@ -150,6 +150,21 @@ export const usersApi = {
     const response = await api.get<User>(`/users/${userId}`);
     return response.data;
   },
+
+  delete: async (userId: number): Promise<MessageResponse> => {
+    const response = await api.delete<MessageResponse>(`/users/${userId}`);
+    return response.data;
+  },
+
+  assignRole: async (userId: number, roleName: string): Promise<MessageResponse> => {
+    const response = await api.post<MessageResponse>(`/users/${userId}/roles/${roleName}`);
+    return response.data;
+  },
+
+  removeRole: async (userId: number, roleName: string): Promise<MessageResponse> => {
+    const response = await api.delete<MessageResponse>(`/users/${userId}/roles/${roleName}`);
+    return response.data;
+  },
 };
 
 // Teams API

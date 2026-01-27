@@ -7,6 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from upskills.models.db.progress import UserCareerPath
+from upskills.models.db.team import TeamMember
 from upskills.models.db.user import Action, PasswordResetToken, Role, User, UserRole
 from upskills.repositories.base import BaseRepository
 
@@ -104,6 +106,18 @@ class UserRepository(BaseRepository[User]):
         """Mark a password reset token as used."""
         token.used = True
         await self._session.flush()
+
+    async def has_team_memberships(self, user_id: int) -> bool:
+        """Check if a user is a member of any team."""
+        stmt = select(TeamMember).where(TeamMember.user_id == user_id).limit(1)
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
+    async def has_career_paths(self, user_id: int) -> bool:
+        """Check if a user has any assigned career paths."""
+        stmt = select(UserCareerPath).where(UserCareerPath.user_id == user_id).limit(1)
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none() is not None
 
 
 class RoleRepository(BaseRepository[Role]):

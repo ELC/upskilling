@@ -214,7 +214,7 @@ export default function PathCreationPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-visible">
             <table className="table">
               <thead>
                 <tr>

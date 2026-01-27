@@ -10,6 +10,7 @@ import MyBioPage from './pages/MyBioPage';
 import MentorValidationPage from './pages/MentorValidationPage';
 import TeamManagementPage from './pages/TeamManagementPage';
 import PathCreationPage from './pages/PathCreationPage';
+import UserManagementPage from './pages/UserManagementPage';
 import LoadingSpinner from './components/LoadingSpinner';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -86,6 +87,7 @@ export default function App() {
         <Route path="mentor-validation" element={<MentorValidationPage />} />
         <Route path="team-management" element={<TeamManagementPage />} />
         <Route path="path-creation" element={<PathCreationPage />} />
+        <Route path="user-management" element={<UserManagementPage />} />
       </Route>
 
       {/* 404 */}

@@ -14,6 +14,7 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  UserCog,
   Clock,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -25,7 +26,8 @@ const navigation = [
   { name: 'My Bio', href: '/my-bio', icon: User, roles: null },
   { name: 'Mentor Validation', href: '/mentor-validation', icon: CheckSquare, roles: ['admin', 'mentor'] },
   { name: 'Team Management', href: '/team-management', icon: Users, roles: ['admin', 'mentor'] },
-  { name: 'Path Creation', href: '/path-creation', icon: FileText, roles: ['admin', 'path_creator'] },
+  { name: 'Path Creation', href: '/path-creation', icon: FileText, roles: ['path_creator'] },
+  { name: 'User Management', href: '/user-management', icon: UserCog, roles: ['admin'] },
 ];
 
 // Example notifications

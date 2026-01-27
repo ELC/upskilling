@@ -96,10 +96,24 @@ class UserService:
         return True
 
     async def delete_user(self, user_id: int) -> bool:
-        """Delete a user."""
+        """Delete a user.
+        
+        Raises:
+            ValueError: If user is part of a team or has career paths assigned.
+        """
         user = await self._user_repo.get_by_id(user_id)
         if not user:
             return False
+
+        # Check if user is a member of any team
+        if await self._user_repo.has_team_memberships(user_id):
+            msg = "Cannot delete user: they are a member of one or more teams. Remove them from all teams first."
+            raise ValueError(msg)
+
+        # Check if user has any career paths assigned
+        if await self._user_repo.has_career_paths(user_id):
+            msg = "Cannot delete user: they have career paths assigned. Remove all career path assignments first."
+            raise ValueError(msg)
 
         await self._user_repo.delete(user)
         return True

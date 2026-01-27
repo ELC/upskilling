@@ -14,12 +14,26 @@ interface ActionMenuProps {
 
 export default function ActionMenu({ items }: ActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Calculate menu position when opened
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  }, [isOpen]);
 
   // Close on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -36,6 +50,7 @@ export default function ActionMenu({ items }: ActionMenuProps) {
   return (
     <div className="relative" ref={menuRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
       >
@@ -43,7 +58,10 @@ export default function ActionMenu({ items }: ActionMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-dropdown z-50">
+        <div 
+          className="fixed w-48 bg-white border border-gray-200 rounded-lg shadow-dropdown z-[9999]"
+          style={{ top: menuPosition.top, right: menuPosition.right }}
+        >
           {items.map((item, index) => (
             <button
               key={index}

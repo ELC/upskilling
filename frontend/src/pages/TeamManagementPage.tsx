@@ -6,6 +6,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import StatusBadge from '../components/StatusBadge';
 import AssignCareerPathModal from '../components/AssignCareerPathModal';
 import MenteeDetailsPanel from '../components/MenteeDetailsPanel';
+import ActionMenu from '../components/ActionMenu';
 
 export default function TeamManagementPage() {
   const [teams, setTeams] = useState<TeamWithMembers[]>([]);
@@ -43,6 +44,27 @@ export default function TeamManagementPage() {
   const handleViewMenteeDetails = (member: MenteeProgressSummary) => {
     setSelectedMentee(member);
     setShowMenteePanel(true);
+  };
+
+  const handleRemoveMentee = async (userId: number) => {
+    // Find which team this user belongs to
+    const team = teams.find((t) => t.members.some((m) => m.userId === userId));
+    if (!team) {
+      console.error('Team not found for user');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to remove this mentee from the team?')) {
+      return;
+    }
+
+    try {
+      await teamsApi.removeMember(team.teamId, userId);
+      fetchData();
+    } catch (error) {
+      console.error('Failed to remove mentee:', error);
+      alert('Failed to remove mentee. Please try again.');
+    }
   };
 
   // Get all unique team members for the assign modal
@@ -122,10 +144,27 @@ export default function TeamManagementPage() {
                 {teamProgress.map((member) => (
                   <div
                     key={member.userId}
-                    className="border border-gray-200 rounded-xl p-5 hover:shadow-card-hover transition-shadow"
+                    className="border border-gray-200 rounded-xl p-5 hover:shadow-card-hover transition-shadow relative"
                   >
+                    {/* Action Menu */}
+                    <div className="absolute top-3 right-3">
+                      <ActionMenu
+                        items={[
+                          {
+                            label: 'View Details',
+                            onClick: () => handleViewMenteeDetails(member),
+                          },
+                          {
+                            label: 'Remove from Team',
+                            onClick: () => handleRemoveMentee(member.userId),
+                            danger: true,
+                          },
+                        ]}
+                      />
+                    </div>
+
                     {/* Avatar and Info */}
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-4 pr-8">
                       <div className="w-12 h-12 rounded-full bg-primary-500 flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-semibold text-lg">
                           {member.fullName.charAt(0).toUpperCase()}

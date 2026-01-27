@@ -146,9 +146,20 @@ async def delete_user(
     session: DbSession,
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
-    """Delete a user (requires team.manage permission)."""
+    """Delete a user (requires team.manage permission).
+    
+    User cannot be deleted if they are a member of a team or have career paths assigned.
+    """
     service = UserService(session)
-    success = await service.delete_user(user_id)
+    
+    try:
+        success = await service.delete_user(user_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    
     await session.commit()
 
     if not success:
