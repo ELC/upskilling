@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -10,24 +10,26 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.0
+    rev: v0.14.14
     hooks:
-      - id: ruff
-        args: [--fix]
-        files: ^backend/
+      - id: ruff-check
       - id: ruff-format
-        files: ^backend/
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+  - repo: https://github.com/pycqa/pylint
+    rev: "v4.0.4"
     hooks:
-      - id: mypy
-        files: ^backend/src/
+    -   id: pylint
         additional_dependencies:
           - pydantic>=2.10.0
           - sqlalchemy>=2.0.36
           - fastapi>=0.115.0
-        args: [--ignore-missing-imports]
 
-  # ESLint for frontend - run via `cd frontend && npm run lint`
-  # Removed from pre-commit due to node_modules path issues
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.1
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - pydantic>=2.10.0
+          - sqlalchemy>=2.0.36
+          - fastapi>=0.115.0
