@@ -5,14 +5,8 @@ from typing import Any
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.models.db.progress import LogEntry
-from upskills.models.domain.progress import (
-    LogEntryCreateInput,
-    LogEntryDetailResponse,
-    LogEntryResponse,
-)
-from upskills.repositories.log_entry import LogEntryRepository
-from upskills.repositories.user_career_path import UserCareerPathRepository
+from upskills.models import LogEntry, LogEntryCreateInput, LogEntryDetailResponse, LogEntryResponse
+from upskills.repositories import LogEntryRepository, UserCareerPathRepository
 
 
 class LogbookService:

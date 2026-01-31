@@ -3,8 +3,9 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from upskills.models.db.career import Career
-from upskills.repositories.base import BaseRepository
+from upskills.models import Career
+
+from .base import BaseRepository
 
 
 class CareerRepository(BaseRepository[Career]):

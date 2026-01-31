@@ -5,23 +5,28 @@ from typing import Any
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.models.db.progress import UserCareerPath, UserPathAssignment, UserStepProgress
-from upskills.models.domain.career import PathStepResponse, PathTemplateResponse
-from upskills.models.domain.progress import (
+from upskills.models import (
     DashboardStats,
     MenteeProgressSummary,
+    PathStepResponse,
+    PathTemplateResponse,
     StepProgressUpdateInput,
+    UserCareerPath,
     UserCareerPathDetailResponse,
     UserCareerPathResponse,
+    UserPathAssignment,
     UserPathAssignmentDetailResponse,
     UserPathAssignmentResponse,
+    UserStepProgress,
     UserStepProgressResponse,
 )
-from upskills.repositories.path_template import PathTemplateRepository
-from upskills.repositories.user import UserRepository
-from upskills.repositories.user_career_path import UserCareerPathRepository
-from upskills.repositories.user_path_assignment import UserPathAssignmentRepository
-from upskills.repositories.user_step_progress import UserStepProgressRepository
+from upskills.repositories import (
+    PathTemplateRepository,
+    UserCareerPathRepository,
+    UserPathAssignmentRepository,
+    UserRepository,
+    UserStepProgressRepository,
+)
 
 
 class ProgressService:

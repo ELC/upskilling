@@ -5,18 +5,19 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from upskills.core.dependencies import CurrentUser, require_permissions
-from upskills.models.db.user import User
-from upskills.models.domain.base import MessageResponse, PaginatedResponse
-from upskills.models.domain.career import (
+from upskills.core import CurrentUser, require_permissions
+from upskills.models import (
+    MessageResponse,
+    PaginatedResponse,
     PathTemplateCreate,
     PathTemplateCreateInput,
     PathTemplateResponse,
     PathTemplateUpdate,
     PathTemplateUpdateInput,
     PathTemplateWithStepsResponse,
+    User,
 )
-from upskills.services.path_template import PathTemplateService
+from upskills.services import PathTemplateService
 
 router = APIRouter()
 

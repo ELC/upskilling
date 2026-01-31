@@ -1,6 +1,6 @@
 """Pydantic domain models."""
 
-from upskills.models.domain.auth import (
+from .auth import (
     AuthResponse,
     LoginRequest,
     RefreshTokenRequest,
@@ -8,8 +8,8 @@ from upskills.models.domain.auth import (
     TokenPayload,
     TokenResponse,
 )
-from upskills.models.domain.base import DomainModel, MessageResponse, PaginatedResponse
-from upskills.models.domain.career import (
+from .base import DomainModel, MessageResponse, PaginatedResponse
+from .career import (
     CareerCreate,
     CareerResponse,
     CareerUpdate,
@@ -24,7 +24,7 @@ from upskills.models.domain.career import (
     PathTemplateWithStepsResponse,
     StepDependencyCreate,
 )
-from upskills.models.domain.progress import (
+from .progress import (
     DashboardStats,
     LogEntryCreate,
     LogEntryDetailResponse,
@@ -45,7 +45,7 @@ from upskills.models.domain.progress import (
     UserStepProgressUpdate,
     ValidationStatus,
 )
-from upskills.models.domain.team import (
+from .team import (
     TeamCreate,
     TeamListResponse,
     TeamMemberAdd,
@@ -55,7 +55,7 @@ from upskills.models.domain.team import (
     TeamUpdate,
     TeamWithMembersResponse,
 )
-from upskills.models.domain.user import (
+from .user import (
     ActionResponse,
     PasswordChange,
     PasswordReset,

@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from upskills.models.db.base import Base, TimestampMixin
+from .base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from upskills.models.db.progress import LogEntry, UserCareerPath
-    from upskills.models.db.team import Team, TeamMember
+    from .progress import LogEntry, UserCareerPath
+    from .team import Team, TeamMember
 
 
 class User(Base, TimestampMixin):

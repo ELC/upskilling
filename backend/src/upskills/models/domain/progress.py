@@ -5,8 +5,8 @@ from enum import StrEnum
 
 from pydantic import Field
 
-from upskills.models.domain.base import DomainModel
-from upskills.models.domain.career import PathStepResponse, PathTemplateResponse
+from .base import DomainModel
+from .career import PathStepResponse, PathTemplateResponse
 
 
 class ProgressStatus(StrEnum):

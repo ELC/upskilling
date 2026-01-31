@@ -4,16 +4,15 @@ from typing import Any
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.models.db.team import Team
-from upskills.models.domain.team import (
+from upskills.models import (
+    Team,
     TeamListResponse,
     TeamMemberResponse,
     TeamResponse,
     TeamWithMembersResponse,
+    UserResponse,
 )
-from upskills.models.domain.user import UserResponse
-from upskills.repositories.team import TeamRepository
-from upskills.repositories.user import UserRepository
+from upskills.repositories import TeamRepository, UserRepository
 
 
 class TeamService:

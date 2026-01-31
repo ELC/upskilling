@@ -7,9 +7,10 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from upskills.core.security import verify_token
-from upskills.models.db.user import User
-from upskills.repositories.user import UserRepository
+from upskills.models import User
+from upskills.repositories import UserRepository
+
+from .security import verify_token
 
 # Security scheme
 security = HTTPBearer()

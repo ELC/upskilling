@@ -11,8 +11,9 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from upskills.db.provider import DatabaseProvider
-from upskills.models.db.base import Base
+from upskills.models import Base
+
+from .provider import DatabaseProvider
 
 
 class SQLiteProvider(DatabaseProvider):
