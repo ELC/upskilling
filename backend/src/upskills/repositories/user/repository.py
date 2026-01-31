@@ -6,9 +6,11 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from upskills.models import Action, PasswordResetToken, Role, TeamMember, User, UserCareerPath, UserRole
+from upskills.repositories.base import BaseRepository
+from upskills.repositories.team.models import TeamMember
+from upskills.repositories.user_career_path.models import UserCareerPath
 
-from .base import BaseRepository
+from .models import Action, PasswordResetToken, Role, User, UserRole
 
 
 class UserRepository(BaseRepository[User]):

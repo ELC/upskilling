@@ -3,9 +3,11 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from upskills.models import PathTemplate, UserCareerPath, UserPathAssignment
+from upskills.repositories.base import BaseRepository
+from upskills.repositories.path_template.models import PathTemplate
+from upskills.repositories.user_career_path.models import UserCareerPath
 
-from .base import BaseRepository
+from .models import UserPathAssignment
 
 
 class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):

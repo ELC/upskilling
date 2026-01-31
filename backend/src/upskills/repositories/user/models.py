@@ -1,4 +1,4 @@
-"""User-related SQLAlchemy models."""
+"""User-related models."""
 
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -6,11 +6,12 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, TimestampMixin
+from upskills.repositories.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from .progress import LogEntry, UserCareerPath
-    from .team import Team, TeamMember
+    from upskills.repositories.log_entry.models import LogEntry
+    from upskills.repositories.team.models import Team, TeamMember
+    from upskills.repositories.user_career_path.models import UserCareerPath
 
 
 class User(Base, TimestampMixin):
