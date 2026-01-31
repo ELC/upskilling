@@ -14,7 +14,8 @@ from upskills.api.routers import (
     auth,
     careers,
     logbook,
-    paths,
+    path_steps,
+    path_templates,
     progress,
     teams,
     users,
@@ -59,7 +60,8 @@ def app_factory() -> FastAPI:
     app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
     app.include_router(teams.router, prefix="/api/v1/teams", tags=["Teams"])
     app.include_router(careers.router, prefix="/api/v1/careers", tags=["Careers"])
-    app.include_router(paths.router, prefix="/api/v1/paths", tags=["Paths"])
+    app.include_router(path_templates.router, prefix="/api/v1/paths", tags=["Path Templates"])
+    app.include_router(path_steps.router, prefix="/api/v1/steps", tags=["Path Steps"])
     app.include_router(progress.router, prefix="/api/v1/progress", tags=["Progress"])
     app.include_router(logbook.router, prefix="/api/v1/logbook", tags=["Logbook"])
 
