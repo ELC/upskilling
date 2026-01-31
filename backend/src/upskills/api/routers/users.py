@@ -2,9 +2,10 @@
 
 from typing import Annotated
 
+from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
+from upskills.core.dependencies import CurrentUser, require_permissions
 from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse, PaginatedResponse
 from upskills.models.domain.user import (
@@ -19,14 +20,14 @@ router = APIRouter()
 
 
 @router.get("")
+@inject
 async def list_users(
-    session: DbSession,
+    service: Annotated[UserService, Depends(Provide["user_service"])],
     _: Annotated[User, Depends(require_permissions("team.view"))],
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[UserResponse]:
     """List all users (requires team.view permission)."""
-    service = UserService(session)
     skip = (page - 1) * page_size
 
     users, total = await service.get_all_users(skip=skip, limit=page_size)
@@ -42,12 +43,12 @@ async def list_users(
 
 
 @router.get("/me")
+@inject
 async def get_my_profile(
+    service: Annotated[UserService, Depends(Provide["user_service"])],
     current_user: CurrentUser,
-    session: DbSession,
 ) -> UserWithPermissions:
     """Get current user's profile with permissions."""
-    service = UserService(session)
     result = await service.get_user_with_permissions(current_user.user_id)
 
     if not result:
@@ -60,14 +61,13 @@ async def get_my_profile(
 
 
 @router.put("/me")
+@inject
 async def update_my_profile(
     data: UserUpdate,
+    service: Annotated[UserService, Depends(Provide["user_service"])],
     current_user: CurrentUser,
-    session: DbSession,
 ) -> UserResponse:
     """Update current user's profile."""
-    service = UserService(session)
-
     try:
         result = await service.update_user(
             current_user.user_id,
@@ -75,7 +75,6 @@ async def update_my_profile(
             email=data.email,
             bio=data.bio,
         )
-        await session.commit()
 
         if not result:
             raise HTTPException(
@@ -92,21 +91,19 @@ async def update_my_profile(
 
 
 @router.post("/me/change-password")
+@inject
 async def change_my_password(
     data: PasswordChange,
+    service: Annotated[UserService, Depends(Provide["user_service"])],
     current_user: CurrentUser,
-    session: DbSession,
 ) -> MessageResponse:
     """Change current user's password."""
-    service = UserService(session)
-
     try:
         success = await service.change_password(
             current_user.user_id,
             data.current_password,
             data.new_password,
         )
-        await session.commit()
 
         if success:
             return MessageResponse(message="Password changed successfully.")
@@ -122,13 +119,13 @@ async def change_my_password(
 
 
 @router.get("/{user_id}")
+@inject
 async def get_user(
     user_id: int,
-    session: DbSession,
+    service: Annotated[UserService, Depends(Provide["user_service"])],
     _: Annotated[User, Depends(require_permissions("team.view"))],
 ) -> UserResponse:
     """Get a specific user (requires team.view permission)."""
-    service = UserService(session)
     result = await service.get_user(user_id)
 
     if not result:
@@ -141,17 +138,16 @@ async def get_user(
 
 
 @router.delete("/{user_id}")
+@inject
 async def delete_user(
     user_id: int,
-    session: DbSession,
+    service: Annotated[UserService, Depends(Provide["user_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Delete a user (requires team.manage permission).
 
     User cannot be deleted if they are a member of a team or have career paths assigned.
     """
-    service = UserService(session)
-
     try:
         success = await service.delete_user(user_id)
     except ValueError as e:
@@ -159,8 +155,6 @@ async def delete_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         ) from e
-
-    await session.commit()
 
     if not success:
         raise HTTPException(
@@ -172,18 +166,16 @@ async def delete_user(
 
 
 @router.post("/{user_id}/roles/{role_name}")
+@inject
 async def assign_role_to_user(
     user_id: int,
     role_name: str,
-    session: DbSession,
+    service: Annotated[UserService, Depends(Provide["user_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Assign a role to a user (requires team.manage permission)."""
-    service = UserService(session)
-
     try:
         await service.assign_role(user_id, role_name)
-        await session.commit()
         return MessageResponse(message=f"Role '{role_name}' assigned to user.")
     except ValueError as e:
         raise HTTPException(
@@ -193,18 +185,16 @@ async def assign_role_to_user(
 
 
 @router.delete("/{user_id}/roles/{role_name}")
+@inject
 async def remove_role_from_user(
     user_id: int,
     role_name: str,
-    session: DbSession,
+    service: Annotated[UserService, Depends(Provide["user_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     """Remove a role from a user (requires team.manage permission)."""
-    service = UserService(session)
-
     try:
         await service.remove_role(user_id, role_name)
-        await session.commit()
         return MessageResponse(message=f"Role '{role_name}' removed from user.")
     except ValueError as e:
         raise HTTPException(

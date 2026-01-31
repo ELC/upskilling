@@ -29,9 +29,10 @@ async def get_db_session(
         await session.close()
 
 
+@inject
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    repo: Annotated[UserRepository, Depends(Provide["user_repository"])],
 ) -> User:
     """Get the current authenticated user from the JWT token."""
     credentials_exception = HTTPException(
@@ -51,7 +52,6 @@ async def get_current_user(
     except ValueError:
         raise credentials_exception from None
 
-    repo = UserRepository(session)
     user = await repo.get_by_id(user_id)
 
     if user is None:
@@ -60,9 +60,10 @@ async def get_current_user(
     return user
 
 
+@inject
 async def get_current_user_optional(
     request: Request,
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    repo: Annotated[UserRepository, Depends(Provide["user_repository"])],
 ) -> User | None:
     """Get the current user if authenticated, otherwise None."""
     auth_header = request.headers.get("Authorization")
@@ -81,7 +82,6 @@ async def get_current_user_optional(
     except ValueError:
         return None
 
-    repo = UserRepository(session)
     return await repo.get_by_id(user_id)
 
 
@@ -90,11 +90,11 @@ def require_permissions(
 ) -> Callable[..., Coroutine[Any, Any, User]]:
     """Dependency factory that checks if user has required permissions."""
 
+    @inject
     async def check_permissions(
         current_user: Annotated[User, Depends(get_current_user)],
-        session: Annotated[AsyncSession, Depends(get_db_session)],
+        repo: Annotated[UserRepository, Depends(Provide["user_repository"])],
     ) -> User:
-        repo = UserRepository(session)
         user_permissions = await repo.get_user_permissions(current_user.user_id)
 
         for permission in required_permissions:
@@ -112,4 +112,3 @@ def require_permissions(
 # Type aliases for common dependencies
 CurrentUser = Annotated[User, Depends(get_current_user)]
 OptionalUser = Annotated[User | None, Depends(get_current_user_optional)]
-DbSession = Annotated[AsyncSession, Depends(get_db_session)]

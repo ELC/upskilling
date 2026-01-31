@@ -1,6 +1,6 @@
 """User service."""
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from dependency_injector.wiring import Provide, inject
 
 from upskills.core.security import hash_password, verify_password
 from upskills.models.db.user import User
@@ -11,25 +11,29 @@ from upskills.repositories.user import RoleRepository, UserRepository
 class UserService:
     """Service for user operations."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-        self._user_repo = UserRepository(session)
-        self._role_repo = RoleRepository(session)
+    @inject
+    def __init__(
+        self,
+        user_repository: UserRepository = Provide["user_repository"],
+        role_repository: RoleRepository = Provide["role_repository"],
+    ) -> None:
+        self._user_repository = user_repository
+        self._role_repository = role_repository
 
     async def get_user(self, user_id: int) -> UserResponse | None:
         """Get a user by ID."""
-        user = await self._user_repo.get_by_id(user_id)
+        user = await self._user_repository.get_by_id(user_id)
         if not user:
             return None
         return self._user_to_response(user)
 
     async def get_user_with_permissions(self, user_id: int) -> UserWithPermissions | None:
         """Get a user with their permissions."""
-        user = await self._user_repo.get_by_id(user_id)
+        user = await self._user_repository.get_by_id(user_id)
         if not user:
             return None
 
-        permissions = await self._user_repo.get_user_permissions(user_id)
+        permissions = await self._user_repository.get_user_permissions(user_id)
 
         response = self._user_to_response(user)
         return UserWithPermissions(
@@ -41,8 +45,8 @@ class UserService:
         self, *, skip: int = 0, limit: int = 100
     ) -> tuple[list[UserResponse], int]:
         """Get all users with pagination."""
-        users = await self._user_repo.get_all_with_roles(skip=skip, limit=limit)
-        total = await self._user_repo.count()
+        users = await self._user_repository.get_all_with_roles(skip=skip, limit=limit)
+        total = await self._user_repository.count()
         return [self._user_to_response(u) for u in users], total
 
     async def update_user(
@@ -53,13 +57,13 @@ class UserService:
         bio: str | None = None,
     ) -> UserResponse | None:
         """Update a user's profile."""
-        user = await self._user_repo.get_by_id(user_id)
+        user = await self._user_repository.get_by_id(user_id)
         if not user:
             return None
 
         # Check email uniqueness if changing
         if email and email != user.email:
-            existing = await self._user_repo.get_by_email(email)
+            existing = await self._user_repository.get_by_email(email)
             if existing:
                 msg = "Email already in use"
                 raise ValueError(msg)
@@ -73,7 +77,7 @@ class UserService:
             update_data["bio"] = bio
 
         if update_data:
-            user = await self._user_repo.update(user, update_data)
+            user = await self._user_repository.update(user, update_data)
 
         return self._user_to_response(user)
 
@@ -84,7 +88,7 @@ class UserService:
         new_password: str,
     ) -> bool:
         """Change a user's password."""
-        user = await self._user_repo.get_by_id(user_id)
+        user = await self._user_repository.get_by_id(user_id)
         if not user:
             return False
 
@@ -92,7 +96,7 @@ class UserService:
             msg = "Current password is incorrect"
             raise ValueError(msg)
 
-        await self._user_repo.update(user, {"password_hash": hash_password(new_password)})
+        await self._user_repository.update(user, {"password_hash": hash_password(new_password)})
         return True
 
     async def delete_user(self, user_id: int) -> bool:
@@ -101,41 +105,41 @@ class UserService:
         Raises:
             ValueError: If user is part of a team or has career paths assigned.
         """
-        user = await self._user_repo.get_by_id(user_id)
+        user = await self._user_repository.get_by_id(user_id)
         if not user:
             return False
 
         # Check if user is a member of any team
-        if await self._user_repo.has_team_memberships(user_id):
+        if await self._user_repository.has_team_memberships(user_id):
             msg = "Cannot delete user: they are a member of one or more teams. Remove them from all teams first."
             raise ValueError(msg)
 
         # Check if user has any career paths assigned
-        if await self._user_repo.has_career_paths(user_id):
+        if await self._user_repository.has_career_paths(user_id):
             msg = "Cannot delete user: they have career paths assigned. Remove all career path assignments first."
             raise ValueError(msg)
 
-        await self._user_repo.delete(user)
+        await self._user_repository.delete(user)
         return True
 
     async def assign_role(self, user_id: int, role_name: str) -> bool:
         """Assign a role to a user."""
-        role = await self._role_repo.get_by_name(role_name)
+        role = await self._role_repository.get_by_name(role_name)
         if not role:
             msg = f"Role '{role_name}' not found"
             raise ValueError(msg)
 
-        await self._user_repo.assign_role(user_id, role.role_id)
+        await self._user_repository.assign_role(user_id, role.role_id)
         return True
 
     async def remove_role(self, user_id: int, role_name: str) -> bool:
         """Remove a role from a user."""
-        role = await self._role_repo.get_by_name(role_name)
+        role = await self._role_repository.get_by_name(role_name)
         if not role:
             msg = f"Role '{role_name}' not found"
             raise ValueError(msg)
 
-        await self._user_repo.remove_role(user_id, role.role_id)
+        await self._user_repository.remove_role(user_id, role.role_id)
         return True
 
     @staticmethod

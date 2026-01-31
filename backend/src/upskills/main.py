@@ -11,14 +11,14 @@ from upskills.db.provider import DatabaseProvider
 from upskills.injections import Container
 from upskills.core.config import get_settings
 from upskills.api.routers import (
-        auth,
-        careers,
-        logbook,
-        paths,
-        progress,
-        teams,
-        users,
-    )
+    auth,
+    careers,
+    logbook,
+    paths,
+    progress,
+    teams,
+    users,
+)
 
 @asynccontextmanager
 @inject

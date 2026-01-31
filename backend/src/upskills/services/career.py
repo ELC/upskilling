@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from dependency_injector.wiring import Provide, inject
 
 from upskills.models.db.career import Career, PathTemplate, PathTemplateStep
 from upskills.models.domain.career import (
@@ -27,14 +27,18 @@ from upskills.repositories.career import (
 class CareerService:
     """Service for career operations."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-        self._career_repo = CareerRepository(session)
-        self._path_repo = PathTemplateRepository(session)
+    @inject
+    def __init__(
+        self,
+        career_repository: CareerRepository = Provide["career_repository"],
+        path_template_repository: PathTemplateRepository = Provide["path_template_repository"],
+    ) -> None:
+        self._career_repository = career_repository
+        self._path_template_repository = path_template_repository
 
     async def get_career(self, career_id: int) -> CareerWithPathsResponse | None:
         """Get a career by ID with its paths."""
-        career = await self._career_repo.get_by_id(career_id)
+        career = await self._career_repository.get_by_id(career_id)
         if not career:
             return None
         return self._career_to_response_with_paths(career)
@@ -43,8 +47,8 @@ class CareerService:
         self, *, skip: int = 0, limit: int = 100
     ) -> tuple[list[CareerResponse], int]:
         """Get all careers."""
-        careers = await self._career_repo.get_all_with_paths(skip=skip, limit=limit)
-        total = await self._career_repo.count()
+        careers = await self._career_repository.get_all_with_paths(skip=skip, limit=limit)
+        total = await self._career_repository.count()
 
         return [self._career_to_response(c) for c in careers], total
 
@@ -54,7 +58,7 @@ class CareerService:
         specialization: str | None = None,
     ) -> CareerResponse:
         """Create a new career."""
-        career = await self._career_repo.create({
+        career = await self._career_repository.create({
             "name": name,
             "specialization": specialization,
         })
@@ -67,7 +71,7 @@ class CareerService:
         specialization: str | None = None,
     ) -> CareerResponse | None:
         """Update a career."""
-        career = await self._career_repo.get_by_id(career_id)
+        career = await self._career_repository.get_by_id(career_id)
         if not career:
             return None
 
@@ -78,17 +82,17 @@ class CareerService:
             update_data["specialization"] = specialization
 
         if update_data:
-            career = await self._career_repo.update(career, update_data)
+            career = await self._career_repository.update(career, update_data)
 
         return self._career_to_response(career)
 
     async def delete_career(self, career_id: int) -> bool:
         """Delete a career."""
-        career = await self._career_repo.get_by_id(career_id)
+        career = await self._career_repository.get_by_id(career_id)
         if not career:
             return False
 
-        await self._career_repo.delete(career)
+        await self._career_repository.delete(career)
         return True
 
     @staticmethod
@@ -129,15 +133,20 @@ class CareerService:
 class PathTemplateService:
     """Service for path template operations."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-        self._path_repo = PathTemplateRepository(session)
-        self._step_repo = PathStepRepository(session)
-        self._career_repo = CareerRepository(session)
+    @inject
+    def __init__(
+        self,
+        path_template_repository: PathTemplateRepository = Provide["path_template_repository"],
+        path_step_repository: PathStepRepository = Provide["path_step_repository"],
+        career_repository: CareerRepository = Provide["career_repository"],
+    ) -> None:
+        self._path_template_repository = path_template_repository
+        self._path_step_repository = path_step_repository
+        self._career_repository = career_repository
 
     async def get_path(self, path_template_id: int) -> PathTemplateWithStepsResponse | None:
         """Get a path template by ID with steps."""
-        path = await self._path_repo.get_by_id(path_template_id)
+        path = await self._path_template_repository.get_by_id(path_template_id)
         if not path:
             return None
         return self._path_to_response_with_steps(path)
@@ -147,11 +156,11 @@ class PathTemplateService:
     ) -> tuple[list[PathTemplateResponse], int]:
         """Get all path templates."""
         if career_id:
-            paths = await self._path_repo.get_by_career(career_id)
+            paths = await self._path_template_repository.get_by_career(career_id)
             return [self._path_to_response(p) for p in paths], len(paths)
 
-        paths = await self._path_repo.get_all_with_details(skip=skip, limit=limit)
-        total = await self._path_repo.count()
+        paths = await self._path_template_repository.get_all_with_details(skip=skip, limit=limit)
+        total = await self._path_template_repository.count()
 
         return [self._path_to_response(p) for p in paths], total
 
@@ -161,12 +170,12 @@ class PathTemplateService:
     ) -> PathTemplateResponse:
         """Create a new path template."""
         # Verify career exists
-        career = await self._career_repo.get_by_id(data.career_id)
+        career = await self._career_repository.get_by_id(data.career_id)
         if not career:
             msg = "Career not found"
             raise ValueError(msg)
 
-        path = await self._path_repo.create(data.model_dump())
+        path = await self._path_template_repository.create(data.model_dump())
         return self._path_to_response(path)
 
     async def update_path(
@@ -175,24 +184,24 @@ class PathTemplateService:
         data: PathTemplateUpdateInput,
     ) -> PathTemplateResponse | None:
         """Update a path template."""
-        path = await self._path_repo.get_by_id(path_template_id)
+        path = await self._path_template_repository.get_by_id(path_template_id)
         if not path:
             return None
 
         update_data = data.model_dump(exclude_unset=True)
 
         if update_data:
-            path = await self._path_repo.update(path, update_data)
+            path = await self._path_template_repository.update(path, update_data)
 
         return self._path_to_response(path)
 
     async def delete_path(self, path_template_id: int) -> bool:
         """Delete a path template."""
-        path = await self._path_repo.get_by_id(path_template_id)
+        path = await self._path_template_repository.get_by_id(path_template_id)
         if not path:
             return False
 
-        await self._path_repo.delete(path)
+        await self._path_template_repository.delete(path)
         return True
 
     @staticmethod
@@ -254,21 +263,25 @@ class PathTemplateService:
 class PathStepService:
     """Service for path step operations."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-        self._step_repo = PathStepRepository(session)
-        self._path_repo = PathTemplateRepository(session)
+    @inject
+    def __init__(
+        self,
+        path_step_repository: PathStepRepository = Provide["path_step_repository"],
+        path_template_repository: PathTemplateRepository = Provide["path_template_repository"],
+    ) -> None:
+        self._path_step_repository = path_step_repository
+        self._path_template_repository = path_template_repository
 
     async def get_step(self, step_id: int) -> PathStepResponse | None:
         """Get a step by ID."""
-        step = await self._step_repo.get_by_id(step_id)
+        step = await self._path_step_repository.get_by_id(step_id)
         if not step:
             return None
         return self._step_to_response(step)
 
     async def get_steps_for_path(self, path_template_id: int) -> list[PathStepResponse]:
         """Get all steps for a path template."""
-        steps = await self._step_repo.get_by_path_template(path_template_id)
+        steps = await self._path_step_repository.get_by_path_template(path_template_id)
         return [self._step_to_response(s) for s in steps]
 
     async def create_step(
@@ -277,12 +290,12 @@ class PathStepService:
     ) -> PathStepResponse:
         """Create a new step."""
         # Verify path exists
-        path = await self._path_repo.get_by_id(data.path_template_id)
+        path = await self._path_template_repository.get_by_id(data.path_template_id)
         if not path:
             msg = "Path template not found"
             raise ValueError(msg)
 
-        step = await self._step_repo.create(data.model_dump())
+        step = await self._path_step_repository.create(data.model_dump())
         return self._step_to_response(step)
 
     async def update_step(
@@ -291,34 +304,34 @@ class PathStepService:
         data: PathStepUpdateInput,
     ) -> PathStepResponse | None:
         """Update a step."""
-        step = await self._step_repo.get_by_id(step_id)
+        step = await self._path_step_repository.get_by_id(step_id)
         if not step:
             return None
 
         update_data = data.model_dump(exclude_unset=True)
 
         if update_data:
-            step = await self._step_repo.update(step, update_data)
+            step = await self._path_step_repository.update(step, update_data)
 
         return self._step_to_response(step)
 
     async def delete_step(self, step_id: int) -> bool:
         """Delete a step."""
-        step = await self._step_repo.get_by_id(step_id)
+        step = await self._path_step_repository.get_by_id(step_id)
         if not step:
             return False
 
-        await self._step_repo.delete(step)
+        await self._path_step_repository.delete(step)
         return True
 
     async def add_dependency(self, step_id: int, depends_on_step_id: int) -> bool:
         """Add a dependency between steps."""
-        await self._step_repo.add_dependency(step_id, depends_on_step_id)
+        await self._path_step_repository.add_dependency(step_id, depends_on_step_id)
         return True
 
     async def remove_dependency(self, step_id: int, depends_on_step_id: int) -> bool:
         """Remove a dependency between steps."""
-        await self._step_repo.remove_dependency(step_id, depends_on_step_id)
+        await self._path_step_repository.remove_dependency(step_id, depends_on_step_id)
         return True
 
     @staticmethod
