@@ -1,7 +1,6 @@
 """Team repository."""
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from upskills.models.db.team import Team, TeamMember
@@ -11,9 +10,6 @@ from upskills.repositories.base import BaseRepository
 
 class TeamRepository(BaseRepository[Team]):
     """Repository for Team operations."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, Team)
 
     async def get_by_id(self, team_id: int, id_column: str = "team_id") -> Team | None:
         """Get team by ID with members loaded."""
@@ -71,6 +67,7 @@ class TeamRepository(BaseRepository[Team]):
         member = TeamMember(team_id=team_id, user_id=user_id)
         self._session.add(member)
         await self._session.flush()
+        await self._session.commit()
 
     async def remove_member(self, team_id: int, user_id: int) -> None:
         """Remove a member from a team."""
@@ -82,6 +79,7 @@ class TeamRepository(BaseRepository[Team]):
         if member:
             await self._session.delete(member)
             await self._session.flush()
+            await self._session.commit()
 
     async def is_member(self, team_id: int, user_id: int) -> bool:
         """Check if a user is a member of a team."""

@@ -2,9 +2,10 @@
 
 from typing import Annotated
 
+from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
+from upskills.core.dependencies import CurrentUser, require_permissions
 from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse
 from upskills.models.domain.progress import (
@@ -20,25 +21,25 @@ router = APIRouter()
 
 
 @router.get("/career-path/{career_path_id}")
+@inject
 async def get_logbook_entries(
     career_path_id: int,
     current_user: CurrentUser,
-    session: DbSession,
+    service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
     entry_type: str | None = None,
 ) -> list[LogEntryDetailResponse]:
     """Get logbook entries for a career path."""
-    service = LogbookService(session)
     return await service.get_entries_for_career_path(career_path_id, entry_type)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
+@inject
 async def create_logbook_entry(
     data: LogEntryCreate,
-    session: DbSession,
+    service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
     _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> LogEntryResponse:
     """Create a new logbook entry (requires logbook.create permission)."""
-    service = LogbookService(session)
 
     try:
         input_data = LogEntryCreateInput(
@@ -50,7 +51,6 @@ async def create_logbook_entry(
             related_user_path_assignment_id=data.related_user_path_assignment_id,
         )
         result = await service.create_entry(input_data)
-        await session.commit()
         return result
     except ValueError as e:
         raise HTTPException(
@@ -60,13 +60,13 @@ async def create_logbook_entry(
 
 
 @router.get("/{log_entry_id}")
+@inject
 async def get_logbook_entry(
     log_entry_id: int,
     current_user: CurrentUser,
-    session: DbSession,
+    service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
 ) -> LogEntryDetailResponse:
     """Get a specific logbook entry."""
-    service = LogbookService(session)
     result = await service.get_entry(log_entry_id)
 
     if not result:
@@ -79,21 +79,20 @@ async def get_logbook_entry(
 
 
 @router.put("/{log_entry_id}")
+@inject
 async def update_logbook_entry(
     log_entry_id: int,
     data: LogEntryUpdate,
-    session: DbSession,
+    service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
     _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> LogEntryResponse:
     """Update a logbook entry (requires logbook.create permission)."""
-    service = LogbookService(session)
     result = await service.update_entry(
         log_entry_id,
         entry_type=data.entry_type.value if data.entry_type else None,
         entry_date=data.entry_date,
         notes=data.notes,
     )
-    await session.commit()
 
     if not result:
         raise HTTPException(
@@ -105,15 +104,14 @@ async def update_logbook_entry(
 
 
 @router.delete("/{log_entry_id}")
+@inject
 async def delete_logbook_entry(
     log_entry_id: int,
-    session: DbSession,
+    service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
     _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> MessageResponse:
     """Delete a logbook entry (requires logbook.create permission)."""
-    service = LogbookService(session)
     success = await service.delete_entry(log_entry_id)
-    await session.commit()
 
     if not success:
         raise HTTPException(
