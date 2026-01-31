@@ -29,12 +29,6 @@ class Container(containers.DeclarativeContainer):
         db_path=config.database_path,
     )
 
-    # DB Session factory
-    db_session = providers.Factory(
-        lambda provider: provider.get_session(),
-        provider=db_provider,
-    )
-
     # Repositories
     user_repository = providers.Factory(UserRepository)
     role_repository = providers.Factory(RoleRepository)
