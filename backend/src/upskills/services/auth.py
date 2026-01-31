@@ -12,7 +12,8 @@ from upskills.core.security import (
 from upskills.models.db.user import User
 from upskills.models.domain.auth import AuthResponse, TokenResponse
 from upskills.models.domain.user import RoleResponse, UserResponse
-from upskills.repositories.user import RoleRepository, UserRepository
+from upskills.repositories.role import RoleRepository
+from upskills.repositories.user import UserRepository
 
 
 class AuthService:
