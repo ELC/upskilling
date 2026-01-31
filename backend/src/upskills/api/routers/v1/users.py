@@ -17,7 +17,7 @@ from upskills.models import (
 )
 from upskills.services import UserService
 
-router = APIRouter()
+router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get("")
