@@ -2,8 +2,8 @@
 
 from pydantic import Field
 
-from upskills.models.domain.base import DomainModel
-from upskills.models.domain.user import UserResponse
+from .base import DomainModel
+from .user import UserResponse
 
 # === Request Models ===
 

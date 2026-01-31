@@ -2,18 +2,15 @@
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.core.security import (
+from upskills.core import (
     create_access_token,
     create_refresh_token,
     hash_password,
     verify_password,
     verify_token,
 )
-from upskills.models.db.user import User
-from upskills.models.domain.auth import AuthResponse, TokenResponse
-from upskills.models.domain.user import RoleResponse, UserResponse
-from upskills.repositories.role import RoleRepository
-from upskills.repositories.user import UserRepository
+from upskills.models import AuthResponse, RoleResponse, TokenResponse, User, UserResponse
+from upskills.repositories import RoleRepository, UserRepository
 
 
 class AuthService:

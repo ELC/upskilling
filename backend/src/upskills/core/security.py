@@ -6,7 +6,7 @@ from typing import Any
 import bcrypt
 from jose import JWTError, jwt
 
-from upskills.core.config import get_settings
+from .config import get_settings
 
 
 def hash_password(password: str) -> str:

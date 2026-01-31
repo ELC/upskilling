@@ -4,14 +4,8 @@ from typing import Any
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.models.db.career import Career
-from upskills.models.domain.career import (
-    CareerResponse,
-    CareerWithPathsResponse,
-    PathTemplateResponse,
-)
-from upskills.repositories.career import CareerRepository
-from upskills.repositories.path_template import PathTemplateRepository
+from upskills.models import Career, CareerResponse, CareerWithPathsResponse, PathTemplateResponse
+from upskills.repositories import CareerRepository, PathTemplateRepository
 
 
 class CareerService:

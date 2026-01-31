@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 from sqlalchemy import CheckConstraint, Date, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from upskills.models.db.base import Base
+from .base import Base
 
 if TYPE_CHECKING:
-    from upskills.models.db.career import Career, PathTemplate, PathTemplateStep
-    from upskills.models.db.user import User
+    from .career import Career, PathTemplate, PathTemplateStep
+    from .user import User
 
 
 class UserCareerPath(Base):

@@ -5,10 +5,10 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from upskills.core.dependencies import CurrentUser, require_permissions
-from upskills.models.db.user import User
-from upskills.models.domain.base import MessageResponse, PaginatedResponse
-from upskills.models.domain.team import (
+from upskills.core import CurrentUser, require_permissions
+from upskills.models import (
+    MessageResponse,
+    PaginatedResponse,
     TeamCreate,
     TeamListResponse,
     TeamMemberAdd,
@@ -17,8 +17,9 @@ from upskills.models.domain.team import (
     TeamResponse,
     TeamUpdate,
     TeamWithMembersResponse,
+    User,
 )
-from upskills.services.team import TeamService
+from upskills.services import TeamService
 
 router = APIRouter()
 

@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from upskills.models.db.base import Base
+from .base import Base
 
 if TYPE_CHECKING:
-    from upskills.models.db.user import User
+    from .user import User
 
 
 class Team(Base):

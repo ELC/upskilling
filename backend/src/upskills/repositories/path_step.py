@@ -3,8 +3,9 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from upskills.models.db.career import PathStepDependency, PathTemplateStep
-from upskills.repositories.base import BaseRepository
+from upskills.models import PathStepDependency, PathTemplateStep
+
+from .base import BaseRepository
 
 
 class PathStepRepository(BaseRepository[PathTemplateStep]):
