@@ -6,7 +6,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.core import CurrentUser
-from upskills.models import (
+from upskills.domain import (
     AuthResponse,
     LoginRequest,
     MessageResponse,
@@ -124,7 +124,7 @@ async def get_current_user_info(
     current_user: CurrentUser,
 ) -> UserResponse:
     """Get the current authenticated user's information."""
-    from upskills.models.domain.user import RoleResponse
+    from upskills.domain import RoleResponse
 
     roles: list[RoleResponse] = []
     if current_user.roles:

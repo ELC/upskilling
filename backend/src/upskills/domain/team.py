@@ -1,11 +1,9 @@
-"""Team-related Pydantic domain models."""
+"""Team domain models."""
 
 from pydantic import Field
 
 from .base import DomainModel
 from .user import UserResponse
-
-# === Request Models ===
 
 
 class TeamCreate(DomainModel):
@@ -32,9 +30,6 @@ class TeamMemberBulkAdd(DomainModel):
     """Request model for adding multiple members to a team."""
 
     user_ids: list[int]
-
-
-# === Response Models ===
 
 
 class TeamMemberResponse(DomainModel):

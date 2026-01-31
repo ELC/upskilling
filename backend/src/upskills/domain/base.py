@@ -1,7 +1,5 @@
 """Base Pydantic models and utilities."""
 
-from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
@@ -14,12 +12,6 @@ class DomainModel(BaseModel):
         from_attributes=True,
         populate_by_name=True,
     )
-
-
-class TimestampMixin(BaseModel):
-    """Mixin for models with timestamps."""
-
-    created_at: datetime
 
 
 class PaginatedResponse[T](BaseModel):

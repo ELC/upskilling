@@ -4,15 +4,14 @@ from typing import Any
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.models import (
-    Team,
+from upskills.domain import (
     TeamListResponse,
     TeamMemberResponse,
     TeamResponse,
     TeamWithMembersResponse,
     UserResponse,
 )
-from upskills.repositories import TeamRepository, UserRepository
+from upskills.repositories import Team, TeamRepository, UserRepository
 
 
 class TeamService:
@@ -177,7 +176,7 @@ class TeamService:
     @staticmethod
     def _team_to_response(team: Team) -> TeamWithMembersResponse:
         """Convert a Team model to TeamWithMembersResponse."""
-        from upskills.models.domain.user import RoleResponse
+        from upskills.domain import RoleResponse
 
         manager_roles: list[RoleResponse] = []
         if team.manager and team.manager.roles:

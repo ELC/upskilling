@@ -6,7 +6,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.core import CurrentUser, require_permissions
-from upskills.models import (
+from upskills.domain import (
     MessageResponse,
     PathStepCreate,
     PathStepCreateInput,
@@ -14,8 +14,8 @@ from upskills.models import (
     PathStepUpdate,
     PathStepUpdateInput,
     StepDependencyCreate,
-    User,
 )
+from upskills.repositories import User
 from upskills.services import PathStepService
 
 router = APIRouter(prefix="/steps", tags=["Path Steps"])
