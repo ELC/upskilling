@@ -37,7 +37,7 @@ def app_factory() -> FastAPI:
 
     container = Container()
     container.config.from_pydantic(settings)
-    container.wire(modules=[__name__])
+    container.wire(packages=["upskills"])
 
     app = FastAPI(
         title=settings.app_name,
