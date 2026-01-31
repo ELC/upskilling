@@ -6,7 +6,8 @@ from dependency_injector.wiring import Provide, inject
 from sqlalchemy import select
 
 from upskills.db import DatabaseProvider
-from upskills.models import Base
+
+from .models import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
 

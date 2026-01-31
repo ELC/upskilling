@@ -3,9 +3,10 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from upskills.models import LogEntry, UserPathAssignment
+from upskills.repositories.base import BaseRepository
+from upskills.repositories.user_path_assignment.models import UserPathAssignment
 
-from .base import BaseRepository
+from .models import LogEntry
 
 
 class LogEntryRepository(BaseRepository[LogEntry]):

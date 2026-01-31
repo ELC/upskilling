@@ -3,9 +3,10 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from upskills.models import Team, TeamMember, User
+from upskills.repositories.base import BaseRepository
+from upskills.repositories.user.models import User
 
-from .base import BaseRepository
+from .models import Team, TeamMember
 
 
 class TeamRepository(BaseRepository[Team]):

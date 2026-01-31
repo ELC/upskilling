@@ -2,9 +2,8 @@
 
 from sqlalchemy import select
 
-from upskills.models import Role
-
-from .base import BaseRepository
+from upskills.repositories.base import BaseRepository
+from upskills.repositories.user.models import Role
 
 
 class RoleRepository(BaseRepository[Role]):

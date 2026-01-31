@@ -1,32 +1,15 @@
-"""Career and path template SQLAlchemy models."""
+"""Path template models."""
 
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from upskills.repositories.base import Base
 
 if TYPE_CHECKING:
-    from .progress import UserCareerPath, UserPathAssignment
-
-
-class Career(Base):
-    """Career model - high-level career tracks."""
-
-    __tablename__ = "careers"
-
-    career_id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255))
-    specialization: Mapped[str | None] = mapped_column(String(255))
-
-    # Relationships
-    path_templates: Mapped[list["PathTemplate"]] = relationship(
-        back_populates="career", lazy="selectin"
-    )
-    user_career_paths: Mapped[list["UserCareerPath"]] = relationship(
-        back_populates="career", lazy="selectin"
-    )
+    from upskills.repositories.career.models import Career
+    from upskills.repositories.user_path_assignment.models import UserPathAssignment
 
 
 class PathTemplate(Base):
