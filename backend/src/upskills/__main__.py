@@ -1,7 +1,7 @@
 
 import asyncio
 
-from upskills.server import server_factory
+from .api import server_factory
 
 
 async def main() -> None:

@@ -21,7 +21,7 @@ from upskills.models import (
 )
 from upskills.services import TeamService
 
-router = APIRouter()
+router = APIRouter(prefix="/teams", tags=["Teams"])
 
 
 @router.get("")

@@ -24,7 +24,7 @@ from upskills.models import (
 )
 from upskills.services import ProgressService, TeamService
 
-router = APIRouter()
+router = APIRouter(prefix="/progress", tags=["Progress"])
 
 
 # === Dashboard ===

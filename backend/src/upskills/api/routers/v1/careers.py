@@ -17,7 +17,7 @@ from upskills.models import (
 )
 from upskills.services import CareerService
 
-router = APIRouter()
+router = APIRouter(prefix="/careers", tags=["Careers"])
 
 
 @router.get("")
