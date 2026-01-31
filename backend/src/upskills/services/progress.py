@@ -5,22 +5,20 @@ from typing import Any
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.models import (
+from upskills.domain import (
     DashboardStats,
     MenteeProgressSummary,
     PathStepResponse,
     PathTemplateResponse,
     StepProgressUpdateInput,
-    UserCareerPath,
     UserCareerPathDetailResponse,
     UserCareerPathResponse,
-    UserPathAssignment,
     UserPathAssignmentDetailResponse,
     UserPathAssignmentResponse,
-    UserStepProgress,
     UserStepProgressResponse,
 )
 from upskills.repositories import (
+    UserCareerPath, UserPathAssignment, UserStepProgress,
     PathTemplateRepository,
     UserCareerPathRepository,
     UserPathAssignmentRepository,

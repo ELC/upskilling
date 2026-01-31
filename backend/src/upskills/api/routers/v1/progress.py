@@ -6,11 +6,10 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.core import CurrentUser, require_permissions
-from upskills.models import (
+from upskills.domain import (
     DashboardStats,
     MenteeProgressSummary,
     StepProgressUpdateInput,
-    User,
     UserCareerPathCreate,
     UserCareerPathDetailResponse,
     UserCareerPathResponse,
@@ -22,6 +21,7 @@ from upskills.models import (
     UserStepProgressResponse,
     UserStepProgressUpdate,
 )
+from upskills.repositories import User
 from upskills.services import ProgressService, TeamService
 
 router = APIRouter(prefix="/progress", tags=["Progress"])

@@ -1,4 +1,4 @@
-"""Pydantic domain models."""
+"""Domain models package."""
 
 from .auth import (
     AuthResponse,
@@ -9,48 +9,34 @@ from .auth import (
     TokenResponse,
 )
 from .base import DomainModel, MessageResponse, PaginatedResponse
-from .career import (
-    CareerCreate,
-    CareerResponse,
-    CareerUpdate,
-    CareerWithPathsResponse,
+from .career import CareerCreate, CareerResponse, CareerUpdate, CareerWithPathsResponse
+from .dashboard import DashboardStats, MenteeProgressSummary
+from .enums import LogEntryType, ProgressStatus, ValidationStatus
+from .log_entry import (
+    LogEntryCreate,
+    LogEntryCreateInput,
+    LogEntryDetailResponse,
+    LogEntryResponse,
+    LogEntryUpdate,
+)
+from .path_step import (
     PathStepCreate,
     PathStepCreateInput,
     PathStepDependencyResponse,
     PathStepResponse,
     PathStepUpdate,
     PathStepUpdateInput,
+    StepDependencyCreate,
+)
+from .path_template import (
     PathTemplateCreate,
     PathTemplateCreateInput,
     PathTemplateResponse,
     PathTemplateUpdate,
     PathTemplateUpdateInput,
     PathTemplateWithStepsResponse,
-    StepDependencyCreate,
 )
-from .progress import (
-    DashboardStats,
-    LogEntryCreate,
-    LogEntryCreateInput,
-    LogEntryDetailResponse,
-    LogEntryResponse,
-    LogEntryType,
-    LogEntryUpdate,
-    MenteeProgressSummary,
-    ProgressStatus,
-    StepProgressUpdateInput,
-    UserCareerPathCreate,
-    UserCareerPathDetailResponse,
-    UserCareerPathResponse,
-    UserCareerPathUpdate,
-    UserPathAssignmentCreate,
-    UserPathAssignmentDetailResponse,
-    UserPathAssignmentResponse,
-    UserPathAssignmentUpdate,
-    UserStepProgressResponse,
-    UserStepProgressUpdate,
-    ValidationStatus,
-)
+from .role import ActionResponse, RoleResponse
 from .team import (
     TeamCreate,
     TeamListResponse,
@@ -62,28 +48,41 @@ from .team import (
     TeamWithMembersResponse,
 )
 from .user import (
-    ActionResponse,
     PasswordChange,
     PasswordReset,
     PasswordResetRequest,
-    RoleResponse,
     UserCreate,
     UserInDB,
     UserResponse,
     UserUpdate,
     UserWithPermissions,
 )
+from .user_career_path import (
+    UserCareerPathCreate,
+    UserCareerPathDetailResponse,
+    UserCareerPathResponse,
+    UserCareerPathUpdate,
+)
+from .user_path_assignment import (
+    UserPathAssignmentCreate,
+    UserPathAssignmentDetailResponse,
+    UserPathAssignmentResponse,
+    UserPathAssignmentUpdate,
+)
+from .user_step_progress import (
+    StepProgressUpdateInput,
+    UserStepProgressResponse,
+    UserStepProgressUpdate,
+)
 
 __all__ = [
     "ActionResponse",
     "AuthResponse",
-    # Career
     "CareerCreate",
     "CareerResponse",
     "CareerUpdate",
     "CareerWithPathsResponse",
     "DashboardStats",
-    # Base
     "DomainModel",
     "LogEntryCreate",
     "LogEntryCreateInput",
@@ -91,7 +90,6 @@ __all__ = [
     "LogEntryResponse",
     "LogEntryType",
     "LogEntryUpdate",
-    # Auth
     "LoginRequest",
     "MenteeProgressSummary",
     "MessageResponse",
@@ -111,14 +109,12 @@ __all__ = [
     "PathTemplateUpdate",
     "PathTemplateUpdateInput",
     "PathTemplateWithStepsResponse",
-    # Progress
     "ProgressStatus",
     "RefreshTokenRequest",
     "RegisterRequest",
     "RoleResponse",
     "StepDependencyCreate",
     "StepProgressUpdateInput",
-    # Team
     "TeamCreate",
     "TeamListResponse",
     "TeamMemberAdd",
@@ -133,7 +129,6 @@ __all__ = [
     "UserCareerPathDetailResponse",
     "UserCareerPathResponse",
     "UserCareerPathUpdate",
-    # User
     "UserCreate",
     "UserInDB",
     "UserPathAssignmentCreate",

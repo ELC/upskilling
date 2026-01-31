@@ -3,11 +3,16 @@
 from .base import Base, BaseRepository, TimestampMixin, UpdateTimestampMixin
 from .career import Career, CareerRepository
 from .log_entry import LogEntry, LogEntryRepository
-from .path_step import PathStepDependency, PathStepRepository, PathTemplateStep
-from .path_template import PathTemplate, PathTemplateRepository
-from .role import Action, Role, RoleAction, RoleRepository, UserRole
+from .path_step import PathStepRepository
+from .path_template import (
+    PathStepDependency,
+    PathTemplate,
+    PathTemplateRepository,
+    PathTemplateStep,
+)
+from .role import RoleRepository
 from .team import Team, TeamMember, TeamRepository
-from .user import PasswordResetToken, User, UserRepository
+from .user import Action, PasswordResetToken, Role, RoleAction, User, UserRepository, UserRole
 from .user_career_path import UserCareerPath, UserCareerPathRepository
 from .user_path_assignment import UserPathAssignment, UserPathAssignmentRepository
 from .user_step_progress import UserStepProgress, UserStepProgressRepository

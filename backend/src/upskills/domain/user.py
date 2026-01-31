@@ -1,12 +1,11 @@
-"""User-related Pydantic domain models."""
+"""User domain models."""
 
 from datetime import datetime
 
 from pydantic import EmailStr, Field
 
 from .base import DomainModel
-
-# === Request Models ===
+from .role import RoleResponse
 
 
 class UserCreate(DomainModel):
@@ -46,26 +45,6 @@ class PasswordResetRequest(DomainModel):
     email: EmailStr
 
 
-# === Response Models ===
-
-
-class RoleResponse(DomainModel):
-    """Response model for a role."""
-
-    role_id: int
-    name: str
-    description: str | None
-    max_active_paths: int | None
-
-
-class ActionResponse(DomainModel):
-    """Response model for an action/permission."""
-
-    action_id: int
-    action_key: str
-    description: str
-
-
 class UserResponse(DomainModel):
     """Response model for a user."""
 
@@ -81,9 +60,6 @@ class UserWithPermissions(UserResponse):
     """User response with full permission details."""
 
     permissions: list[str] = Field(default_factory=list)
-
-
-# === Internal Models ===
 
 
 class UserInDB(DomainModel):

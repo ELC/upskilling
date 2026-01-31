@@ -1,4 +1,4 @@
-"""Authentication Pydantic domain models."""
+"""Authentication domain models."""
 
 from pydantic import EmailStr, Field
 

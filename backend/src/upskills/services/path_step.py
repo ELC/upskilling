@@ -2,14 +2,13 @@
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.models import (
+from upskills.domain import (
     PathStepCreateInput,
     PathStepDependencyResponse,
     PathStepResponse,
     PathStepUpdateInput,
-    PathTemplateStep,
 )
-from upskills.repositories import PathStepRepository, PathTemplateRepository
+from upskills.repositories import PathTemplateStep, PathStepRepository, PathTemplateRepository
 
 
 class PathStepService:

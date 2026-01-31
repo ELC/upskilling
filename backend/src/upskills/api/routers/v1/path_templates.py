@@ -6,7 +6,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.core import CurrentUser, require_permissions
-from upskills.models import (
+from upskills.domain import (
     MessageResponse,
     PaginatedResponse,
     PathTemplateCreate,
@@ -15,8 +15,8 @@ from upskills.models import (
     PathTemplateUpdate,
     PathTemplateUpdateInput,
     PathTemplateWithStepsResponse,
-    User,
 )
+from upskills.repositories import User
 from upskills.services import PathTemplateService
 
 router = APIRouter(prefix="/paths", tags=["Path Templates"])
