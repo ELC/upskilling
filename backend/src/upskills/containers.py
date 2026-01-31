@@ -6,7 +6,6 @@ from upskills.db.sqlite import SQLiteProvider
 
 
 class Container(containers.DeclarativeContainer):
-    """Main DI container for the application."""
 
     wiring_config = containers.WiringConfiguration(
         modules=[
