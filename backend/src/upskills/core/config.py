@@ -1,5 +1,3 @@
-"""Application configuration."""
-
 from functools import lru_cache
 from pathlib import Path
 
@@ -7,8 +5,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
-
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -19,6 +15,9 @@ class Settings(BaseSettings):
     app_name: str = "UpSkills API"
     app_version: str = "0.1.0"
     debug: bool = False
+
+    server_host: str = "0.0.0.0"
+    server_port: int = 8000
 
     # Database
     database_path: str = "upskills.db"
@@ -34,16 +33,13 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        """Get the SQLite database URL."""
         return f"sqlite+aiosqlite:///{self.database_path}"
 
     @property
     def project_root(self) -> Path:
-        """Get the project root directory."""
         return Path(__file__).parent.parent.parent.parent.parent
 
 
 @lru_cache
 def get_settings() -> Settings:
-    """Get cached settings instance."""
     return Settings()

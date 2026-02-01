@@ -8,20 +8,25 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from upskills.containers import Container
 from upskills.core.config import get_settings
-
+from upskills.api.routers import (
+        auth,
+        careers,
+        logbook,
+        paths,
+        progress,
+        teams,
+        users,
+    )
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Application lifespan handler."""
-    # Startup
     container = app.state.container
     await container.db_provider().init_db()
     yield
-    # Shutdown
     await container.db_provider().close()
 
 
-def create_app() -> FastAPI:
+def app_factory() -> FastAPI:
     """Create and configure the FastAPI application."""
     settings = get_settings()
 
@@ -47,16 +52,6 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Include routers
-    from upskills.api.routers import (
-        auth,
-        careers,
-        logbook,
-        paths,
-        progress,
-        teams,
-        users,
-    )
 
     app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
     app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
@@ -72,6 +67,3 @@ def create_app() -> FastAPI:
         return {"status": "healthy"}
 
     return app
-
-
-app = create_app()

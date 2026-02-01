@@ -55,8 +55,7 @@ dev = [
 #########################
 
 [tool.poe.tasks]
-serve = "uv run uvicorn upskills.main:app --host 0.0.0.0 --port 8000"
-serve-dev = "uv run uvicorn upskills.main:app --host 0.0.0.0 --port 8000 --reload"
+serve = "uv run python -m upskills"
 test = "uv run pytest"
 format = "uv run pre-commit run --all-files --verbose"
 lint = "uv run ruff check src tests"
@@ -138,7 +137,7 @@ ignore_missing_imports = true
 fix = true
 preview = true
 unsafe-fixes = true
-line-length = 20
+line-length = 120
 
 [tool.ruff.lint]
 extend-select = ["ALL"]
