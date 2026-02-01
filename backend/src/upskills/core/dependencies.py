@@ -1,8 +1,9 @@
 """FastAPI dependencies for authentication and authorization."""
 
 from collections.abc import AsyncIterator, Callable, Coroutine
-from typing import Annotated, Any, cast
+from typing import Annotated, Any
 
+from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,14 +17,9 @@ from upskills.repositories.user import UserRepository
 security = HTTPBearer()
 
 
-def get_db_provider(request: Request) -> DatabaseProvider:
-    """Get the database provider from the app state."""
-    provider: DatabaseProvider = cast("DatabaseProvider", request.app.state.container.db_provider())
-    return provider
-
-
+@inject
 async def get_db_session(
-    db_provider: Annotated[DatabaseProvider, Depends(get_db_provider)],
+    db_provider: Annotated[DatabaseProvider, Depends(Provide["db_provider"])],
 ) -> AsyncIterator[AsyncSession]:
     """Get a database session with proper cleanup."""
     session = await db_provider.get_session()
