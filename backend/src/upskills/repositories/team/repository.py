@@ -1,8 +1,7 @@
-"""Team repository."""
-
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from upskills.domain import RoleResponse, Team as TeamDomain, TeamMember as TeamMemberDomain, User as UserDomain
 from upskills.repositories.base import BaseRepository
 from upskills.repositories.user.models import User
 
@@ -10,10 +9,7 @@ from .models import Team, TeamMember
 
 
 class TeamRepository(BaseRepository[Team]):
-    """Repository for Team operations."""
-
-    async def get_by_id(self, team_id: int, id_column: str = "team_id") -> Team | None:
-        """Get team by ID with members loaded."""
+    async def get_by_id_with_members(self, team_id: int) -> TeamDomain | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(Team)
@@ -24,10 +20,10 @@ class TeamRepository(BaseRepository[Team]):
                 .where(Team.team_id == team_id)
             )
             result = await session.execute(stmt)
-            return result.scalar_one_or_none()
+            team = result.scalar_one_or_none()
+            return self.to_domain(team) if team else None
 
     async def get_all_with_details(self, *, skip: int = 0, limit: int = 100) -> list[Team]:
-        """Get all teams with manager and member details."""
         async with self._db_provider.session() as session:
             stmt = (
                 select(Team)
@@ -42,7 +38,6 @@ class TeamRepository(BaseRepository[Team]):
             return list(result.scalars().all())
 
     async def get_teams_by_manager(self, manager_user_id: int) -> list[Team]:
-        """Get all teams managed by a specific user."""
         async with self._db_provider.session() as session:
             stmt = (
                 select(Team)
@@ -56,7 +51,6 @@ class TeamRepository(BaseRepository[Team]):
             return list(result.scalars().all())
 
     async def get_teams_for_user(self, user_id: int) -> list[Team]:
-        """Get all teams a user is a member of."""
         async with self._db_provider.session() as session:
             stmt = (
                 select(Team)
@@ -68,7 +62,6 @@ class TeamRepository(BaseRepository[Team]):
             return list(result.scalars().all())
 
     async def add_member(self, team_id: int, user_id: int) -> None:
-        """Add a member to a team."""
         async with self._db_provider.session() as session:
             member = TeamMember(team_id=team_id, user_id=user_id)
             session.add(member)
@@ -76,7 +69,6 @@ class TeamRepository(BaseRepository[Team]):
             await session.commit()
 
     async def remove_member(self, team_id: int, user_id: int) -> None:
-        """Remove a member from a team."""
         async with self._db_provider.session() as session:
             stmt = select(TeamMember).where(
                 TeamMember.team_id == team_id, TeamMember.user_id == user_id
@@ -89,7 +81,6 @@ class TeamRepository(BaseRepository[Team]):
                 await session.commit()
 
     async def is_member(self, team_id: int, user_id: int) -> bool:
-        """Check if a user is a member of a team."""
         async with self._db_provider.session() as session:
             stmt = select(TeamMember).where(
                 TeamMember.team_id == team_id, TeamMember.user_id == user_id
@@ -98,8 +89,53 @@ class TeamRepository(BaseRepository[Team]):
             return result.scalar_one_or_none() is not None
 
     async def get_team_members(self, team_id: int) -> list[User]:
-        """Get all members of a team."""
         async with self._db_provider.session() as session:
             stmt = select(User).join(TeamMember).where(TeamMember.team_id == team_id)
             result = await session.execute(stmt)
             return list(result.scalars().all())
+
+    @staticmethod
+    def to_domain(team: Team) -> TeamDomain:
+        manager_roles: list[RoleResponse] = []
+        if team.manager and team.manager.roles:
+            manager_roles = [
+                RoleResponse(
+                    role_id=user_role.role.role_id,
+                    name=user_role.role.name,
+                    description=user_role.role.description,
+                    max_active_paths=user_role.role.max_active_paths,
+                )
+                for user_role in team.manager.roles
+                if user_role.role
+            ]
+
+        manager = None
+        if team.manager:
+            manager = UserDomain(
+                user_id=team.manager.user_id,
+                full_name=team.manager.full_name,
+                email=team.manager.email,
+                bio=team.manager.bio,
+                created_at=team.manager.created_at,
+                roles=manager_roles,
+            )
+
+        members: list[TeamMemberDomain] = []
+        if team.members:
+            members = [
+                TeamMemberDomain(
+                    user_id=tm.user.user_id,
+                    full_name=tm.user.full_name,
+                    email=tm.user.email,
+                )
+                for tm in team.members
+                if tm.user
+            ]
+
+        return TeamDomain(
+            team_id=team.team_id,
+            name=team.name,
+            manager_user_id=team.manager_user_id,
+            manager=manager,
+            members=members,
+        )

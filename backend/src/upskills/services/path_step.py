@@ -1,19 +1,10 @@
-"""Path step service."""
-
 from dependency_injector.wiring import Provide, inject
 
-from upskills.domain import (
-    PathStepCreateInput,
-    PathStepDependencyResponse,
-    PathStepResponse,
-    PathStepUpdateInput,
-)
-from upskills.repositories import PathTemplateStep, PathStepRepository, PathTemplateRepository
+from upskills.domain import PathStep
+from upskills.repositories import PathStepRepository, PathTemplateRepository
 
 
 class PathStepService:
-    """Service for path step operations."""
-
     @inject
     def __init__(
         self,
@@ -23,88 +14,39 @@ class PathStepService:
         self._path_step_repository = path_step_repository
         self._path_template_repository = path_template_repository
 
-    async def get_step(self, step_id: int) -> PathStepResponse | None:
-        """Get a step by ID."""
-        step = await self._path_step_repository.get_by_id(step_id)
-        if not step:
-            return None
-        return self._step_to_response(step)
+    async def get_step(self, step_id: int) -> PathStep | None:
+        return await self._path_step_repository.get_by_id_with_deps(step_id)
 
-    async def get_steps_for_path(self, path_template_id: int) -> list[PathStepResponse]:
-        """Get all steps for a path template."""
-        steps = await self._path_step_repository.get_by_path_template(path_template_id)
-        return [self._step_to_response(s) for s in steps]
+    async def get_steps_for_path(self, path_template_id: int) -> list[PathStep]:
+        return await self._path_step_repository.get_by_path_template(path_template_id)
 
-    async def create_step(
-        self,
-        data: PathStepCreateInput,
-    ) -> PathStepResponse:
-        """Create a new step."""
-        # Verify path exists
-        path = await self._path_template_repository.get_by_id(data.path_template_id)
+    async def create_step(self, data: PathStep) -> PathStep:
+        path = await self._path_template_repository.get_by_id(data.path_template_id, id_column="path_template_id")
         if not path:
             msg = "Path template not found"
             raise ValueError(msg)
 
-        step = await self._path_step_repository.create(data.model_dump())
-        return self._step_to_response(step)
+        db_model = await self._path_step_repository.create(data)
+        return self._path_step_repository.to_domain(db_model)
 
-    async def update_step(
-        self,
-        step_id: int,
-        data: PathStepUpdateInput,
-    ) -> PathStepResponse | None:
-        """Update a step."""
-        step = await self._path_step_repository.get_by_id(step_id)
-        if not step:
+    async def update_step(self, step_id: int, data: PathStep) -> PathStep | None:
+        db_model = await self._path_step_repository.get_by_id(step_id, id_column="step_id")
+        if not db_model:
             return None
-
-        update_data = data.model_dump(exclude_unset=True)
-
-        if update_data:
-            step = await self._path_step_repository.update(step, update_data)
-
-        return self._step_to_response(step)
+        updated = await self._path_step_repository.update(db_model, data)
+        return self._path_step_repository.to_domain(updated)
 
     async def delete_step(self, step_id: int) -> bool:
-        """Delete a step."""
-        step = await self._path_step_repository.get_by_id(step_id)
-        if not step:
+        db_model = await self._path_step_repository.get_by_id(step_id, id_column="step_id")
+        if not db_model:
             return False
-
-        await self._path_step_repository.delete(step)
+        await self._path_step_repository.delete(db_model)
         return True
 
     async def add_dependency(self, step_id: int, depends_on_step_id: int) -> bool:
-        """Add a dependency between steps."""
         await self._path_step_repository.add_dependency(step_id, depends_on_step_id)
         return True
 
     async def remove_dependency(self, step_id: int, depends_on_step_id: int) -> bool:
-        """Remove a dependency between steps."""
         await self._path_step_repository.remove_dependency(step_id, depends_on_step_id)
         return True
-
-    @staticmethod
-    def _step_to_response(step: PathTemplateStep) -> PathStepResponse:
-        """Convert PathTemplateStep to PathStepResponse."""
-        deps: list[PathStepDependencyResponse] = []
-        if step.dependencies:
-            deps.extend(
-                PathStepDependencyResponse(
-                    depends_on_step_id=dep.depends_on_step_id,
-                    depends_on_step_name=dep.depends_on_step.name if dep.depends_on_step else "",
-                )
-                for dep in step.dependencies
-            )
-
-        return PathStepResponse(
-            step_id=step.step_id,
-            path_template_id=step.path_template_id,
-            step_order=step.step_order,
-            name=step.name,
-            description=step.description,
-            duration_hours=step.duration_hours,
-            course_link=step.course_link,
-            dependencies=deps,
-        )

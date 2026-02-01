@@ -1,23 +1,21 @@
-"""Authentication router."""
-
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from upskills.api.schemas import MessageResponse, RoleResponse, UserResponse
 from upskills.core import CurrentUser
-from upskills.domain import (
+from upskills.services import AuthService
+
+from .schemas import (
     AuthResponse,
     LoginRequest,
-    MessageResponse,
     PasswordReset,
     PasswordResetRequest,
     RefreshTokenRequest,
     RegisterRequest,
     TokenResponse,
-    UserResponse,
 )
-from upskills.services import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -28,14 +26,14 @@ async def register(
     data: RegisterRequest,
     service: Annotated[AuthService, Depends(Provide["auth_service"])],
 ) -> AuthResponse:
-    """Register a new user account."""
     try:
-        return await service.register(
+        result = await service.register(
             full_name=data.full_name,
             email=data.email,
             password=data.password,
             bio=data.bio,
         )
+        return AuthResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -49,9 +47,9 @@ async def login(
     data: LoginRequest,
     service: Annotated[AuthService, Depends(Provide["auth_service"])],
 ) -> AuthResponse:
-    """Authenticate and get access tokens."""
     try:
-        return await service.login(data.email, data.password)
+        result = await service.login(data.email, data.password)
+        return AuthResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -65,9 +63,9 @@ async def refresh_tokens(
     data: RefreshTokenRequest,
     service: Annotated[AuthService, Depends(Provide["auth_service"])],
 ) -> TokenResponse:
-    """Refresh access and refresh tokens."""
     try:
-        return await service.refresh_tokens(data.refresh_token)
+        result = await service.refresh_tokens(data.refresh_token)
+        return TokenResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -81,7 +79,6 @@ async def request_password_reset(
     data: PasswordResetRequest,
     service: Annotated[AuthService, Depends(Provide["auth_service"])],
 ) -> MessageResponse:
-    """Request a password reset email."""
     token = await service.request_password_reset(data.email)
 
     # In production, send email with token
@@ -102,7 +99,6 @@ async def reset_password(
     data: PasswordReset,
     service: Annotated[AuthService, Depends(Provide["auth_service"])],
 ) -> MessageResponse:
-    """Reset password using a reset token."""
     try:
         success = await service.reset_password(data.token, data.new_password)
 
@@ -123,9 +119,6 @@ async def reset_password(
 async def get_current_user_info(
     current_user: CurrentUser,
 ) -> UserResponse:
-    """Get the current authenticated user's information."""
-    from upskills.domain import RoleResponse
-
     roles: list[RoleResponse] = []
     if current_user.roles:
         roles.extend(

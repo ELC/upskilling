@@ -1,57 +1,24 @@
-"""Log entry domain models."""
-
 from datetime import date
-
-from pydantic import Field
+from enum import StrEnum
 
 from .base import DomainModel
-from .enums import LogEntryType
 
 
-class LogEntryCreate(DomainModel):
-    """Request model for creating a log entry."""
-
-    user_id: int
-    user_career_path_id: int
-    entry_type: LogEntryType
-    entry_date: date
-    notes: str = Field(..., min_length=1)
-    related_user_path_assignment_id: int | None = None
+class LogEntryType(StrEnum):
+    MEETING = "Meeting/Conversation"
+    PATH_APPROVED = "Path Approved"
+    PATH_REJECTED = "Path Rejected"
+    FINAL_PROJECT = "Final Project"
+    GENERAL = "General"
 
 
-class LogEntryUpdate(DomainModel):
-    """Request model for updating a log entry."""
-
-    entry_type: LogEntryType | None = None
+class LogEntry(DomainModel):
+    log_entry_id: int | None = None
+    user_id: int | None = None
+    user_career_path_id: int | None = None
+    entry_type: str | None = None
     entry_date: date | None = None
-    notes: str | None = Field(None, min_length=1)
-
-
-class LogEntryCreateInput(DomainModel):
-    """Input model for creating a log entry."""
-
-    user_id: int
-    user_career_path_id: int
-    entry_type: str
-    entry_date: date
-    notes: str
+    notes: str | None = None
     related_user_path_assignment_id: int | None = None
-
-
-class LogEntryResponse(DomainModel):
-    """Response model for a log entry."""
-
-    log_entry_id: int
-    user_id: int
-    user_career_path_id: int
-    entry_type: str
-    entry_date: date
-    notes: str
-    related_user_path_assignment_id: int | None
-
-
-class LogEntryDetailResponse(LogEntryResponse):
-    """Detailed log entry response with related info."""
-
-    user_name: str
+    user_name: str | None = None
     path_name: str | None = None

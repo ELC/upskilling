@@ -1,22 +1,15 @@
-"""Path steps router."""
-
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from upskills.api.schemas import MessageResponse
 from upskills.core import CurrentUser, require_permissions
-from upskills.domain import (
-    MessageResponse,
-    PathStepCreate,
-    PathStepCreateInput,
-    PathStepResponse,
-    PathStepUpdate,
-    PathStepUpdateInput,
-    StepDependencyCreate,
-)
+from upskills.domain import PathStep
 from upskills.repositories import User
 from upskills.services import PathStepService
+
+from .schemas import PathStepCreate, PathStepResponse, PathStepUpdate, StepDependencyCreate
 
 router = APIRouter(prefix="/steps", tags=["Path Steps"])
 
@@ -28,8 +21,8 @@ async def list_steps(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     current_user: CurrentUser,
 ) -> list[PathStepResponse]:
-    """Get all steps for a path template."""
-    return await service.get_steps_for_path(path_id)
+    steps = await service.get_steps_for_path(path_id)
+    return [PathStepResponse.model_validate(s.model_dump()) for s in steps]
 
 
 @router.post("/templates/{path_id}/steps", status_code=status.HTTP_201_CREATED)
@@ -40,9 +33,8 @@ async def create_step(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> PathStepResponse:
-    """Create a new step (requires path_content.add permission)."""
     try:
-        input_data = PathStepCreateInput(
+        input_data = PathStep(
             path_template_id=path_id,
             step_order=data.step_order,
             name=data.name,
@@ -51,7 +43,7 @@ async def create_step(
             course_link=data.course_link,
         )
         result = await service.create_step(input_data)
-        return result
+        return PathStepResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -66,7 +58,6 @@ async def get_step(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     current_user: CurrentUser,
 ) -> PathStepResponse:
-    """Get a specific step."""
     result = await service.get_step(step_id)
 
     if not result:
@@ -75,7 +66,8 @@ async def get_step(
             detail="Step not found",
         )
 
-    return result
+    # Map domain object to API schema
+    return PathStepResponse.model_validate(result.model_dump())
 
 
 @router.put("/{step_id}")
@@ -86,8 +78,7 @@ async def update_step(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> PathStepResponse:
-    """Update a step (requires path_content.add permission)."""
-    input_data = PathStepUpdateInput(
+    input_data = PathStep(
         step_order=data.step_order,
         name=data.name,
         description=data.description,
@@ -102,7 +93,7 @@ async def update_step(
             detail="Step not found",
         )
 
-    return result
+    return PathStepResponse.model_validate(result.model_dump())
 
 
 @router.delete("/{step_id}")
@@ -112,7 +103,6 @@ async def delete_step(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> MessageResponse:
-    """Delete a step (requires path_content.add permission)."""
     success = await service.delete_step(step_id)
 
     if not success:
@@ -132,7 +122,6 @@ async def add_step_dependency(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> MessageResponse:
-    """Add a dependency to a step (requires path_content.add permission)."""
     await service.add_dependency(step_id, data.depends_on_step_id)
     return MessageResponse(message="Dependency added successfully.")
 
@@ -145,6 +134,5 @@ async def remove_step_dependency(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> MessageResponse:
-    """Remove a dependency from a step (requires path_content.add permission)."""
     await service.remove_dependency(step_id, depends_on_step_id)
     return MessageResponse(message="Dependency removed successfully.")
