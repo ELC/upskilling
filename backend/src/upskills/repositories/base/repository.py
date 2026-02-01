@@ -3,6 +3,7 @@
 from typing import Any, TypeVar, get_args
 
 from dependency_injector.wiring import Provide, inject
+from pydantic import BaseModel
 from sqlalchemy import select
 
 from upskills.db import DatabaseProvider
@@ -12,12 +13,34 @@ from .models import Base
 ModelType = TypeVar("ModelType", bound=Base)
 
 
+def _to_dict(data: dict[str, Any] | BaseModel, exclude_unset: bool = False) -> dict[str, Any]:
+    """Convert data to dict, handling both dicts and Pydantic models.
+
+    Args:
+        data: Either a dict or a Pydantic model.
+        exclude_unset: If True and data is a Pydantic model, exclude unset fields.
+
+    Returns:
+        Dictionary representation of the data.
+    """
+    if isinstance(data, dict):
+        return data
+    if hasattr(data, "model_dump"):
+        return data.model_dump(exclude_unset=exclude_unset)
+    msg = f"Expected dict or Pydantic model, got {type(data)}"
+    raise TypeError(msg)
+
+
 class BaseRepository[ModelType: Base]:
     """Base repository providing common CRUD operations.
 
     This follows the Repository pattern to abstract data access logic.
     Each method uses a session from the DatabaseProvider with automatic
     transaction management.
+
+    The create and update methods accept either a dict or a Pydantic model
+    (domain object). If a Pydantic model is passed, it will be automatically
+    converted to a dict using model_dump().
     """
 
     @inject
@@ -107,17 +130,18 @@ class BaseRepository[ModelType: Base]:
             result = await session.execute(stmt)
             return result.scalar() or 0
 
-    async def create(self, data: dict[str, Any]) -> ModelType:
+    async def create(self, data: dict[str, Any] | BaseModel) -> ModelType:
         """Create a new record.
 
         Args:
-            data: Dictionary of column values.
+            data: Dictionary or Pydantic model with column values.
 
         Returns:
             The created model instance.
         """
+        data_dict = _to_dict(data)
         async with self._db_provider.session() as session:
-            instance = self._model(**data)
+            instance = self._model(**data_dict)
             session.add(instance)
             await session.flush()
             await session.refresh(instance)
@@ -127,22 +151,23 @@ class BaseRepository[ModelType: Base]:
     async def update(
         self,
         instance: ModelType,
-        data: dict[str, Any],
+        data: dict[str, Any] | BaseModel,
     ) -> ModelType:
         """Update an existing record.
 
         Args:
             instance: The model instance to update.
-            data: Dictionary of column values to update.
+            data: Dictionary or Pydantic model with column values to update.
 
         Returns:
             The updated model instance.
         """
+        data_dict = _to_dict(data, exclude_unset=True)
         async with self._db_provider.session() as session:
             # Merge the instance into the new session
             instance = await session.merge(instance)
-            for key, value in data.items():
-                if hasattr(instance, key) and value is not None:
+            for key, value in data_dict.items():
+                if hasattr(instance, key):
                     setattr(instance, key, value)
             await session.flush()
             await session.refresh(instance)

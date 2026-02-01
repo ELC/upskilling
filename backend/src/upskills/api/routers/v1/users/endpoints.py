@@ -1,21 +1,14 @@
-"""Users router."""
-
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from upskills.api.schemas import MessageResponse, PaginatedResponse, UserResponse, UserWithPermissionsResponse
 from upskills.core import CurrentUser, require_permissions
-from upskills.domain import (
-    MessageResponse,
-    PaginatedResponse,
-    PasswordChange,
-    UserResponse,
-    UserUpdate,
-    UserWithPermissions,
-)
 from upskills.repositories import User
 from upskills.services import UserService
+
+from .schemas import PasswordChange, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -28,14 +21,14 @@ async def list_users(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[UserResponse]:
-    """List all users (requires team.view permission)."""
     skip = (page - 1) * page_size
-
     users, total = await service.get_all_users(skip=skip, limit=page_size)
     total_pages = (total + page_size - 1) // page_size
 
+    items = [UserResponse.model_validate(u.model_dump()) for u in users]
+
     return PaginatedResponse(
-        items=users,
+        items=items,
         total=total,
         page=page,
         page_size=page_size,
@@ -48,8 +41,7 @@ async def list_users(
 async def get_my_profile(
     service: Annotated[UserService, Depends(Provide["user_service"])],
     current_user: CurrentUser,
-) -> UserWithPermissions:
-    """Get current user's profile with permissions."""
+) -> UserWithPermissionsResponse:
     result = await service.get_user_with_permissions(current_user.user_id)
 
     if not result:
@@ -58,7 +50,7 @@ async def get_my_profile(
             detail="User not found",
         )
 
-    return result
+    return UserWithPermissionsResponse.model_validate(result.model_dump())
 
 
 @router.put("/me")
@@ -68,7 +60,6 @@ async def update_my_profile(
     service: Annotated[UserService, Depends(Provide["user_service"])],
     current_user: CurrentUser,
 ) -> UserResponse:
-    """Update current user's profile."""
     try:
         result = await service.update_user(
             current_user.user_id,
@@ -83,7 +74,7 @@ async def update_my_profile(
                 detail="User not found",
             )
 
-        return result
+        return UserResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -98,7 +89,6 @@ async def change_my_password(
     service: Annotated[UserService, Depends(Provide["user_service"])],
     current_user: CurrentUser,
 ) -> MessageResponse:
-    """Change current user's password."""
     try:
         success = await service.change_password(
             current_user.user_id,
@@ -126,7 +116,6 @@ async def get_user(
     service: Annotated[UserService, Depends(Provide["user_service"])],
     _: Annotated[User, Depends(require_permissions("team.view"))],
 ) -> UserResponse:
-    """Get a specific user (requires team.view permission)."""
     result = await service.get_user(user_id)
 
     if not result:
@@ -135,7 +124,7 @@ async def get_user(
             detail="User not found",
         )
 
-    return result
+    return UserResponse.model_validate(result.model_dump())
 
 
 @router.delete("/{user_id}")
@@ -145,10 +134,6 @@ async def delete_user(
     service: Annotated[UserService, Depends(Provide["user_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
-    """Delete a user (requires team.manage permission).
-
-    User cannot be deleted if they are a member of a team or have career paths assigned.
-    """
     try:
         success = await service.delete_user(user_id)
     except ValueError as e:
@@ -174,7 +159,6 @@ async def assign_role_to_user(
     service: Annotated[UserService, Depends(Provide["user_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
-    """Assign a role to a user (requires team.manage permission)."""
     try:
         await service.assign_role(user_id, role_name)
         return MessageResponse(message=f"Role '{role_name}' assigned to user.")
@@ -193,7 +177,6 @@ async def remove_role_from_user(
     service: Annotated[UserService, Depends(Provide["user_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
-    """Remove a role from a user (requires team.manage permission)."""
     try:
         await service.remove_role(user_id, role_name)
         return MessageResponse(message=f"Role '{role_name}' removed from user.")
