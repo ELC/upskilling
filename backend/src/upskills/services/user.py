@@ -2,11 +2,9 @@
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.core.security import hash_password, verify_password
-from upskills.models.db.user import User
-from upskills.models.domain.user import RoleResponse, UserResponse, UserWithPermissions
-from upskills.repositories.role import RoleRepository
-from upskills.repositories.user import UserRepository
+from upskills.core import hash_password, verify_password
+from upskills.models import RoleResponse, User, UserResponse, UserWithPermissions
+from upskills.repositories import RoleRepository, UserRepository
 
 
 class UserService:

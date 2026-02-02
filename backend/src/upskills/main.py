@@ -7,19 +7,19 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from upskills.db.provider import DatabaseProvider
-from upskills.injections import Container
-from upskills.core.config import get_settings
-from upskills.api.routers import (
-    auth,
-    careers,
-    logbook,
-    path_steps,
-    path_templates,
-    progress,
-    teams,
-    users,
+from upskills.api import (
+    auth_router,
+    careers_router,
+    logbook_router,
+    path_steps_router,
+    path_templates_router,
+    progress_router,
+    teams_router,
+    users_router,
 )
+from upskills.core import get_settings
+from upskills.db import DatabaseProvider
+from upskills.injections import Container
 
 @asynccontextmanager
 @inject
@@ -37,7 +37,7 @@ def app_factory() -> FastAPI:
 
     container = Container()
     container.config.from_pydantic(settings)
-    container.wire(modules=[__name__])
+    container.wire(packages=["upskills"])
 
     app = FastAPI(
         title=settings.app_name,
@@ -56,14 +56,14 @@ def app_factory() -> FastAPI:
     )
 
 
-    app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
-    app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
-    app.include_router(teams.router, prefix="/api/v1/teams", tags=["Teams"])
-    app.include_router(careers.router, prefix="/api/v1/careers", tags=["Careers"])
-    app.include_router(path_templates.router, prefix="/api/v1/paths", tags=["Path Templates"])
-    app.include_router(path_steps.router, prefix="/api/v1/steps", tags=["Path Steps"])
-    app.include_router(progress.router, prefix="/api/v1/progress", tags=["Progress"])
-    app.include_router(logbook.router, prefix="/api/v1/logbook", tags=["Logbook"])
+    app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+    app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
+    app.include_router(teams_router, prefix="/api/v1/teams", tags=["Teams"])
+    app.include_router(careers_router, prefix="/api/v1/careers", tags=["Careers"])
+    app.include_router(path_templates_router, prefix="/api/v1/paths", tags=["Path Templates"])
+    app.include_router(path_steps_router, prefix="/api/v1/steps", tags=["Path Steps"])
+    app.include_router(progress_router, prefix="/api/v1/progress", tags=["Progress"])
+    app.include_router(logbook_router, prefix="/api/v1/logbook", tags=["Logbook"])
 
     @app.get("/health")
     async def health_check() -> dict[str, str]:

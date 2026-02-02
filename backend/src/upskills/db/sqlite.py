@@ -11,8 +11,9 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from upskills.db.provider import DatabaseProvider
-from upskills.models.db.base import Base
+from upskills.models import Base
+
+from .provider import DatabaseProvider
 
 
 class SQLiteProvider(DatabaseProvider):
@@ -39,11 +40,6 @@ class SQLiteProvider(DatabaseProvider):
             expire_on_commit=False,
             autoflush=False,
         )
-
-    @property
-    def engine(self) -> AsyncEngine:
-        """Get the SQLAlchemy engine."""
-        return self._engine
 
     async def init_db(self) -> None:
         """Initialize the database by creating all tables."""
@@ -75,7 +71,3 @@ class SQLiteProvider(DatabaseProvider):
             raise
         finally:
             await session.close()
-
-    async def get_session(self) -> AsyncSession:
-        """Get a new session for dependency injection."""
-        return self._session_factory()

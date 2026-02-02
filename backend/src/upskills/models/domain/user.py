@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import EmailStr, Field
 
-from upskills.models.domain.base import DomainModel
+from .base import DomainModel
 
 # === Request Models ===
 

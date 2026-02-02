@@ -1,6 +1,6 @@
 """Pydantic domain models."""
 
-from upskills.models.domain.auth import (
+from .auth import (
     AuthResponse,
     LoginRequest,
     RefreshTokenRequest,
@@ -8,31 +8,37 @@ from upskills.models.domain.auth import (
     TokenPayload,
     TokenResponse,
 )
-from upskills.models.domain.base import DomainModel, MessageResponse, PaginatedResponse
-from upskills.models.domain.career import (
+from .base import DomainModel, MessageResponse, PaginatedResponse
+from .career import (
     CareerCreate,
     CareerResponse,
     CareerUpdate,
     CareerWithPathsResponse,
     PathStepCreate,
+    PathStepCreateInput,
     PathStepDependencyResponse,
     PathStepResponse,
     PathStepUpdate,
+    PathStepUpdateInput,
     PathTemplateCreate,
+    PathTemplateCreateInput,
     PathTemplateResponse,
     PathTemplateUpdate,
+    PathTemplateUpdateInput,
     PathTemplateWithStepsResponse,
     StepDependencyCreate,
 )
-from upskills.models.domain.progress import (
+from .progress import (
     DashboardStats,
     LogEntryCreate,
+    LogEntryCreateInput,
     LogEntryDetailResponse,
     LogEntryResponse,
     LogEntryType,
     LogEntryUpdate,
     MenteeProgressSummary,
     ProgressStatus,
+    StepProgressUpdateInput,
     UserCareerPathCreate,
     UserCareerPathDetailResponse,
     UserCareerPathResponse,
@@ -45,7 +51,7 @@ from upskills.models.domain.progress import (
     UserStepProgressUpdate,
     ValidationStatus,
 )
-from upskills.models.domain.team import (
+from .team import (
     TeamCreate,
     TeamListResponse,
     TeamMemberAdd,
@@ -55,7 +61,7 @@ from upskills.models.domain.team import (
     TeamUpdate,
     TeamWithMembersResponse,
 )
-from upskills.models.domain.user import (
+from .user import (
     ActionResponse,
     PasswordChange,
     PasswordReset,
@@ -80,6 +86,7 @@ __all__ = [
     # Base
     "DomainModel",
     "LogEntryCreate",
+    "LogEntryCreateInput",
     "LogEntryDetailResponse",
     "LogEntryResponse",
     "LogEntryType",
@@ -93,12 +100,16 @@ __all__ = [
     "PasswordReset",
     "PasswordResetRequest",
     "PathStepCreate",
+    "PathStepCreateInput",
     "PathStepDependencyResponse",
     "PathStepResponse",
     "PathStepUpdate",
+    "PathStepUpdateInput",
     "PathTemplateCreate",
+    "PathTemplateCreateInput",
     "PathTemplateResponse",
     "PathTemplateUpdate",
+    "PathTemplateUpdateInput",
     "PathTemplateWithStepsResponse",
     # Progress
     "ProgressStatus",
@@ -106,6 +117,7 @@ __all__ = [
     "RegisterRequest",
     "RoleResponse",
     "StepDependencyCreate",
+    "StepProgressUpdateInput",
     # Team
     "TeamCreate",
     "TeamListResponse",

@@ -5,12 +5,12 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from upskills.core.dependencies import CurrentUser, require_permissions
-from upskills.models.db.user import User
-from upskills.models.domain.progress import (
+from upskills.core import CurrentUser, require_permissions
+from upskills.models import (
     DashboardStats,
     MenteeProgressSummary,
     StepProgressUpdateInput,
+    User,
     UserCareerPathCreate,
     UserCareerPathDetailResponse,
     UserCareerPathResponse,
@@ -22,8 +22,7 @@ from upskills.models.domain.progress import (
     UserStepProgressResponse,
     UserStepProgressUpdate,
 )
-from upskills.services.progress import ProgressService
-from upskills.services.team import TeamService
+from upskills.services import ProgressService, TeamService
 
 router = APIRouter()
 

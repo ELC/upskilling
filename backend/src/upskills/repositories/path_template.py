@@ -3,8 +3,9 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from upskills.models.db.career import PathTemplate, PathTemplateStep
-from upskills.repositories.base import BaseRepository
+from upskills.models import PathTemplate, PathTemplateStep
+
+from .base import BaseRepository
 
 
 class PathTemplateRepository(BaseRepository[PathTemplate]):
@@ -14,38 +15,41 @@ class PathTemplateRepository(BaseRepository[PathTemplate]):
         self, path_template_id: int, id_column: str = "path_template_id"
     ) -> PathTemplate | None:
         """Get path template by ID with steps."""
-        stmt = (
-            select(PathTemplate)
-            .options(
-                selectinload(PathTemplate.career),
-                selectinload(PathTemplate.steps).selectinload(PathTemplateStep.dependencies),
+        async with self._db_provider.session() as session:
+            stmt = (
+                select(PathTemplate)
+                .options(
+                    selectinload(PathTemplate.career),
+                    selectinload(PathTemplate.steps).selectinload(PathTemplateStep.dependencies),
+                )
+                .where(PathTemplate.path_template_id == path_template_id)
             )
-            .where(PathTemplate.path_template_id == path_template_id)
-        )
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
 
     async def get_by_career(self, career_id: int) -> list[PathTemplate]:
         """Get all path templates for a career."""
-        stmt = (
-            select(PathTemplate)
-            .options(selectinload(PathTemplate.steps))
-            .where(PathTemplate.career_id == career_id)
-            .order_by(PathTemplate.default_start_offset_days)
-        )
-        result = await self._session.execute(stmt)
-        return list(result.scalars().all())
+        async with self._db_provider.session() as session:
+            stmt = (
+                select(PathTemplate)
+                .options(selectinload(PathTemplate.steps))
+                .where(PathTemplate.career_id == career_id)
+                .order_by(PathTemplate.default_start_offset_days)
+            )
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
 
     async def get_all_with_details(self, *, skip: int = 0, limit: int = 100) -> list[PathTemplate]:
         """Get all path templates with career and steps."""
-        stmt = (
-            select(PathTemplate)
-            .options(
-                selectinload(PathTemplate.career),
-                selectinload(PathTemplate.steps),
+        async with self._db_provider.session() as session:
+            stmt = (
+                select(PathTemplate)
+                .options(
+                    selectinload(PathTemplate.career),
+                    selectinload(PathTemplate.steps),
+                )
+                .offset(skip)
+                .limit(limit)
             )
-            .offset(skip)
-            .limit(limit)
-        )
-        result = await self._session.execute(stmt)
-        return list(result.scalars().all())
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
