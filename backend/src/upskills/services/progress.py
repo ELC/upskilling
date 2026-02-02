@@ -17,13 +17,11 @@ from upskills.models.domain.progress import (
     UserPathAssignmentResponse,
     UserStepProgressResponse,
 )
-from upskills.repositories.career import PathTemplateRepository
-from upskills.repositories.progress import (
-    UserCareerPathRepository,
-    UserPathAssignmentRepository,
-    UserStepProgressRepository,
-)
+from upskills.repositories.path_template import PathTemplateRepository
 from upskills.repositories.user import UserRepository
+from upskills.repositories.user_career_path import UserCareerPathRepository
+from upskills.repositories.user_path_assignment import UserPathAssignmentRepository
+from upskills.repositories.user_step_progress import UserStepProgressRepository
 
 
 class ProgressService:
