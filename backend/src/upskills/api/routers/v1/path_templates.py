@@ -19,7 +19,7 @@ from upskills.models import (
 )
 from upskills.services import PathTemplateService
 
-router = APIRouter()
+router = APIRouter(prefix="/paths", tags=["Path Templates"])
 
 
 @router.get("")

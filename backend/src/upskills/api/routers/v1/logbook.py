@@ -17,7 +17,7 @@ from upskills.models import (
 )
 from upskills.services import LogbookService
 
-router = APIRouter()
+router = APIRouter(prefix="/logbook", tags=["Logbook"])
 
 
 @router.get("/career-path/{career_path_id}")

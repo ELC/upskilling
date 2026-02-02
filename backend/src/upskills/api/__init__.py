@@ -1,23 +1,12 @@
 """API module."""
 
-from .routers import (
-    auth_router,
-    careers_router,
-    logbook_router,
-    path_steps_router,
-    path_templates_router,
-    progress_router,
-    teams_router,
-    users_router,
-)
+from .app import app_factory
+from .routers import base_router, v1_router
+from .server import server_factory
 
 __all__ = [
-    "auth_router",
-    "careers_router",
-    "logbook_router",
-    "path_steps_router",
-    "path_templates_router",
-    "progress_router",
-    "teams_router",
-    "users_router",
+    "app_factory",
+    "base_router",
+    "server_factory",
+    "v1_router",
 ]
