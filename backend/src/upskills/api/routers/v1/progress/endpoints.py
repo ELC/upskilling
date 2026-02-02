@@ -47,7 +47,7 @@ async def get_my_career_paths(
     current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> list[UserCareerPathDetailResponse]:
-    paths = await service.get_user_career_paths(current_user.user_id)
+    paths = await service.get_user_paths(current_user.user_id)
     return [UserCareerPathDetailResponse.model_validate(p.model_dump()) for p in paths]
 
 
@@ -57,7 +57,7 @@ async def get_career_path(
     career_path_id: int,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserCareerPathDetailResponse:
-    result = await service.get_career_path(career_path_id)
+    result = await service.get_path(career_path_id)
 
     if not result:
         raise HTTPException(
@@ -85,7 +85,7 @@ async def assign_career_path(
             start_date=data.start_date,
             end_date=data.end_date,
         )
-        result = await service.assign_career_path(input_data)
+        result = await service.assign(input_data)
         return UserCareerPathResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
@@ -108,7 +108,7 @@ async def update_career_path(
         start_date=data.start_date,
         end_date=data.end_date,
     )
-    result = await service.update_career_path(career_path_id, input_data)
+    result = await service.update(career_path_id, input_data)
 
     if not result:
         raise HTTPException(
