@@ -1,51 +1,19 @@
-"""Authentication domain models."""
-
-from pydantic import EmailStr, Field
+from enum import StrEnum
 
 from .base import DomainModel
-from .user import UserResponse
+from .user import User as UserDomain
 
 
-class LoginRequest(DomainModel):
-    """Request model for login."""
-
-    email: EmailStr
-    password: str
+class TokenType(StrEnum):
+    BEARER = "bearer"
 
 
-class RegisterRequest(DomainModel):
-    """Request model for user registration."""
-
-    full_name: str = Field(..., min_length=1, max_length=255)
-    email: EmailStr
-    password: str = Field(..., min_length=8, max_length=128)
-    bio: str | None = None
-
-
-class TokenResponse(DomainModel):
-    """Response model for authentication tokens."""
-
+class Token(DomainModel):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: TokenType = TokenType.BEARER
 
 
-class TokenPayload(DomainModel):
-    """JWT token payload model."""
-
-    sub: str  # user_id as string
-    exp: int  # expiration timestamp
-    type: str  # "access" or "refresh"
-
-
-class RefreshTokenRequest(DomainModel):
-    """Request model for refreshing tokens."""
-
-    refresh_token: str
-
-
-class AuthResponse(DomainModel):
-    """Full authentication response with user and tokens."""
-
-    user: UserResponse
-    tokens: TokenResponse
+class AuthResult(DomainModel):
+    user: UserDomain
+    tokens: Token

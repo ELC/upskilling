@@ -1,23 +1,20 @@
-"""Path templates router."""
-
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from upskills.api.schemas import MessageResponse, PaginatedResponse
 from upskills.core import CurrentUser, require_permissions
-from upskills.domain import (
-    MessageResponse,
-    PaginatedResponse,
-    PathTemplateCreate,
-    PathTemplateCreateInput,
-    PathTemplateResponse,
-    PathTemplateUpdate,
-    PathTemplateUpdateInput,
-    PathTemplateWithStepsResponse,
-)
+from upskills.domain import PathTemplate
 from upskills.repositories import User
 from upskills.services import PathTemplateService
+
+from .schemas import (
+    PathTemplateCreate,
+    PathTemplateResponse,
+    PathTemplateUpdate,
+    PathTemplateWithStepsResponse,
+)
 
 router = APIRouter(prefix="/paths", tags=["Path Templates"])
 
@@ -31,14 +28,15 @@ async def list_paths(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[PathTemplateResponse]:
-    """List all path templates, optionally filtered by career."""
     skip = (page - 1) * page_size
 
     paths, total = await service.get_all_paths(skip=skip, limit=page_size, career_id=career_id)
     total_pages = (total + page_size - 1) // page_size if total > 0 else 1
 
+    items = [PathTemplateResponse.model_validate(p.model_dump()) for p in paths]
+
     return PaginatedResponse(
-        items=paths,
+        items=items,
         total=total,
         page=page,
         page_size=page_size,
@@ -53,9 +51,8 @@ async def create_path(
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
     _: Annotated[User, Depends(require_permissions("path_template.create"))],
 ) -> PathTemplateResponse:
-    """Create a new path template (requires path_template.create permission)."""
     try:
-        input_data = PathTemplateCreateInput(
+        input_data = PathTemplate(
             career_id=data.career_id,
             name=data.name,
             description=data.description,
@@ -64,7 +61,7 @@ async def create_path(
             default_deadline_offset_days=data.default_deadline_offset_days,
         )
         result = await service.create_path(input_data)
-        return result
+        return PathTemplateResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -79,7 +76,6 @@ async def get_path(
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
     current_user: CurrentUser,
 ) -> PathTemplateWithStepsResponse:
-    """Get a specific path template with its steps."""
     result = await service.get_path(path_id)
 
     if not result:
@@ -88,7 +84,8 @@ async def get_path(
             detail="Path template not found",
         )
 
-    return result
+    # Map domain object to API schema
+    return PathTemplateWithStepsResponse.model_validate(result.model_dump())
 
 
 @router.put("/{path_id}")
@@ -99,8 +96,7 @@ async def update_path(
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
     _: Annotated[User, Depends(require_permissions("path_template.update"))],
 ) -> PathTemplateResponse:
-    """Update a path template (requires path_template.update permission)."""
-    input_data = PathTemplateUpdateInput(
+    input_data = PathTemplate(
         name=data.name,
         description=data.description,
         duration_hours=data.duration_hours,
@@ -115,7 +111,7 @@ async def update_path(
             detail="Path template not found",
         )
 
-    return result
+    return PathTemplateResponse.model_validate(result.model_dump())
 
 
 @router.delete("/{path_id}")
@@ -125,7 +121,6 @@ async def delete_path(
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
     _: Annotated[User, Depends(require_permissions("path_template.update"))],
 ) -> MessageResponse:
-    """Delete a path template (requires path_template.update permission)."""
     success = await service.delete_path(path_id)
 
     if not success:

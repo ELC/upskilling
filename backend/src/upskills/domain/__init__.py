@@ -1,144 +1,44 @@
-"""Domain models package."""
-
-from .auth import (
-    AuthResponse,
-    LoginRequest,
-    RefreshTokenRequest,
-    RegisterRequest,
-    TokenPayload,
-    TokenResponse,
-)
-from .base import DomainModel, MessageResponse, PaginatedResponse
-from .career import CareerCreate, CareerResponse, CareerUpdate, CareerWithPathsResponse
-from .dashboard import DashboardStats, MenteeProgressSummary
-from .enums import LogEntryType, ProgressStatus, ValidationStatus
-from .log_entry import (
-    LogEntryCreate,
-    LogEntryCreateInput,
-    LogEntryDetailResponse,
-    LogEntryResponse,
-    LogEntryUpdate,
-)
-from .path_step import (
-    PathStepCreate,
-    PathStepCreateInput,
-    PathStepDependencyResponse,
-    PathStepResponse,
-    PathStepUpdate,
-    PathStepUpdateInput,
-    StepDependencyCreate,
-)
-from .path_template import (
-    PathTemplateCreate,
-    PathTemplateCreateInput,
-    PathTemplateResponse,
-    PathTemplateUpdate,
-    PathTemplateUpdateInput,
-    PathTemplateWithStepsResponse,
+from .auth import AuthResult, Token, TokenType
+from .base import DomainModel
+from .career import Career
+from .log_entry import LogEntry, LogEntryType
+from .path_step import PathStep, PathStepDependency
+from .path_template import PathTemplate
+from .progress import (
+    DashboardStats,
+    MenteeProgressSummary,
+    ProgressStatus,
+    UserCareerPath,
+    UserPathAssignment,
+    UserStepProgress,
+    ValidationStatus,
 )
 from .role import ActionResponse, RoleResponse
-from .team import (
-    TeamCreate,
-    TeamListResponse,
-    TeamMemberAdd,
-    TeamMemberBulkAdd,
-    TeamMemberResponse,
-    TeamResponse,
-    TeamUpdate,
-    TeamWithMembersResponse,
-)
-from .user import (
-    PasswordChange,
-    PasswordReset,
-    PasswordResetRequest,
-    UserCreate,
-    UserInDB,
-    UserResponse,
-    UserUpdate,
-    UserWithPermissions,
-)
-from .user_career_path import (
-    UserCareerPathCreate,
-    UserCareerPathDetailResponse,
-    UserCareerPathResponse,
-    UserCareerPathUpdate,
-)
-from .user_path_assignment import (
-    UserPathAssignmentCreate,
-    UserPathAssignmentDetailResponse,
-    UserPathAssignmentResponse,
-    UserPathAssignmentUpdate,
-)
-from .user_step_progress import (
-    StepProgressUpdateInput,
-    UserStepProgressResponse,
-    UserStepProgressUpdate,
-)
+from .team import Team, TeamListItem, TeamMember
+from .user import User
 
 __all__ = [
     "ActionResponse",
-    "AuthResponse",
-    "CareerCreate",
-    "CareerResponse",
-    "CareerUpdate",
-    "CareerWithPathsResponse",
+    "AuthResult",
+    "Career",
     "DashboardStats",
     "DomainModel",
-    "LogEntryCreate",
-    "LogEntryCreateInput",
-    "LogEntryDetailResponse",
-    "LogEntryResponse",
+    "LogEntry",
     "LogEntryType",
-    "LogEntryUpdate",
-    "LoginRequest",
     "MenteeProgressSummary",
-    "MessageResponse",
-    "PaginatedResponse",
-    "PasswordChange",
-    "PasswordReset",
-    "PasswordResetRequest",
-    "PathStepCreate",
-    "PathStepCreateInput",
-    "PathStepDependencyResponse",
-    "PathStepResponse",
-    "PathStepUpdate",
-    "PathStepUpdateInput",
-    "PathTemplateCreate",
-    "PathTemplateCreateInput",
-    "PathTemplateResponse",
-    "PathTemplateUpdate",
-    "PathTemplateUpdateInput",
-    "PathTemplateWithStepsResponse",
+    "PathStep",
+    "PathStepDependency",
+    "PathTemplate",
     "ProgressStatus",
-    "RefreshTokenRequest",
-    "RegisterRequest",
     "RoleResponse",
-    "StepDependencyCreate",
-    "StepProgressUpdateInput",
-    "TeamCreate",
-    "TeamListResponse",
-    "TeamMemberAdd",
-    "TeamMemberBulkAdd",
-    "TeamMemberResponse",
-    "TeamResponse",
-    "TeamUpdate",
-    "TeamWithMembersResponse",
-    "TokenPayload",
-    "TokenResponse",
-    "UserCareerPathCreate",
-    "UserCareerPathDetailResponse",
-    "UserCareerPathResponse",
-    "UserCareerPathUpdate",
-    "UserCreate",
-    "UserInDB",
-    "UserPathAssignmentCreate",
-    "UserPathAssignmentDetailResponse",
-    "UserPathAssignmentResponse",
-    "UserPathAssignmentUpdate",
-    "UserResponse",
-    "UserStepProgressResponse",
-    "UserStepProgressUpdate",
-    "UserUpdate",
-    "UserWithPermissions",
+    "Team",
+    "TeamListItem",
+    "TeamMember",
+    "Token",
+    "TokenType",
+    "User",
+    "UserCareerPath",
+    "UserPathAssignment",
+    "UserStepProgress",
     "ValidationStatus",
 ]

@@ -1,11 +1,10 @@
-"""User repository."""
-
 import secrets
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from upskills.domain import User as UserDomain
 from upskills.repositories.base import BaseRepository
 from upskills.repositories.team.models import TeamMember
 from upskills.repositories.user_career_path.models import UserCareerPath
@@ -14,10 +13,7 @@ from .models import Action, PasswordResetToken, Role, User, UserRole
 
 
 class UserRepository(BaseRepository[User]):
-    """Repository for User operations."""
-
-    async def get_by_id(self, user_id: int, id_column: str = "user_id") -> User | None:
-        """Get user by ID with roles loaded."""
+    async def get_by_id_with_roles(self, user_id: int) -> UserDomain | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(User)
@@ -25,33 +21,22 @@ class UserRepository(BaseRepository[User]):
                 .where(User.user_id == user_id)
             )
             result = await session.execute(stmt)
-            return result.scalar_one_or_none()
+            user = result.scalar_one_or_none()
+            return self.to_domain(user) if user else None
 
     async def get_by_email(self, email: str) -> User | None:
-        """Get user by email with roles loaded."""
         async with self._db_provider.session() as session:
-            stmt = (
-                select(User)
-                .options(selectinload(User.roles).selectinload(UserRole.role))
-                .where(User.email == email)
-            )
+            stmt = select(User).options(selectinload(User.roles).selectinload(UserRole.role)).where(User.email == email)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
 
-    async def get_all_with_roles(self, *, skip: int = 0, limit: int = 100) -> list[User]:
-        """Get all users with their roles."""
+    async def get_all_with_roles(self, *, skip: int = 0, limit: int = 100) -> list[UserDomain]:
         async with self._db_provider.session() as session:
-            stmt = (
-                select(User)
-                .options(selectinload(User.roles).selectinload(UserRole.role))
-                .offset(skip)
-                .limit(limit)
-            )
+            stmt = select(User).options(selectinload(User.roles).selectinload(UserRole.role)).offset(skip).limit(limit)
             result = await session.execute(stmt)
-            return list(result.scalars().all())
+            return [self.to_domain(u) for u in result.scalars().all()]
 
     async def get_user_permissions(self, user_id: int) -> list[str]:
-        """Get all permission action keys for a user."""
         async with self._db_provider.session() as session:
             stmt = (
                 select(Action.action_key)
@@ -65,7 +50,6 @@ class UserRepository(BaseRepository[User]):
             return list(result.scalars().all())
 
     async def assign_role(self, user_id: int, role_id: int) -> None:
-        """Assign a role to a user."""
         async with self._db_provider.session() as session:
             user_role = UserRole(user_id=user_id, role_id=role_id)
             session.add(user_role)
@@ -73,7 +57,6 @@ class UserRepository(BaseRepository[User]):
             await session.commit()
 
     async def remove_role(self, user_id: int, role_id: int) -> None:
-        """Remove a role from a user."""
         async with self._db_provider.session() as session:
             stmt = select(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
             result = await session.execute(stmt)
@@ -84,7 +67,6 @@ class UserRepository(BaseRepository[User]):
                 await session.commit()
 
     async def create_password_reset_token(self, user_id: int, expires_hours: int = 24) -> str:
-        """Create a password reset token for a user."""
         async with self._db_provider.session() as session:
             token = secrets.token_urlsafe(32)
             expires_at = datetime.now(UTC) + timedelta(hours=expires_hours)
@@ -100,7 +82,6 @@ class UserRepository(BaseRepository[User]):
             return token
 
     async def get_password_reset_token(self, token: str) -> PasswordResetToken | None:
-        """Get a valid password reset token."""
         async with self._db_provider.session() as session:
             stmt = select(PasswordResetToken).where(
                 PasswordResetToken.token == token,
@@ -111,7 +92,6 @@ class UserRepository(BaseRepository[User]):
             return result.scalar_one_or_none()
 
     async def mark_token_used(self, token: PasswordResetToken) -> None:
-        """Mark a password reset token as used."""
         async with self._db_provider.session() as session:
             token = await session.merge(token)
             token.used = True
@@ -119,15 +99,17 @@ class UserRepository(BaseRepository[User]):
             await session.commit()
 
     async def has_team_memberships(self, user_id: int) -> bool:
-        """Check if a user is a member of any team."""
         async with self._db_provider.session() as session:
             stmt = select(TeamMember).where(TeamMember.user_id == user_id).limit(1)
             result = await session.execute(stmt)
             return result.scalar_one_or_none() is not None
 
     async def has_career_paths(self, user_id: int) -> bool:
-        """Check if a user has any assigned career paths."""
         async with self._db_provider.session() as session:
             stmt = select(UserCareerPath).where(UserCareerPath.user_id == user_id).limit(1)
             result = await session.execute(stmt)
             return result.scalar_one_or_none() is not None
+
+    @staticmethod
+    def to_domain(user: User) -> UserDomain:
+        return UserDomain.model_validate(user.model_dump())
