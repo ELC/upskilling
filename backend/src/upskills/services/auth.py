@@ -1,6 +1,6 @@
 """Authentication service."""
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from dependency_injector.wiring import Provide, inject
 
 from upskills.core.security import (
     create_access_token,
@@ -18,10 +18,14 @@ from upskills.repositories.user import RoleRepository, UserRepository
 class AuthService:
     """Service for authentication operations."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
-        self._user_repo = UserRepository(session)
-        self._role_repo = RoleRepository(session)
+    @inject
+    def __init__(
+        self,
+        user_repository: UserRepository = Provide["user_repository"],
+        role_repository: RoleRepository = Provide["role_repository"],
+    ) -> None:
+        self._user_repository = user_repository
+        self._role_repository = role_repository
 
     async def register(
         self,
@@ -32,13 +36,13 @@ class AuthService:
     ) -> AuthResponse:
         """Register a new user."""
         # Check if email already exists
-        existing = await self._user_repo.get_by_email(email)
+        existing = await self._user_repository.get_by_email(email)
         if existing:
             msg = "Email already registered"
             raise ValueError(msg)
 
         # Create user
-        user = await self._user_repo.create({
+        user = await self._user_repository.create({
             "full_name": full_name,
             "email": email,
             "password_hash": hash_password(password),
@@ -46,11 +50,11 @@ class AuthService:
         })
 
         # Assign default role (mentee)
-        mentee_role = await self._role_repo.get_by_name("mentee")
+        mentee_role = await self._role_repository.get_by_name("mentee")
         if mentee_role:
-            await self._user_repo.assign_role(user.user_id, mentee_role.role_id)
+            await self._user_repository.assign_role(user.user_id, mentee_role.role_id)
             # Refresh to get the role
-            refreshed_user = await self._user_repo.get_by_id(user.user_id)
+            refreshed_user = await self._user_repository.get_by_id(user.user_id)
             if refreshed_user:
                 user = refreshed_user
 
@@ -64,7 +68,7 @@ class AuthService:
 
     async def login(self, email: str, password: str) -> AuthResponse:
         """Authenticate a user and return tokens."""
-        user = await self._user_repo.get_by_email(email)
+        user = await self._user_repository.get_by_email(email)
 
         if not user or not verify_password(password, user.password_hash):
             msg = "Invalid email or password"
@@ -86,7 +90,7 @@ class AuthService:
             raise ValueError(msg)
 
         user_id = int(user_id_str)
-        user = await self._user_repo.get_by_id(user_id)
+        user = await self._user_repository.get_by_id(user_id)
 
         if not user:
             msg = "User not found"
@@ -96,27 +100,27 @@ class AuthService:
 
     async def request_password_reset(self, email: str) -> str | None:
         """Request a password reset token."""
-        user = await self._user_repo.get_by_email(email)
+        user = await self._user_repository.get_by_email(email)
 
         if not user:
             # Don't reveal whether email exists
             return None
 
-        return await self._user_repo.create_password_reset_token(user.user_id)
+        return await self._user_repository.create_password_reset_token(user.user_id)
 
     async def reset_password(self, token: str, new_password: str) -> bool:
         """Reset password using a reset token."""
-        reset_token = await self._user_repo.get_password_reset_token(token)
+        reset_token = await self._user_repository.get_password_reset_token(token)
 
         if not reset_token:
             msg = "Invalid or expired reset token"
             raise ValueError(msg)
 
         # Update password
-        user = await self._user_repo.get_by_id(reset_token.user_id)
+        user = await self._user_repository.get_by_id(reset_token.user_id)
         if user:
-            await self._user_repo.update(user, {"password_hash": hash_password(new_password)})
-            await self._user_repo.mark_token_used(reset_token)
+            await self._user_repository.update(user, {"password_hash": hash_password(new_password)})
+            await self._user_repository.mark_token_used(reset_token)
             return True
 
         return False

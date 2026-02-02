@@ -2,9 +2,10 @@
 
 from typing import Annotated
 
+from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from upskills.core.dependencies import CurrentUser, DbSession, require_permissions
+from upskills.core.dependencies import CurrentUser, require_permissions
 from upskills.models.db.user import User
 from upskills.models.domain.base import MessageResponse, PaginatedResponse
 from upskills.models.domain.career import (
@@ -19,14 +20,14 @@ router = APIRouter()
 
 
 @router.get("")
+@inject
 async def list_careers(
-    session: DbSession,
+    service: Annotated[CareerService, Depends(Provide["career_service"])],
     current_user: CurrentUser,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[CareerResponse]:
     """List all careers."""
-    service = CareerService(session)
     skip = (page - 1) * page_size
 
     careers, total = await service.get_all_careers(skip=skip, limit=page_size)
@@ -42,29 +43,28 @@ async def list_careers(
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
+@inject
 async def create_career(
     data: CareerCreate,
-    session: DbSession,
+    service: Annotated[CareerService, Depends(Provide["career_service"])],
     _: Annotated[User, Depends(require_permissions("career.create"))],
 ) -> CareerResponse:
     """Create a new career (requires career.create permission)."""
-    service = CareerService(session)
     result = await service.create_career(
         name=data.name,
         specialization=data.specialization,
     )
-    await session.commit()
     return result
 
 
 @router.get("/{career_id}")
+@inject
 async def get_career(
     career_id: int,
-    session: DbSession,
+    service: Annotated[CareerService, Depends(Provide["career_service"])],
     current_user: CurrentUser,
 ) -> CareerWithPathsResponse:
     """Get a specific career with its paths."""
-    service = CareerService(session)
     result = await service.get_career(career_id)
 
     if not result:
@@ -77,20 +77,19 @@ async def get_career(
 
 
 @router.put("/{career_id}")
+@inject
 async def update_career(
     career_id: int,
     data: CareerUpdate,
-    session: DbSession,
+    service: Annotated[CareerService, Depends(Provide["career_service"])],
     _: Annotated[User, Depends(require_permissions("career.update"))],
 ) -> CareerResponse:
     """Update a career (requires career.update permission)."""
-    service = CareerService(session)
     result = await service.update_career(
         career_id,
         name=data.name,
         specialization=data.specialization,
     )
-    await session.commit()
 
     if not result:
         raise HTTPException(
@@ -102,15 +101,14 @@ async def update_career(
 
 
 @router.delete("/{career_id}")
+@inject
 async def delete_career(
     career_id: int,
-    session: DbSession,
+    service: Annotated[CareerService, Depends(Provide["career_service"])],
     _: Annotated[User, Depends(require_permissions("career.update"))],
 ) -> MessageResponse:
     """Delete a career (requires career.update permission)."""
-    service = CareerService(session)
     success = await service.delete_career(career_id)
-    await session.commit()
 
     if not success:
         raise HTTPException(

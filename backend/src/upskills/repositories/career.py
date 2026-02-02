@@ -1,7 +1,6 @@
 """Career and path template repositories."""
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from upskills.models.db.career import (
@@ -15,9 +14,6 @@ from upskills.repositories.base import BaseRepository
 
 class CareerRepository(BaseRepository[Career]):
     """Repository for Career operations."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, Career)
 
     async def get_by_id(self, career_id: int, id_column: str = "career_id") -> Career | None:
         """Get career by ID with path templates."""
@@ -38,9 +34,6 @@ class CareerRepository(BaseRepository[Career]):
 
 class PathTemplateRepository(BaseRepository[PathTemplate]):
     """Repository for PathTemplate operations."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, PathTemplate)
 
     async def get_by_id(
         self, path_template_id: int, id_column: str = "path_template_id"
@@ -86,9 +79,6 @@ class PathTemplateRepository(BaseRepository[PathTemplate]):
 class PathStepRepository(BaseRepository[PathTemplateStep]):
     """Repository for PathTemplateStep operations."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, PathTemplateStep)
-
     async def get_by_id(self, step_id: int, id_column: str = "step_id") -> PathTemplateStep | None:
         """Get step by ID with dependencies."""
         stmt = (
@@ -115,6 +105,7 @@ class PathStepRepository(BaseRepository[PathTemplateStep]):
         dep = PathStepDependency(step_id=step_id, depends_on_step_id=depends_on_step_id)
         self._session.add(dep)
         await self._session.flush()
+        await self._session.commit()
 
     async def remove_dependency(self, step_id: int, depends_on_step_id: int) -> None:
         """Remove a dependency between steps."""
@@ -127,3 +118,4 @@ class PathStepRepository(BaseRepository[PathTemplateStep]):
         if dep:
             await self._session.delete(dep)
             await self._session.flush()
+            await self._session.commit()

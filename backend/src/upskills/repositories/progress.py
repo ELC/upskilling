@@ -1,7 +1,6 @@
 """Progress tracking repositories."""
 
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from upskills.models.db.career import PathTemplate
@@ -16,9 +15,6 @@ from upskills.repositories.base import BaseRepository
 
 class UserCareerPathRepository(BaseRepository[UserCareerPath]):
     """Repository for UserCareerPath operations."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, UserCareerPath)
 
     async def get_by_id(
         self, user_career_path_id: int, id_column: str = "user_career_path_id"
@@ -70,9 +66,6 @@ class UserCareerPathRepository(BaseRepository[UserCareerPath]):
 
 class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
     """Repository for UserPathAssignment operations."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, UserPathAssignment)
 
     async def get_by_id(
         self, assignment_id: int, id_column: str = "user_path_assignment_id"
@@ -146,9 +139,6 @@ class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
 class UserStepProgressRepository(BaseRepository[UserStepProgress]):
     """Repository for UserStepProgress operations."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, UserStepProgress)
-
     async def get_by_id(
         self, progress_id: int, id_column: str = "user_step_progress_id"
     ) -> UserStepProgress | None:
@@ -188,6 +178,7 @@ class UserStepProgressRepository(BaseRepository[UserStepProgress]):
             )
             self._session.add(progress)
             await self._session.flush()
+            await self._session.commit()
             await self._session.refresh(progress)
 
         return progress
@@ -195,9 +186,6 @@ class UserStepProgressRepository(BaseRepository[UserStepProgress]):
 
 class LogEntryRepository(BaseRepository[LogEntry]):
     """Repository for LogEntry operations."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, LogEntry)
 
     async def get_by_id(
         self, log_entry_id: int, id_column: str = "log_entry_id"
