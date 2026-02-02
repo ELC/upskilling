@@ -3,8 +3,8 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from upskills.api.dependencies import CurrentUser
 from upskills.api.schemas import MessageResponse, RoleResponse, UserResponse
-from upskills.core import CurrentUser
 from upskills.services import AuthService
 
 from .schemas import (
@@ -80,12 +80,7 @@ async def request_password_reset(
     service: Annotated[AuthService, Depends(Provide["auth_service"])],
 ) -> MessageResponse:
     token = await service.request_password_reset(data.email)
-
-    # In production, send email with token
-    # For now, return success regardless (don't reveal if email exists)
     if token:
-        # Log or send email with token
-        # In a real app: send_password_reset_email(data.email, token)
         pass
 
     return MessageResponse(
@@ -102,12 +97,14 @@ async def reset_password(
     try:
         success = await service.reset_password(data.token, data.new_password)
 
-        if success:
-            return MessageResponse(message="Password has been reset successfully.")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to reset password.",
-        )
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to reset password.",
+            )
+
+        return MessageResponse(message="Password has been reset successfully.")
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -119,18 +116,27 @@ async def reset_password(
 async def get_current_user_info(
     current_user: CurrentUser,
 ) -> UserResponse:
-    roles: list[RoleResponse] = []
-    if current_user.roles:
-        roles.extend(
-            RoleResponse(
-                role_id=user_role.role.role_id,
-                name=user_role.role.name,
-                description=user_role.role.description,
-                max_active_paths=user_role.role.max_active_paths,
-            )
-            for user_role in current_user.roles
-            if user_role.role
+    if not current_user.roles:
+        return UserResponse(
+            user_id=current_user.user_id,
+            full_name=current_user.full_name,
+            email=current_user.email,
+            bio=current_user.bio,
+            created_at=current_user.created_at,
+            roles=roles,
         )
+
+    roles: list[RoleResponse] = []
+    roles.extend(
+        RoleResponse(
+            role_id=user_role.role.role_id,
+            name=user_role.role.name,
+            description=user_role.role.description,
+            max_active_paths=user_role.role.max_active_paths,
+        )
+        for user_role in current_user.roles
+        if user_role.role
+    )
 
     return UserResponse(
         user_id=current_user.user_id,

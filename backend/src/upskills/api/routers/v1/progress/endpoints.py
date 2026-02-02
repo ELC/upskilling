@@ -3,9 +3,8 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from upskills.core import CurrentUser, require_permissions
+from upskills.api.dependencies import CurrentUser, require_permissions
 from upskills.domain import UserCareerPath, UserPathAssignment, UserStepProgress
-from upskills.repositories import User
 from upskills.services import ProgressService, TeamService
 
 from .schemas import (
@@ -56,7 +55,6 @@ async def get_my_career_paths(
 @inject
 async def get_career_path(
     career_path_id: int,
-    current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserCareerPathDetailResponse:
     result = await service.get_career_path(career_path_id)
@@ -70,12 +68,15 @@ async def get_career_path(
     return UserCareerPathDetailResponse.model_validate(result.model_dump())
 
 
-@router.post("/career-paths", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/career-paths",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permissions("paths.assign"))],
+)
 @inject
 async def assign_career_path(
     data: UserCareerPathCreate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
-    _: Annotated[User, Depends(require_permissions("paths.assign"))],
 ) -> UserCareerPathResponse:
     try:
         input_data = UserCareerPath(
@@ -93,13 +94,15 @@ async def assign_career_path(
         ) from e
 
 
-@router.put("/career-paths/{career_path_id}")
+@router.put(
+    "/career-paths/{career_path_id}",
+    dependencies=[Depends(require_permissions("paths.assign"))],
+)
 @inject
 async def update_career_path(
     career_path_id: int,
     data: UserCareerPathUpdate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
-    _: Annotated[User, Depends(require_permissions("paths.assign"))],
 ) -> UserCareerPathResponse:
     input_data = UserCareerPath(
         start_date=data.start_date,
@@ -123,19 +126,21 @@ async def update_career_path(
 @inject
 async def get_path_assignments(
     career_path_id: int,
-    current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> list[UserPathAssignmentResponse]:
     assignments = await service.get_path_assignments(career_path_id)
     return [UserPathAssignmentResponse.model_validate(a.model_dump()) for a in assignments]
 
 
-@router.post("/assignments", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/assignments",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permissions("paths.assign"))],
+)
 @inject
 async def assign_path(
     data: UserPathAssignmentCreate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
-    _: Annotated[User, Depends(require_permissions("paths.assign"))],
 ) -> UserPathAssignmentResponse:
     try:
         input_data = UserPathAssignment(
@@ -157,7 +162,6 @@ async def assign_path(
 @inject
 async def get_assignment(
     assignment_id: int,
-    current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserPathAssignmentDetailResponse:
     result = await service.get_path_assignment(assignment_id)
@@ -176,7 +180,6 @@ async def get_assignment(
 async def update_assignment(
     assignment_id: int,
     data: UserPathAssignmentUpdate,
-    current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserPathAssignmentResponse:
     input_data = UserPathAssignment(
@@ -197,22 +200,26 @@ async def update_assignment(
 # === Mentor Validation ===
 
 
-@router.get("/pending-validations")
+@router.get(
+    "/pending-validations",
+    dependencies=[Depends(require_permissions("paths.validate"))],
+)
 @inject
 async def get_pending_validations(
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
-    _: Annotated[User, Depends(require_permissions("paths.validate"))],
 ) -> list[UserPathAssignmentDetailResponse]:
     assignments = await service.get_pending_validations()
     return [UserPathAssignmentDetailResponse.model_validate(a.model_dump()) for a in assignments]
 
 
-@router.post("/assignments/{assignment_id}/approve")
+@router.post(
+    "/assignments/{assignment_id}/approve",
+    dependencies=[Depends(require_permissions("paths.validate"))],
+)
 @inject
 async def approve_assignment(
     assignment_id: int,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
-    _: Annotated[User, Depends(require_permissions("paths.validate"))],
 ) -> UserPathAssignmentResponse:
     input_data = UserPathAssignment(mentor_validation_status="Approved")
     result = await service.update_assignment_status(assignment_id, input_data)
@@ -226,12 +233,14 @@ async def approve_assignment(
     return UserPathAssignmentResponse.model_validate(result.model_dump())
 
 
-@router.post("/assignments/{assignment_id}/reject")
+@router.post(
+    "/assignments/{assignment_id}/reject",
+    dependencies=[Depends(require_permissions("paths.validate"))],
+)
 @inject
 async def reject_assignment(
     assignment_id: int,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
-    _: Annotated[User, Depends(require_permissions("paths.validate"))],
 ) -> UserPathAssignmentResponse:
     input_data = UserPathAssignment(mentor_validation_status="Rejected")
     result = await service.update_assignment_status(assignment_id, input_data)
@@ -252,7 +261,6 @@ async def reject_assignment(
 @inject
 async def get_step_progress(
     assignment_id: int,
-    current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> list[UserStepProgressResponse]:
     progress_list = await service.get_step_progress(assignment_id)
@@ -264,7 +272,6 @@ async def get_step_progress(
 async def update_step_progress(
     progress_id: int,
     data: UserStepProgressUpdate,
-    current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserStepProgressResponse:
     input_data = UserStepProgress(
