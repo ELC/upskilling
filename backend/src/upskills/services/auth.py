@@ -9,8 +9,8 @@ from upskills.core import (
     verify_password,
     verify_token,
 )
-from upskills.models import AuthResponse, RoleResponse, TokenResponse, User, UserResponse
-from upskills.repositories import RoleRepository, UserRepository
+from upskills.domain import AuthResponse, RoleResponse, TokenResponse, UserResponse
+from upskills.repositories import User, RoleRepository, UserRepository
 
 
 class AuthService:

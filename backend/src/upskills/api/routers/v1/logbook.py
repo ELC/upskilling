@@ -6,15 +6,15 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.core import CurrentUser, require_permissions
-from upskills.models import (
+from upskills.domain import (
     LogEntryCreate,
     LogEntryCreateInput,
     LogEntryDetailResponse,
     LogEntryResponse,
     LogEntryUpdate,
     MessageResponse,
-    User,
 )
+from upskills.repositories import User
 from upskills.services import LogbookService
 
 router = APIRouter(prefix="/logbook", tags=["Logbook"])

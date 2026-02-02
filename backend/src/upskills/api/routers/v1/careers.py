@@ -6,15 +6,15 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.core import CurrentUser, require_permissions
-from upskills.models import (
+from upskills.domain import (
     CareerCreate,
     CareerResponse,
     CareerUpdate,
     CareerWithPathsResponse,
     MessageResponse,
     PaginatedResponse,
-    User,
 )
+from upskills.repositories import User
 from upskills.services import CareerService
 
 router = APIRouter(prefix="/careers", tags=["Careers"])
