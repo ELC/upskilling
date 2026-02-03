@@ -1,14 +1,60 @@
 # UpSkills
 
-A career development and upskilling platform that enables organizations to manage learning paths, track employee progress, and facilitate mentor-mentee relationships.
+A career development and upskilling platform that enables organizations to
+manage learning paths, track employee progress, and facilitate mentor-mentee
+relationships.
+
+## Initial Setup
+
+To run this project and its toolchain, [install
+mise](https://mise.jdx.dev/getting-started.html), then run:
+
+```
+mise install
+```
+
+This will install:
+
+- UV for managing the Python Backend
+- Node and NPM for managing the React Frontend
+- Lefthook for multi-project pre-commits and linter
+- Podman to build and run container images
+
+To initialize the projects run
+
+```
+mise init
+```
+
+This will create the virtual environment with `uv` and install the packages from
+`package.json` with `npm`.
+
+To execute the project-wide linter run
+
+```
+mise lint
+```
+
+This will run pre-commits in the backend with [prek](https://prek.j178.dev/) and
+[eslint](https://eslint.org/) in the frontend.
+
+To serve the backend and frontend run
+
+```
+mise serve
+```
+
 
 ## Overview
 
 UpSkills helps organizations:
 
-- **Define Career Paths**: Create structured learning journeys with courses, steps, and dependencies
-- **Assign & Track Progress**: Mentors assign paths to mentees and monitor completion
-- **Validate Learning**: Mentors approve/reject completed steps and provide feedback via logbook entries
+- **Define Career Paths**: Create structured learning journeys with courses,
+  steps, and dependencies
+- **Assign & Track Progress**: Mentors assign paths to mentees and monitor
+  completion
+- **Validate Learning**: Mentors approve/reject completed steps and provide
+  feedback via logbook entries
 - **Manage Teams**: Organize users into teams with managers overseeing progress
 
 ## Roles
@@ -229,7 +275,8 @@ flowchart TD
 
 #### 4. User Progress & Tracking
 
-This is where **templates become real assignments**. Think of it like a university degree:
+This is where **templates become real assignments**. Think of it like a
+university degree:
 
 ```mermaid
 flowchart TD
@@ -298,7 +345,8 @@ flowchart TB
 **The flow is**:
 1. **Admins/Path Creators** define careers, paths, and steps
 2. **Mentors** assign career paths to mentees
-3. **System** creates `user_career_paths` → `user_path_assignments` → `user_step_progress`
+3. **System** creates `user_career_paths` → `user_path_assignments` →
+   `user_step_progress`
 4. **Mentees** work through steps, updating progress
 5. **Mentors** validate completed paths and add log entries
 
@@ -385,7 +433,8 @@ uv sync
 uv run poe serve-dev
 ```
 
-The API will be available at `http://localhost:8000`. API docs at `http://localhost:8000/docs`.
+The API will be available at `http://localhost:8000`. API docs at
+`http://localhost:8000/docs`.
 
 **Available tasks (via poethepoet):**
 
