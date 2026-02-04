@@ -46,9 +46,9 @@ The improved implementation uses comprehensive dependency injection across all l
 
 ```mermaid
 graph TD
-    A[API Router] -->|@inject decorator| B[DI Container]
-    C[Service] -->|@inject decorator| B
-    D[Repository] -->|@inject decorator| B
+    A[API Router] -->|inject decorator| B[DI Container]
+    C[Service] -->|inject decorator| B
+    D[Repository] -->|inject decorator| B
     B -->|provides| E[Service Instance]
     B -->|provides| F[Repository Instance]
     B -->|provides| G[DB Session]
