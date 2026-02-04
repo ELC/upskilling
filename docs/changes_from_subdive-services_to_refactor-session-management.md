@@ -220,13 +220,6 @@ graph TD
     H -.-> I[Mock AsyncSession]
     I -.-> J[Mock session dependency]
     J -.-> K[Repository Test]
-    
-    style F fill:#ffcccc
-    style G fill:#ffcccc
-    style H fill:#ffcccc
-    style I fill:#ffcccc
-    style J fill:#ffcccc
-    style K fill:#ffcccc
 ```
 
 ## Next Steps
