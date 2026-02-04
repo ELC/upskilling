@@ -80,7 +80,7 @@ graph TB
     end
     
     subgraph "Dependency Injection"
-        I[@inject Decorator] --> J{Resolve Dependency}
+        I[inject Decorator] --> J{Resolve Dependency}
         J --> K[Provide Marker]
         K --> L[Container Resolution]
         L --> M[Inject Parameter]
@@ -95,10 +95,6 @@ graph TB
     G -.->|Provides| L
     I --> N
     I --> P
-    
-    style I fill:#90EE90
-    style K fill:#90EE90
-    style D fill:#FFE4B5
 ```
 
 ## Benefits
@@ -237,9 +233,6 @@ graph LR
         B3 --> B4[Access via request.app.state]
         B4 --> B5[Call .db_provider]
         B5 --> B6[Use Provider]
-        
-        style B4 fill:#FFB6C1
-        style B5 fill:#FFB6C1
     end
     
     subgraph "After: Declarative Pattern"
@@ -248,9 +241,6 @@ graph LR
         A3 --> A4[Request Handler]
         A4 --> A5[Auto Inject]
         A5 --> A6[Use Provider]
-        
-        style A5 fill:#90EE90
-        style A3 fill:#90EE90
     end
 ```
 
@@ -359,17 +349,16 @@ graph TB
         OLD_MAIN --> OLD_DEP[dependencies.py<br/>get from request.app.state]
         OLD_DEP --> OLD_ROUTE[Routers<br/>Access via Depends]
     end
-    
+```
+
+```mermaid
+graph TB    
     subgraph "After Structure"
         NEW_CONT[injections/containers.py<br/>Package Level] --> NEW_MAIN[main.py<br/>container.wire]
-        NEW_MAIN --> NEW_DEP[dependencies.py<br/>@inject + Provide]
+        NEW_MAIN --> NEW_DEP[dependencies.py<br/>inject + Provide]
         NEW_DEP --> NEW_ROUTE[Routers<br/>Automatic Injection]
-        NEW_MAIN --> NEW_LIFE[Lifespan<br/>@inject + Provide]
+        NEW_MAIN --> NEW_LIFE[Lifespan<br/>inject + Provide]
     end
-    
-    style NEW_DEP fill:#90EE90
-    style NEW_LIFE fill:#90EE90
-    style OLD_DEP fill:#FFB6C1
 ```
 
 ## Key Files Modified
