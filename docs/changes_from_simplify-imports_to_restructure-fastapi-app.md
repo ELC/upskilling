@@ -253,10 +253,6 @@ graph TD
     J --> R[/api/v1/steps/*]
     K --> S[/api/v1/progress/*]
     L --> T[/api/v1/logbook/*]
-    
-    style A fill:#e1f5ff
-    style C fill:#fff4e1
-    style B fill:#e8f5e9
 ```
 
 ### Module Organization
@@ -278,10 +274,6 @@ graph LR
     
     B --> L[app_factory]
     C --> M[server_factory]
-    
-    style A fill:#e3f2fd
-    style D fill:#f3e5f5
-    style F fill:#fff3e0
 ```
 
 ### Future Versioning Strategy
@@ -300,10 +292,6 @@ graph TD
     H --> I[Deprecation Period]
     I --> J[Remove v1]
     J --> K[v2 Becomes Primary]
-    
-    style A fill:#c8e6c9
-    style F fill:#fff9c4
-    style K fill:#c8e6c9
 ```
 
 ## Next Steps
