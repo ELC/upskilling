@@ -63,15 +63,6 @@ graph TD
     
     C --> H
     D --> H
-    
-    style A fill:#e1f5ff
-    style B fill:#fff4e6
-    style F fill:#fff4e6
-    style G fill:#fff4e6
-    style H fill:#f3e5f5
-    style C fill:#e8f5e9
-    style D fill:#e8f5e9
-    style E fill:#e8f5e9
 ```
 
 ## Import Strategy Before and After
@@ -84,12 +75,6 @@ graph LR
         A1 -->|from upskills.services.auth| D1[services/auth.py]
         A1 -->|from upskills.core.dependencies| E1[core/dependencies.py]
     end
-    
-    style A1 fill:#ffcdd2
-    style B1 fill:#ffcdd2
-    style C1 fill:#ffcdd2
-    style D1 fill:#ffcdd2
-    style E1 fill:#ffcdd2
 ```
 
 ```mermaid
@@ -103,14 +88,6 @@ graph LR
         C2 -.->|re-exports| F2[Internal Modules]
         D2 -.->|re-exports| G2[Internal Modules]
     end
-    
-    style A2 fill:#c8e6c9
-    style B2 fill:#c8e6c9
-    style C2 fill:#c8e6c9
-    style D2 fill:#c8e6c9
-    style E2 fill:#e8f5e9
-    style F2 fill:#e8f5e9
-    style G2 fill:#e8f5e9
 ```
 
 ## Key Changes by Layer
@@ -124,12 +101,6 @@ graph TB
         G[services/__init__.py<br/>Modified] --> H[Relative Imports]
         I[repositories/__init__.py<br/>Modified] --> J[Relative Imports]
     end
-    
-    style A fill:#bbdefb
-    style C fill:#bbdefb
-    style E fill:#bbdefb
-    style G fill:#c5cae9
-    style I fill:#c5cae9
 ```
 
 ## Considerations
