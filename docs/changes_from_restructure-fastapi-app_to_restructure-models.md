@@ -24,9 +24,6 @@ graph TD
     C --> E
     D -.mixed imports.-> E
     E -.circular deps.-> D
-    
-    style D fill:#ff9999
-    style E fill:#ff9999
 ```
 
 ## Architecture After the Change
@@ -38,9 +35,6 @@ graph TD
     B --> D[domain/]
     C --> E[repositories/*/models.py]
     C --> D
-    
-    style D fill:#99ff99
-    style E fill:#99ff99
 ```
 
 ## Key Changes
@@ -127,10 +121,6 @@ graph LR
     B --> E[Career ORM Model]
     C --> F[CareerRepository]
     D --> G[Public Exports]
-    
-    style A fill:#e1f5ff
-    style B fill:#fff9e1
-    style C fill:#ffe1f5
 ```
 
 ### 3. Database Models Co-location
@@ -161,10 +151,6 @@ graph TD
     
     F[Repository Layer] --> G[Import own DB models]
     G --> H["from .models import User"]
-    
-    style D fill:#99ff99
-    style E fill:#99ff99
-    style H fill:#99ff99
 ```
 
 **Before:**
@@ -190,12 +176,6 @@ graph TB
     B --> D[Repository Layer<br/>repositories/]
     D --> E[Database Models<br/>repositories/*/models.py]
     D -.uses.-> C
-    
-    style A fill:#e3f2fd
-    style B fill:#f3e5f5
-    style C fill:#e8f5e9
-    style D fill:#fff3e0
-    style E fill:#fce4ec
 ```
 
 The refactoring enforces a clear dependency flow:
@@ -271,12 +251,6 @@ graph TD
     
     F[Service Layer] --> A
     G[Other Repositories] -.reference.-> A
-    
-    style A fill:#e1f5ff
-    style B fill:#fff9e1
-    style C fill:#ffe1f5
-    style D fill:#e8f5e9
-    style E fill:#f3e5f5
 ```
 
 ## Files Impacted
