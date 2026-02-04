@@ -28,7 +28,7 @@ The refactoring acknowledges that simpler code is more maintainable code, and th
 graph TB
     subgraph "Before: Traditional Class Pattern"
         A[CareerService]
-        B[@inject decorator]
+        B[inject decorator]
         C[__init__ constructor]
         D[self._career_repository]
         
@@ -36,19 +36,18 @@ graph TB
         A --> C
         C --> D
     end
-    
+```
+
+```mermaid
+graph TB
     subgraph "After: Dataclass Pattern"
-        E[@dataclass decorator]
+        E[dataclass decorator]
         F[CareerService]
         G[career_repository: field]
         
         E --> F
         F --> G
     end
-    
-    style E fill:#90EE90
-    style F fill:#90EE90
-    style G fill:#90EE90
 ```
 
 Services have been converted from traditional classes with explicit constructors to Python dataclasses. This change eliminates significant boilerplate while maintaining full functionality:
@@ -103,12 +102,6 @@ graph LR
     A3 -.->|simplified| B3
     A4 -.->|simplified| B4
     A5 -.->|simplified| B5
-    
-    style B1 fill:#90EE90
-    style B2 fill:#90EE90
-    style B3 fill:#90EE90
-    style B4 fill:#90EE90
-    style B5 fill:#90EE90
 ```
 
 Method names have been streamlined to follow standard CRUD patterns, eliminating redundant domain context that was already implicit in the service class name:
@@ -245,8 +238,6 @@ graph LR
         D -->|updated calls| S
         E -->|updated calls| S
     end
-    
-    style S fill:#FFD700
 ```
 
 All API endpoints have been updated to use the new simplified method names. The changes are mechanical and straightforward:
@@ -277,8 +268,6 @@ graph TD
         A --> B
         A --> C
         A --> D
-        
-        style D fill:#90EE90
     end
 ```
 
