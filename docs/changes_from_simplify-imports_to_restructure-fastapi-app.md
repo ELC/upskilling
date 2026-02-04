@@ -245,14 +245,14 @@ graph TD
     C --> K[progress_router]
     C --> L[logbook_router]
     
-    E --> M[/api/v1/auth/*]
-    F --> N[/api/v1/users/*]
-    G --> O[/api/v1/teams/*]
-    H --> P[/api/v1/careers/*]
-    I --> Q[/api/v1/paths/*]
-    J --> R[/api/v1/steps/*]
-    K --> S[/api/v1/progress/*]
-    L --> T[/api/v1/logbook/*]
+    E --> M["/api/v1/auth/*"]
+    F --> N["/api/v1/users/*"]
+    G --> O["/api/v1/teams/*"]
+    H --> P["/api/v1/careers/*"]
+    I --> Q["/api/v1/paths/*"]
+    J --> R["/api/v1/steps/*"]
+    K --> S["/api/v1/progress/*"]
+    L --> T["/api/v1/logbook/*"]
 ```
 
 ### Module Organization
