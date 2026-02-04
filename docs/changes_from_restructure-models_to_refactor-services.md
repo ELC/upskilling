@@ -32,9 +32,6 @@ graph TD
     F --> F1[endpoints.py]
     F --> F2[schemas.py]
     F --> F3[__init__.py]
-    
-    style E fill:#90EE90
-    style A fill:#FFB6C1
 ```
 
 The router layer underwent a structural transformation from single-file modules to organized packages. This change provides better discoverability and maintains related functionality together.
@@ -70,10 +67,6 @@ graph LR
     A4 --> B2
     A5 --> B2
     A6 --> B3
-    
-    style B1 fill:#90EE90
-    style B2 fill:#90EE90
-    style B3 fill:#90EE90
 ```
 
 The domain layer saw a dramatic reduction of **696 lines** (net change after consolidation). This was achieved by:
@@ -152,11 +145,6 @@ graph TB
     B --> F
     C --> G
     D --> H
-    
-    style E fill:#90EE90
-    style F fill:#90EE90
-    style G fill:#90EE90
-    style H fill:#90EE90
 ```
 
 Repositories gained **132 net lines** across the layer, representing added functionality rather than bloat:
