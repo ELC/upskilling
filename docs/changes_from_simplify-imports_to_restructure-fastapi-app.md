@@ -234,7 +234,7 @@ graph TD
     A[app.py: app_factory] --> B[base_router]
     A --> C[v1_router]
     
-    B --> D[/health endpoint]
+    B --> D["/health endpoint"]
     
     C --> E[auth_router]
     C --> F[users_router]
