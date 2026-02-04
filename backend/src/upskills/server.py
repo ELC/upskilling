@@ -1,6 +1,6 @@
 from uvicorn import Config, Server
 
-from upskills.core.config import get_settings
+from upskills.core import get_settings
 from upskills.main import app_factory
 
 

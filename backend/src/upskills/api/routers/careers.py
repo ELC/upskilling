@@ -5,16 +5,17 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from upskills.core.dependencies import CurrentUser, require_permissions
-from upskills.models.db.user import User
-from upskills.models.domain.base import MessageResponse, PaginatedResponse
-from upskills.models.domain.career import (
+from upskills.core import CurrentUser, require_permissions
+from upskills.models import (
     CareerCreate,
     CareerResponse,
     CareerUpdate,
     CareerWithPathsResponse,
+    MessageResponse,
+    PaginatedResponse,
+    User,
 )
-from upskills.services.career import CareerService
+from upskills.services import CareerService
 
 router = APIRouter()
 

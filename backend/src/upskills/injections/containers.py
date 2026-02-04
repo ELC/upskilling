@@ -1,24 +1,28 @@
 from dependency_injector import containers, providers
 
-from upskills.db.sqlite import SQLiteProvider
-from upskills.repositories.career import CareerRepository
-from upskills.repositories.log_entry import LogEntryRepository
-from upskills.repositories.path_step import PathStepRepository
-from upskills.repositories.path_template import PathTemplateRepository
-from upskills.repositories.role import RoleRepository
-from upskills.repositories.team import TeamRepository
-from upskills.repositories.user import UserRepository
-from upskills.repositories.user_career_path import UserCareerPathRepository
-from upskills.repositories.user_path_assignment import UserPathAssignmentRepository
-from upskills.repositories.user_step_progress import UserStepProgressRepository
-from upskills.services.auth import AuthService
-from upskills.services.career import CareerService
-from upskills.services.logbook import LogbookService
-from upskills.services.path_step import PathStepService
-from upskills.services.path_template import PathTemplateService
-from upskills.services.progress import ProgressService
-from upskills.services.team import TeamService
-from upskills.services.user import UserService
+from upskills.db import SQLiteProvider
+from upskills.repositories import (
+    CareerRepository,
+    LogEntryRepository,
+    PathStepRepository,
+    PathTemplateRepository,
+    RoleRepository,
+    TeamRepository,
+    UserCareerPathRepository,
+    UserPathAssignmentRepository,
+    UserRepository,
+    UserStepProgressRepository,
+)
+from upskills.services import (
+    AuthService,
+    CareerService,
+    LogbookService,
+    PathStepService,
+    PathTemplateService,
+    ProgressService,
+    TeamService,
+    UserService,
+)
 
 
 class Container(containers.DeclarativeContainer):

@@ -5,21 +5,19 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from upskills.core.dependencies import CurrentUser
-from upskills.models.domain.auth import (
+from upskills.core import CurrentUser
+from upskills.models import (
     AuthResponse,
     LoginRequest,
+    MessageResponse,
+    PasswordReset,
+    PasswordResetRequest,
     RefreshTokenRequest,
     RegisterRequest,
     TokenResponse,
-)
-from upskills.models.domain.base import MessageResponse
-from upskills.models.domain.user import (
-    PasswordReset,
-    PasswordResetRequest,
     UserResponse,
 )
-from upskills.services.auth import AuthService
+from upskills.services import AuthService
 
 router = APIRouter()
 
