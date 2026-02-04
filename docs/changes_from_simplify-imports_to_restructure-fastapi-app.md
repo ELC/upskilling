@@ -286,8 +286,8 @@ graph TD
     D --> E[Register v2_router]
     E --> F[Both Versions Live]
     
-    F --> G[/api/v1/* - Legacy Support]
-    F --> H[/api/v2/* - New Features]
+    F --> G["/api/v1/* - Legacy Support"]
+    F --> H["/api/v2/* - New Features"]
     
     H --> I[Deprecation Period]
     I --> J[Remove v1]
