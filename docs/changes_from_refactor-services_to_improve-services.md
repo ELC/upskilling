@@ -33,10 +33,11 @@ graph TB
         
         B -->|imports| A
         A -->|uses| C
-        
-        style A fill:#FFB6C1
     end
-    
+```
+
+```mermaid
+graph TB
     subgraph "After: Clear Separation"
         D[api/dependencies.py]
         E[api/routers/*/endpoints.py]
@@ -44,9 +45,6 @@ graph TB
         
         E -->|imports| D
         D -->|uses| F
-        
-        style D fill:#90EE90
-        style E fill:#90EE90
     end
 ```
 
@@ -70,7 +68,10 @@ graph LR
         A2 -->|requires| Auth2[CurrentUser param]
         A3 -->|requires| Auth3[CurrentUser param]
     end
-    
+```
+
+```mermaid
+graph LR
     subgraph "After: Router-Level Authentication"
         B1[APIRouter v1]
         B2[GET /users]
@@ -82,8 +83,6 @@ graph LR
         AuthGlobal -->|protects| B3
         AuthGlobal -->|protects| B4
         
-        style B1 fill:#90EE90
-        style AuthGlobal fill:#FFD700
     end
 ```
 
@@ -181,11 +180,6 @@ graph TD
         C -->|provides| F
         D -->|provides| G
     end
-    
-    style A fill:#87CEEB
-    style B fill:#90EE90
-    style C fill:#FFD700
-    style D fill:#FFA500
 ```
 
 The new `api/dependencies.py` provides a cleaner dependency injection hierarchy:
