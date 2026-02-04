@@ -25,18 +25,17 @@ graph TB
         A2 --> A3[app instance created]
         A3 --> A4[uvicorn imports app]
         A4 --> A5[Server starts]
-        style A2 fill:#ffcccc
-        style A3 fill:#ffcccc
     end
-    
+```
+
+```mermaid
+graph TB    
     subgraph "After: Factory Pattern"
         B1[python -m upskills] --> B2[__main__.py entry]
         B2 --> B3[server_factory creates config]
         B3 --> B4[uvicorn calls app_factory]
         B4 --> B5[FastAPI instance created]
         B5 --> B6[Server starts]
-        style B3 fill:#ccffcc
-        style B4 fill:#ccffcc
     end
 ```
 
