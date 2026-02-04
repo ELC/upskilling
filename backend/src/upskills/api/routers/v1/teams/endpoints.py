@@ -1,14 +1,15 @@
-"""Teams router."""
-
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from upskills.api.schemas import MessageResponse, PaginatedResponse
 from upskills.core import CurrentUser, require_permissions
-from upskills.domain import (
-    MessageResponse,
-    PaginatedResponse,
+from upskills.domain import Team
+from upskills.repositories import User
+from upskills.services import TeamService
+
+from .schemas import (
     TeamCreate,
     TeamListResponse,
     TeamMemberAdd,
@@ -18,8 +19,6 @@ from upskills.domain import (
     TeamUpdate,
     TeamWithMembersResponse,
 )
-from upskills.repositories import User
-from upskills.services import TeamService
 
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
@@ -32,14 +31,14 @@ async def list_teams(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[TeamListResponse]:
-    """List all teams (requires team.view permission)."""
     skip = (page - 1) * page_size
-
     teams, total = await service.get_all_teams(skip=skip, limit=page_size)
     total_pages = (total + page_size - 1) // page_size
 
+    items = [TeamListResponse.model_validate(t.model_dump()) for t in teams]
+
     return PaginatedResponse(
-        items=teams,
+        items=items,
         total=total,
         page=page,
         page_size=page_size,
@@ -53,8 +52,8 @@ async def get_my_managed_teams(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     current_user: CurrentUser,
 ) -> list[TeamWithMembersResponse]:
-    """Get teams managed by the current user."""
-    return await service.get_teams_by_manager(current_user.user_id)
+    teams = await service.get_teams_by_manager(current_user.user_id)
+    return [TeamWithMembersResponse.model_validate(t.model_dump()) for t in teams]
 
 
 @router.get("/member-of")
@@ -63,8 +62,8 @@ async def get_teams_im_member_of(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     current_user: CurrentUser,
 ) -> list[TeamResponse]:
-    """Get teams the current user is a member of."""
-    return await service.get_teams_for_user(current_user.user_id)
+    teams = await service.get_teams_for_user(current_user.user_id)
+    return [TeamResponse.model_validate(t.model_dump()) for t in teams]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -74,14 +73,13 @@ async def create_team(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> TeamWithMembersResponse:
-    """Create a new team (requires team.manage permission)."""
-
     try:
-        result = await service.create_team(
+        input_data = Team(
             name=data.name,
             manager_user_id=data.manager_user_id,
         )
-        return result
+        result = await service.create_team(input_data)
+        return TeamWithMembersResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -96,7 +94,6 @@ async def get_team(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     _: Annotated[User, Depends(require_permissions("team.view"))],
 ) -> TeamWithMembersResponse:
-    """Get a specific team (requires team.view permission)."""
     result = await service.get_team(team_id)
 
     if not result:
@@ -105,7 +102,7 @@ async def get_team(
             detail="Team not found",
         )
 
-    return result
+    return TeamWithMembersResponse.model_validate(result.model_dump())
 
 
 @router.put("/{team_id}")
@@ -116,14 +113,12 @@ async def update_team(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> TeamWithMembersResponse:
-    """Update a team (requires team.manage permission)."""
-
     try:
-        result = await service.update_team(
-            team_id,
+        input_data = Team(
             name=data.name,
             manager_user_id=data.manager_user_id,
         )
+        result = await service.update_team(team_id, input_data)
 
         if not result:
             raise HTTPException(
@@ -131,7 +126,7 @@ async def update_team(
                 detail="Team not found",
             )
 
-        return result
+        return TeamWithMembersResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -146,7 +141,6 @@ async def delete_team(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
-    """Delete a team (requires team.manage permission)."""
     success = await service.delete_team(team_id)
 
     if not success:
@@ -165,8 +159,8 @@ async def get_team_members(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     _: Annotated[User, Depends(require_permissions("team.view"))],
 ) -> list[TeamMemberResponse]:
-    """Get members of a team (requires team.view permission)."""
-    return await service.get_team_members(team_id)
+    members = await service.get_team_members(team_id)
+    return [TeamMemberResponse.model_validate(m.model_dump()) for m in members]
 
 
 @router.post("/{team_id}/members")
@@ -177,8 +171,6 @@ async def add_team_member(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
-    """Add a member to a team (requires team.manage permission)."""
-
     try:
         await service.add_member(team_id, data.user_id)
         return MessageResponse(message="Member added to team.")
@@ -197,7 +189,6 @@ async def add_team_members_bulk(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
-    """Add multiple members to a team (requires team.manage permission)."""
     errors = []
 
     for user_id in data.user_ids:
@@ -223,7 +214,6 @@ async def remove_team_member(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
-    """Remove a member from a team (requires team.manage permission)."""
     success = await service.remove_member(team_id, user_id)
 
     if not success:

@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from upskills.repositories import Base
+from upskills.repositories.base import Base
 
 from .provider import DatabaseProvider
 

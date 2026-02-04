@@ -1,22 +1,10 @@
-"""Team service."""
-
-from typing import Any
-
 from dependency_injector.wiring import Provide, inject
 
-from upskills.domain import (
-    TeamListResponse,
-    TeamMemberResponse,
-    TeamResponse,
-    TeamWithMembersResponse,
-    UserResponse,
-)
-from upskills.repositories import Team, TeamRepository, UserRepository
+from upskills.domain import Team, TeamListItem, TeamMember
+from upskills.repositories import TeamRepository, UserRepository
 
 
 class TeamService:
-    """Service for team operations."""
-
     @inject
     def __init__(
         self,
@@ -26,22 +14,15 @@ class TeamService:
         self._team_repository = team_repository
         self._user_repository = user_repository
 
-    async def get_team(self, team_id: int) -> TeamWithMembersResponse | None:
-        """Get a team by ID with members."""
-        team = await self._team_repository.get_by_id(team_id)
-        if not team:
-            return None
-        return self._team_to_response(team)
+    async def get_team(self, team_id: int) -> Team | None:
+        return await self._team_repository.get_by_id_with_members(team_id)
 
-    async def get_all_teams(
-        self, *, skip: int = 0, limit: int = 100
-    ) -> tuple[list[TeamListResponse], int]:
-        """Get all teams with summary info."""
+    async def get_all_teams(self, *, skip: int = 0, limit: int = 100) -> tuple[list[TeamListItem], int]:
         teams = await self._team_repository.get_all_with_details(skip=skip, limit=limit)
         total = await self._team_repository.count()
 
         return [
-            TeamListResponse(
+            TeamListItem(
                 team_id=t.team_id,
                 name=t.name,
                 member_count=len(t.members) if t.members else 0,
@@ -50,16 +31,14 @@ class TeamService:
             for t in teams
         ], total
 
-    async def get_teams_by_manager(self, manager_user_id: int) -> list[TeamWithMembersResponse]:
-        """Get all teams managed by a user."""
+    async def get_teams_by_manager(self, manager_user_id: int) -> list[Team]:
         teams = await self._team_repository.get_teams_by_manager(manager_user_id)
-        return [self._team_to_response(t) for t in teams]
+        return [self._team_repository.to_domain(t) for t in teams]
 
-    async def get_teams_for_user(self, user_id: int) -> list[TeamResponse]:
-        """Get all teams a user is a member of."""
+    async def get_teams_for_user(self, user_id: int) -> list[Team]:
         teams = await self._team_repository.get_teams_for_user(user_id)
         return [
-            TeamResponse(
+            Team(
                 team_id=t.team_id,
                 name=t.name,
                 manager_user_id=t.manager_user_id,
@@ -67,85 +46,51 @@ class TeamService:
             for t in teams
         ]
 
-    async def create_team(
-        self,
-        name: str,
-        manager_user_id: int,
-    ) -> TeamWithMembersResponse:
-        """Create a new team."""
-        # Verify manager exists
-        manager = await self._user_repository.get_by_id(manager_user_id)
+    async def create_team(self, data: Team) -> Team:
+        manager = await self._user_repository.get_by_id(data.manager_user_id)
         if not manager:
             msg = "Manager user not found"
             raise ValueError(msg)
 
-        team = await self._team_repository.create({
-            "name": name,
-            "manager_user_id": manager_user_id,
-        })
-
-        # Reload with relationships
-        reloaded_team = await self._team_repository.get_by_id(team.team_id)
-        if not reloaded_team:
+        db_model = await self._team_repository.create(data)
+        result = await self._team_repository.get_by_id_with_members(db_model.team_id)
+        if not result:
             msg = "Failed to reload team after creation"
             raise RuntimeError(msg)
-        return self._team_to_response(reloaded_team)
+        return result
 
-    async def update_team(
-        self,
-        team_id: int,
-        name: str | None = None,
-        manager_user_id: int | None = None,
-    ) -> TeamWithMembersResponse | None:
-        """Update a team."""
-        team = await self._team_repository.get_by_id(team_id)
-        if not team:
+    async def update_team(self, team_id: int, data: Team) -> Team | None:
+        db_model = await self._team_repository.get_by_id(team_id, id_column="team_id")
+        if not db_model:
             return None
 
-        if manager_user_id:
-            manager = await self._user_repository.get_by_id(manager_user_id)
+        if data.manager_user_id:
+            manager = await self._user_repository.get_by_id(data.manager_user_id)
             if not manager:
                 msg = "Manager user not found"
                 raise ValueError(msg)
 
-        update_data: dict[str, Any] = {}
-        if name is not None:
-            update_data["name"] = name
-        if manager_user_id is not None:
-            update_data["manager_user_id"] = manager_user_id
-
-        if update_data:
-            team = await self._team_repository.update(team, update_data)
-            reloaded = await self._team_repository.get_by_id(team.team_id)
-            if reloaded:
-                team = reloaded
-
-        return self._team_to_response(team)
+        await self._team_repository.update(db_model, data)
+        return await self._team_repository.get_by_id_with_members(team_id)
 
     async def delete_team(self, team_id: int) -> bool:
-        """Delete a team."""
-        team = await self._team_repository.get_by_id(team_id)
-        if not team:
+        db_model = await self._team_repository.get_by_id(team_id, id_column="team_id")
+        if not db_model:
             return False
-
-        await self._team_repository.delete(team)
+        await self._team_repository.delete(db_model)
         return True
 
     async def add_member(self, team_id: int, user_id: int) -> bool:
-        """Add a member to a team."""
-        # Verify team exists
-        team = await self._team_repository.get_by_id(team_id)
+        team = await self._team_repository.get_by_id(team_id, id_column="team_id")
         if not team:
             msg = "Team not found"
             raise ValueError(msg)
 
-        # Verify user exists
         user = await self._user_repository.get_by_id(user_id)
         if not user:
             msg = "User not found"
             raise ValueError(msg)
 
-        # Check if already a member
         if await self._team_repository.is_member(team_id, user_id):
             msg = "User is already a member of this team"
             raise ValueError(msg)
@@ -154,76 +99,18 @@ class TeamService:
         return True
 
     async def remove_member(self, team_id: int, user_id: int) -> bool:
-        """Remove a member from a team."""
         if not await self._team_repository.is_member(team_id, user_id):
             return False
-
         await self._team_repository.remove_member(team_id, user_id)
         return True
 
-    async def get_team_members(self, team_id: int) -> list[TeamMemberResponse]:
-        """Get all members of a team."""
+    async def get_team_members(self, team_id: int) -> list[TeamMember]:
         members = await self._team_repository.get_team_members(team_id)
         return [
-            TeamMemberResponse(
+            TeamMember(
                 user_id=m.user_id,
                 full_name=m.full_name,
                 email=m.email,
             )
             for m in members
         ]
-
-    @staticmethod
-    def _team_to_response(team: Team) -> TeamWithMembersResponse:
-        """Convert a Team model to TeamWithMembersResponse."""
-        from upskills.domain import RoleResponse
-
-        manager_roles: list[RoleResponse] = []
-        if team.manager and team.manager.roles:
-            manager_roles.extend(
-                RoleResponse(
-                    role_id=user_role.role.role_id,
-                    name=user_role.role.name,
-                    description=user_role.role.description,
-                    max_active_paths=user_role.role.max_active_paths,
-                )
-                for user_role in team.manager.roles
-                if user_role.role
-            )
-
-        manager_response = (
-            UserResponse(
-                user_id=team.manager.user_id,
-                full_name=team.manager.full_name,
-                email=team.manager.email,
-                bio=team.manager.bio,
-                created_at=team.manager.created_at,
-                roles=manager_roles,
-            )
-            if team.manager
-            else None
-        )
-
-        members: list[TeamMemberResponse] = []
-        if team.members:
-            members.extend(
-                TeamMemberResponse(
-                    user_id=tm.user.user_id,
-                    full_name=tm.user.full_name,
-                    email=tm.user.email,
-                )
-                for tm in team.members
-                if tm.user
-            )
-
-        if not manager_response:
-            msg = "Team manager not found"
-            raise RuntimeError(msg)
-
-        return TeamWithMembersResponse(
-            team_id=team.team_id,
-            name=team.name,
-            manager_user_id=team.manager_user_id,
-            manager=manager_response,
-            members=members,
-        )

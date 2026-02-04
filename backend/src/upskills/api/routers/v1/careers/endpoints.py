@@ -1,21 +1,15 @@
-"""Careers router."""
-
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from upskills.api.schemas import MessageResponse, PaginatedResponse
 from upskills.core import CurrentUser, require_permissions
-from upskills.domain import (
-    CareerCreate,
-    CareerResponse,
-    CareerUpdate,
-    CareerWithPathsResponse,
-    MessageResponse,
-    PaginatedResponse,
-)
+from upskills.domain import Career as CareerDomain
 from upskills.repositories import User
 from upskills.services import CareerService
+
+from .schemas import CareerCreate, CareerResponse, CareerUpdate, CareerWithPathsResponse
 
 router = APIRouter(prefix="/careers", tags=["Careers"])
 
@@ -28,14 +22,16 @@ async def list_careers(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[CareerResponse]:
-    """List all careers."""
     skip = (page - 1) * page_size
 
     careers, total = await service.get_all_careers(skip=skip, limit=page_size)
     total_pages = (total + page_size - 1) // page_size
 
+    # Map domain objects to API schemas
+    items = [CareerResponse.model_validate(c.model_dump()) for c in careers]
+
     return PaginatedResponse(
-        items=careers,
+        items=items,
         total=total,
         page=page,
         page_size=page_size,
@@ -50,12 +46,12 @@ async def create_career(
     service: Annotated[CareerService, Depends(Provide["career_service"])],
     _: Annotated[User, Depends(require_permissions("career.create"))],
 ) -> CareerResponse:
-    """Create a new career (requires career.create permission)."""
-    result = await service.create_career(
+    input_data = CareerDomain(
         name=data.name,
         specialization=data.specialization,
     )
-    return result
+    result = await service.create_career(input_data)
+    return CareerResponse.model_validate(result.model_dump())
 
 
 @router.get("/{career_id}")
@@ -65,7 +61,6 @@ async def get_career(
     service: Annotated[CareerService, Depends(Provide["career_service"])],
     current_user: CurrentUser,
 ) -> CareerWithPathsResponse:
-    """Get a specific career with its paths."""
     result = await service.get_career(career_id)
 
     if not result:
@@ -74,7 +69,7 @@ async def get_career(
             detail="Career not found",
         )
 
-    return result
+    return CareerWithPathsResponse.model_validate(result.model_dump())
 
 
 @router.put("/{career_id}")
@@ -85,12 +80,11 @@ async def update_career(
     service: Annotated[CareerService, Depends(Provide["career_service"])],
     _: Annotated[User, Depends(require_permissions("career.update"))],
 ) -> CareerResponse:
-    """Update a career (requires career.update permission)."""
-    result = await service.update_career(
-        career_id,
+    input_data = CareerDomain(
         name=data.name,
         specialization=data.specialization,
     )
+    result = await service.update_career(career_id, input_data)
 
     if not result:
         raise HTTPException(
@@ -98,7 +92,7 @@ async def update_career(
             detail="Career not found",
         )
 
-    return result
+    return CareerResponse.model_validate(result.model_dump())
 
 
 @router.delete("/{career_id}")
@@ -108,7 +102,6 @@ async def delete_career(
     service: Annotated[CareerService, Depends(Provide["career_service"])],
     _: Annotated[User, Depends(require_permissions("career.update"))],
 ) -> MessageResponse:
-    """Delete a career (requires career.update permission)."""
     success = await service.delete_career(career_id)
 
     if not success:
