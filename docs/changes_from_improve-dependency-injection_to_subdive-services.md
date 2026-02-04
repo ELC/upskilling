@@ -45,10 +45,6 @@ graph TD
     H --> J[UserCareerPathRepository]
     H --> K[UserPathAssignmentRepository]
     H --> L[UserStepProgressRepository]
-    
-    style C fill:#ffcccc
-    style H fill:#ffcccc
-    style A fill:#ffffcc
 ```
 
 ### After: Atomic Components
@@ -69,16 +65,6 @@ graph TD
     D1 --> E2[user_career_path.py]
     D1 --> E3[user_path_assignment.py]
     D1 --> E4[user_step_progress.py]
-    
-    style C1 fill:#ccffcc
-    style C2 fill:#ccffcc
-    style C3 fill:#ccffcc
-    style E1 fill:#ccffcc
-    style E2 fill:#ccffcc
-    style E3 fill:#ccffcc
-    style E4 fill:#ccffcc
-    style A1 fill:#cce5ff
-    style A2 fill:#cce5ff
 ```
 
 ### Dependency Injection Flow
@@ -108,10 +94,6 @@ graph LR
     
     D -.depends on.-> J
     D -.depends on.-> I
-    
-    style A fill:#e1f5ff
-    style B fill:#fff3e0
-    style H fill:#f3e5f5
 ```
 
 ## Key Changes Summary
