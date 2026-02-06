@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from upskills.repositories.base import Base
+from upskills.repositories.base.models import Base
 
 from .provider import DatabaseProvider
 
