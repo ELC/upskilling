@@ -19,11 +19,10 @@ from .schemas import (
 router = APIRouter(prefix="/careers", tags=["Careers"])
 
 
-@router.get("")
+@router.get("", dependencies=[Depends(CurrentUser)])
 @inject
 async def list_careers(
     service: Annotated[CareerService, Depends(Provide["career_service"])],
-    current_user: CurrentUser,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[CareerResponse]:
@@ -55,12 +54,11 @@ async def create_career(
     return CareerResponse.model_validate(result.model_dump())
 
 
-@router.get("/{career_id}")
+@router.get("/{career_id}", dependencies=[Depends(CurrentUser)])
 @inject
 async def get_career(
     career_id: int,
     service: Annotated[CareerService, Depends(Provide["career_service"])],
-    current_user: CurrentUser,
 ) -> CareerWithPathsResponse:
     result = await service.get_career(career_id)
 
@@ -73,13 +71,12 @@ async def get_career(
     return CareerWithPathsResponse.model_validate(result.model_dump())
 
 
-@router.put("/{career_id}")
+@router.put("/{career_id}", dependencies=[Depends(require_permissions("career.update"))])
 @inject
 async def update_career(
     career_id: int,
     data: CareerUpdate,
     service: Annotated[CareerService, Depends(Provide["career_service"])],
-    _: Annotated[User, Depends(require_permissions("career.update"))],
 ) -> CareerResponse:
     career = Career(name=data.name, specialization=data.specialization)
     result = await service.update_career(career_id, career)
@@ -93,12 +90,11 @@ async def update_career(
     return CareerResponse.model_validate(result.model_dump())
 
 
-@router.delete("/{career_id}")
+@router.delete("/{career_id}", dependencies=[Depends(require_permissions("career.update"))])
 @inject
 async def delete_career(
     career_id: int,
     service: Annotated[CareerService, Depends(Provide["career_service"])],
-    _: Annotated[User, Depends(require_permissions("career.update"))],
 ) -> MessageResponse:
     success = await service.delete_career(career_id)
 

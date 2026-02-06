@@ -19,7 +19,7 @@ from .schemas import PasswordChange, UserUpdate
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.get("")
+@router.get("", dependencies=[Depends(require_permissions("user.view"))])
 @inject
 async def list_users(
     service: Annotated[UserService, Depends(Provide["user_service"])],
@@ -105,12 +105,11 @@ async def change_my_password(
     )
 
 
-@router.get("/{user_id}")
+@router.get("/{user_id}", dependencies=[Depends(require_permissions("user.view"))])
 @inject
 async def get_user(
     user_id: int,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    _: Annotated[User, Depends(require_permissions("team.view"))],
 ) -> UserResponse:
     result = await service.get_user(user_id)
 
@@ -123,13 +122,12 @@ async def get_user(
     return UserResponse.model_validate(result.model_dump())
 
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", dependencies=[Depends(require_permissions("user.manage"))])
 @inject
 @handle_service_errors
 async def delete_user(
     user_id: int,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     success = await service.delete_user(user_id)
 
@@ -142,27 +140,25 @@ async def delete_user(
     return MessageResponse(message="User deleted successfully.")
 
 
-@router.post("/{user_id}/roles/{role_name}")
+@router.post("/{user_id}/roles/{role_name}", dependencies=[Depends(require_permissions("user.manage"))])
 @inject
 @handle_service_errors
 async def assign_role_to_user(
     user_id: int,
     role_name: str,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     await service.assign_role(user_id, role_name)
     return MessageResponse(message=f"Role '{role_name}' assigned to user.")
 
 
-@router.delete("/{user_id}/roles/{role_name}")
+@router.delete("/{user_id}/roles/{role_name}", dependencies=[Depends(require_permissions("user.manage"))])
 @inject
 @handle_service_errors
 async def remove_role_from_user(
     user_id: int,
     role_name: str,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     await service.remove_role(user_id, role_name)
     return MessageResponse(message=f"Role '{role_name}' removed from user.")

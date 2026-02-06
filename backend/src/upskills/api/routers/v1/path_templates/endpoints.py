@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from upskills.api.schemas import MessageResponse, PaginatedResponse
 from upskills.core import CurrentUser, handle_service_errors, require_permissions
 from upskills.domain import PathTemplate
-from upskills.repositories import User
 from upskills.services import PathTemplateService
 
 from .schemas import PathTemplateCreate, PathTemplateResponse, PathTemplateUpdate, PathTemplateWithStepsResponse
@@ -14,11 +13,10 @@ from .schemas import PathTemplateCreate, PathTemplateResponse, PathTemplateUpdat
 router = APIRouter(prefix="/paths", tags=["Path Templates"])
 
 
-@router.get("")
+@router.get("", dependencies=[Depends(CurrentUser)])
 @inject
 async def list_paths(
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
-    current_user: CurrentUser,
     career_id: int | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -39,13 +37,14 @@ async def list_paths(
     )
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permissions("path_template.create"))]
+)
 @inject
 @handle_service_errors
 async def create_path(
     data: PathTemplateCreate,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
-    _: Annotated[User, Depends(require_permissions("path_template.create"))],
 ) -> PathTemplateResponse:
     path = PathTemplate(
         career_id=data.career_id,
@@ -59,12 +58,11 @@ async def create_path(
     return PathTemplateResponse.model_validate(result.model_dump())
 
 
-@router.get("/{path_id}")
+@router.get("/{path_id}", dependencies=[Depends(CurrentUser)])
 @inject
 async def get_path(
     path_id: int,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
-    current_user: CurrentUser,
 ) -> PathTemplateWithStepsResponse:
     result = await service.get_path(path_id)
 
@@ -77,13 +75,12 @@ async def get_path(
     return PathTemplateWithStepsResponse.model_validate(result.model_dump())
 
 
-@router.put("/{path_id}")
+@router.put("/{path_id}", dependencies=[Depends(require_permissions("path_template.update"))])
 @inject
 async def update_path(
     path_id: int,
     data: PathTemplateUpdate,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
-    _: Annotated[User, Depends(require_permissions("path_template.update"))],
 ) -> PathTemplateResponse:
     path = PathTemplate(
         name=data.name,
@@ -103,12 +100,11 @@ async def update_path(
     return PathTemplateResponse.model_validate(result.model_dump())
 
 
-@router.delete("/{path_id}")
+@router.delete("/{path_id}", dependencies=[Depends(require_permissions("path_template.update"))])
 @inject
 async def delete_path(
     path_id: int,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
-    _: Annotated[User, Depends(require_permissions("path_template.update"))],
 ) -> MessageResponse:
     success = await service.delete_path(path_id)
 

@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from upskills.api.schemas import MessageResponse
 from upskills.core import CurrentUser, handle_service_errors, require_permissions
 from upskills.domain import LogEntry
-from upskills.repositories import User
 from upskills.services import LogbookService
 
 from .schemas import (
@@ -19,11 +18,10 @@ from .schemas import (
 router = APIRouter(prefix="/logbook", tags=["Logbook"])
 
 
-@router.get("/career-path/{career_path_id}")
+@router.get("/career-path/{career_path_id}", dependencies=[Depends(CurrentUser)])
 @inject
 async def get_logbook_entries(
     career_path_id: int,
-    current_user: CurrentUser,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
     entry_type: str | None = None,
 ) -> list[LogEntryDetailResponse]:
@@ -31,13 +29,12 @@ async def get_logbook_entries(
     return [LogEntryDetailResponse.model_validate(r.model_dump()) for r in results]
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permissions("logbook.create"))])
 @inject
 @handle_service_errors
 async def create_logbook_entry(
     data: LogEntryCreate,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
-    _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> LogEntryResponse:
     entry = LogEntry(
         user_id=data.user_id,
@@ -51,11 +48,10 @@ async def create_logbook_entry(
     return LogEntryResponse.model_validate(result.model_dump())
 
 
-@router.get("/{log_entry_id}")
+@router.get("/{log_entry_id}", dependencies=[Depends(CurrentUser)])
 @inject
 async def get_logbook_entry(
     log_entry_id: int,
-    current_user: CurrentUser,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
 ) -> LogEntryDetailResponse:
     result = await service.get_entry(log_entry_id)
@@ -69,13 +65,12 @@ async def get_logbook_entry(
     return LogEntryDetailResponse.model_validate(result.model_dump())
 
 
-@router.put("/{log_entry_id}")
+@router.put("/{log_entry_id}", dependencies=[Depends(require_permissions("logbook.create"))])
 @inject
 async def update_logbook_entry(
     log_entry_id: int,
     data: LogEntryUpdate,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
-    _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> LogEntryResponse:
     entry = LogEntry(
         entry_type=data.entry_type.value if data.entry_type else None,
@@ -93,12 +88,11 @@ async def update_logbook_entry(
     return LogEntryResponse.model_validate(result.model_dump())
 
 
-@router.delete("/{log_entry_id}")
+@router.delete("/{log_entry_id}", dependencies=[Depends(require_permissions("logbook.create"))])
 @inject
 async def delete_logbook_entry(
     log_entry_id: int,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
-    _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> MessageResponse:
     success = await service.delete_entry(log_entry_id)
 
