@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.api.schemas import MessageResponse, PaginatedResponse
 from upskills.core import CurrentUser, handle_service_errors, require_permissions
+from upskills.domain import Team
 from upskills.services import TeamService
 
 from .schemas import (
@@ -49,7 +50,8 @@ async def get_my_managed_teams(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     current_user: CurrentUser,
 ) -> list[TeamWithMembersResponse]:
-    return await service.get_teams_by_manager(current_user.user_id)
+    teams = await service.get_teams_by_manager(current_user.user_id)
+    return [TeamWithMembersResponse.model_validate(t.model_dump()) for t in teams]
 
 
 @router.get("/member-of")
@@ -58,7 +60,8 @@ async def get_teams_im_member_of(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
     current_user: CurrentUser,
 ) -> list[TeamResponse]:
-    return await service.get_teams_for_user(current_user.user_id)
+    teams = await service.get_teams_for_user(current_user.user_id)
+    return [TeamResponse.model_validate(t.model_dump()) for t in teams]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permissions("team.manage"))])
@@ -68,10 +71,9 @@ async def create_team(
     data: TeamCreate,
     service: Annotated[TeamService, Depends(Provide["team_service"])],
 ) -> TeamWithMembersResponse:
-    return await service.create_team(
-        name=data.name,
-        manager_user_id=data.manager_user_id,
-    )
+    team = Team(name=data.name, manager_user_id=data.manager_user_id)
+    result = await service.create_team(team)
+    return TeamWithMembersResponse.model_validate(result.model_dump())
 
 
 @router.get("/{team_id}", dependencies=[Depends(require_permissions("team.view"))])
@@ -99,11 +101,8 @@ async def update_team(
     data: TeamUpdate,
     service: Annotated[TeamService, Depends(Provide["team_service"])],
 ) -> TeamWithMembersResponse:
-    result = await service.update_team(
-        team_id,
-        name=data.name,
-        manager_user_id=data.manager_user_id,
-    )
+    team = Team(name=data.name, manager_user_id=data.manager_user_id)
+    result = await service.update_team(team_id, team)
 
     if not result:
         raise HTTPException(
@@ -111,7 +110,7 @@ async def update_team(
             detail="Team not found",
         )
 
-    return result
+    return TeamWithMembersResponse.model_validate(result.model_dump())
 
 
 @router.delete("/{team_id}", dependencies=[Depends(require_permissions("team.manage"))])
@@ -137,7 +136,8 @@ async def get_team_members(
     team_id: int,
     service: Annotated[TeamService, Depends(Provide["team_service"])],
 ) -> list[TeamMemberResponse]:
-    return await service.get_team_members(team_id)
+    members = await service.get_team_members(team_id)
+    return [TeamMemberResponse.model_validate(m.model_dump()) for m in members]
 
 
 @router.post("/{team_id}/members", dependencies=[Depends(require_permissions("team.manage"))])
