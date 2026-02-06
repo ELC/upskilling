@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { progressApi } from '../services/api';
 import type { DashboardStats } from '../types';
 import { TrendingUp, Target, Award, Clock, BookOpen, GraduationCap, User } from 'lucide-react';
