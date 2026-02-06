@@ -3,6 +3,9 @@ from dependency_injector.wiring import Provide, inject
 from upskills.domain import Team, TeamListItem, TeamMember
 from upskills.repositories import TeamRepository, UserRepository
 
+CREATE_FIELDS = {"name", "manager_user_id"}
+UPDATE_FIELDS = {"name", "manager_user_id"}
+
 
 class TeamService:
     @inject
@@ -15,7 +18,10 @@ class TeamService:
         self._user_repository = user_repository
 
     async def get_team(self, team_id: int) -> Team | None:
-        return await self._team_repository.get_by_id_with_members(team_id)
+        team_db = await self._team_repository.get_by_id(team_id)
+        if not team_db:
+            return None
+        return self._team_repository.to_domain(team_db)
 
     async def get_all_teams(self, *, skip: int = 0, limit: int = 100) -> tuple[list[TeamListItem], int]:
         teams = await self._team_repository.get_all_with_details(skip=skip, limit=limit)
@@ -37,51 +43,54 @@ class TeamService:
 
     async def get_teams_for_user(self, user_id: int) -> list[Team]:
         teams = await self._team_repository.get_teams_for_user(user_id)
-        return [
-            Team(
-                team_id=t.team_id,
-                name=t.name,
-                manager_user_id=t.manager_user_id,
-            )
-            for t in teams
-        ]
+        return [self._team_repository.to_domain(t) for t in teams]
 
-    async def create_team(self, data: Team) -> Team:
-        manager = await self._user_repository.get_by_id(data.manager_user_id)
+    async def create_team(self, team: Team) -> Team:
+        if team.manager_user_id is None:
+            msg = "Manager user ID is required"
+            raise ValueError(msg)
+
+        manager = await self._user_repository.get_by_id(team.manager_user_id)
         if not manager:
             msg = "Manager user not found"
             raise ValueError(msg)
 
-        db_model = await self._team_repository.create(data)
-        result = await self._team_repository.get_by_id_with_members(db_model.team_id)
-        if not result:
+        db_model = await self._team_repository.create(team.model_dump(include=CREATE_FIELDS))
+        result_db = await self._team_repository.get_by_id(db_model.team_id)
+        if not result_db:
             msg = "Failed to reload team after creation"
             raise RuntimeError(msg)
-        return result
+        return self._team_repository.to_domain(result_db)
 
-    async def update_team(self, team_id: int, data: Team) -> Team | None:
-        db_model = await self._team_repository.get_by_id(team_id, id_column="team_id")
-        if not db_model:
+    async def update_team(self, team_id: int, team: Team) -> Team | None:
+        team_db = await self._team_repository.get_by_id(team_id)
+        if not team_db:
             return None
 
-        if data.manager_user_id:
-            manager = await self._user_repository.get_by_id(data.manager_user_id)
+        if team.manager_user_id:
+            manager = await self._user_repository.get_by_id(team.manager_user_id)
             if not manager:
                 msg = "Manager user not found"
                 raise ValueError(msg)
 
-        await self._team_repository.update(db_model, data)
-        return await self._team_repository.get_by_id_with_members(team_id)
+        update_data = team.model_dump(include=UPDATE_FIELDS, exclude_none=True)
+
+        if update_data:
+            await self._team_repository.update(team_db, update_data)
+        result_db = await self._team_repository.get_by_id(team_id)
+        if not result_db:
+            return None
+        return self._team_repository.to_domain(result_db)
 
     async def delete_team(self, team_id: int) -> bool:
-        db_model = await self._team_repository.get_by_id(team_id, id_column="team_id")
-        if not db_model:
+        team = await self._team_repository.get_by_id(team_id)
+        if not team:
             return False
-        await self._team_repository.delete(db_model)
+        await self._team_repository.delete(team)
         return True
 
     async def add_member(self, team_id: int, user_id: int) -> bool:
-        team = await self._team_repository.get_by_id(team_id, id_column="team_id")
+        team = await self._team_repository.get_by_id(team_id)
         if not team:
             msg = "Team not found"
             raise ValueError(msg)

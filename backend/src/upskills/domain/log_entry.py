@@ -1,7 +1,12 @@
 from datetime import date
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from .base import DomainModel
+
+if TYPE_CHECKING:
+    from .progress import UserPathAssignment
+    from .user import User
 
 
 class LogEntryType(StrEnum):
@@ -22,3 +27,5 @@ class LogEntry(DomainModel):
     related_user_path_assignment_id: int | None = None
     user_name: str | None = None
     path_name: str | None = None
+    user: "User | None" = None
+    related_path_assignment: "UserPathAssignment | None" = None

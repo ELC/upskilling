@@ -1,5 +1,3 @@
-"""Log entry model."""
-
 from datetime import date
 from typing import TYPE_CHECKING
 
@@ -14,16 +12,12 @@ if TYPE_CHECKING:
     from upskills.repositories.user_path_assignment.models import UserPathAssignment
 
 
-class LogEntry(Base):
-    """Logbook entry for mentor-mentee interactions."""
-
+class LogEntry(Base):  # pylint: disable=too-few-public-methods R0903
     __tablename__ = "log_entries"
 
     log_entry_id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"))
-    user_career_path_id: Mapped[int] = mapped_column(
-        ForeignKey("user_career_paths.user_career_path_id")
-    )
+    user_career_path_id: Mapped[int] = mapped_column(ForeignKey("user_career_paths.user_career_path_id"))
     entry_type: Mapped[str] = mapped_column(String(50))
     entry_date: Mapped[date] = mapped_column(Date)
     notes: Mapped[str] = mapped_column(Text)
@@ -33,14 +27,10 @@ class LogEntry(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "entry_type IN ('Meeting/Conversation', 'Path Approved', "
-            "'Path Rejected', 'Final Project', 'General')"
+            "entry_type IN ('Meeting/Conversation', 'Path Approved', 'Path Rejected', 'Final Project', 'General')"
         ),
     )
 
-    # Relationships
     user: Mapped["User"] = relationship(back_populates="log_entries")
     user_career_path: Mapped["UserCareerPath"] = relationship(back_populates="log_entries")
-    related_path_assignment: Mapped["UserPathAssignment | None"] = relationship(
-        back_populates="log_entries"
-    )
+    related_path_assignment: Mapped["UserPathAssignment | None"] = relationship(back_populates="log_entries")

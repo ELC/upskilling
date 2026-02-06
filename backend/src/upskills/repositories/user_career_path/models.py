@@ -1,5 +1,3 @@
-"""User career path model."""
-
 from datetime import date
 from typing import TYPE_CHECKING
 
@@ -15,9 +13,7 @@ if TYPE_CHECKING:
     from upskills.repositories.user_path_assignment.models import UserPathAssignment
 
 
-class UserCareerPath(Base):
-    """User's assigned career track."""
-
+class UserCareerPath(Base):  # pylint: disable=too-few-public-methods R0903
     __tablename__ = "user_career_paths"
 
     user_career_path_id: Mapped[int] = mapped_column(primary_key=True)
@@ -27,16 +23,11 @@ class UserCareerPath(Base):
     end_date: Mapped[date] = mapped_column(Date)
     overall_progress_percent: Mapped[int] = mapped_column(default=0)
 
-    __table_args__ = (
-        CheckConstraint("overall_progress_percent >= 0 AND overall_progress_percent <= 100"),
-    )
+    __table_args__ = (CheckConstraint("overall_progress_percent >= 0 AND overall_progress_percent <= 100"),)
 
-    # Relationships
     user: Mapped["User"] = relationship(back_populates="career_paths")
     career: Mapped["Career"] = relationship(back_populates="user_career_paths")
     path_assignments: Mapped[list["UserPathAssignment"]] = relationship(
         back_populates="user_career_path", lazy="selectin"
     )
-    log_entries: Mapped[list["LogEntry"]] = relationship(
-        back_populates="user_career_path", lazy="selectin"
-    )
+    log_entries: Mapped[list["LogEntry"]] = relationship(back_populates="user_career_path", lazy="selectin")

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { usersApi } from '../services/api';
 import { User, Mail, Edit2, Save, X, Shield } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';

@@ -9,7 +9,7 @@ from .models import UserCareerPath
 
 
 class UserCareerPathRepository(BaseRepository[UserCareerPath]):
-    async def get_by_id_with_details(self, user_career_path_id: int) -> UserCareerPathDomain | None:
+    async def get_by_id(self, id_value: int, id_column: str = "user_career_path_id") -> UserCareerPath | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(UserCareerPath)
@@ -17,11 +17,10 @@ class UserCareerPathRepository(BaseRepository[UserCareerPath]):
                     selectinload(UserCareerPath.career),
                     selectinload(UserCareerPath.path_assignments).selectinload(UserPathAssignment.path_template),
                 )
-                .where(UserCareerPath.user_career_path_id == user_career_path_id)
+                .where(UserCareerPath.user_career_path_id == id_value)
             )
             result = await session.execute(stmt)
-            path = result.scalar_one_or_none()
-            return self.to_domain(path, include_assignments=True) if path else None
+            return result.scalar_one_or_none()
 
     async def get_by_user(self, user_id: int) -> list[UserCareerPathDomain]:
         async with self._db_provider.session() as session:
@@ -43,6 +42,7 @@ class UserCareerPathRepository(BaseRepository[UserCareerPath]):
                 .options(
                     selectinload(UserCareerPath.career),
                     selectinload(UserCareerPath.path_assignments).selectinload(UserPathAssignment.path_template),
+                    selectinload(UserCareerPath.path_assignments).selectinload(UserPathAssignment.path_template),
                 )
                 .where(UserCareerPath.user_id == user_id)
                 .order_by(UserCareerPath.start_date.desc())
@@ -53,7 +53,7 @@ class UserCareerPathRepository(BaseRepository[UserCareerPath]):
 
     @staticmethod
     def to_domain(path: UserCareerPath, *, include_assignments: bool = False) -> UserCareerPathDomain:
-        path_dict = path.model_dump()
-        if not include_assignments:
+        path_dict = path.to_dict()
+        if not include_assignments and "path_assignments" in path_dict:
             path_dict.pop("path_assignments")
         return UserCareerPathDomain.model_validate(path_dict)

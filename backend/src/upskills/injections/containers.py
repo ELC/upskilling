@@ -30,7 +30,7 @@ class Container(containers.DeclarativeContainer):
 
     db_provider = providers.Singleton(
         SQLiteProvider,
-        db_path=config.database_path,
+        db_path=config["database_path"],
     )
 
     # Repositories

@@ -3,9 +3,9 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from upskills.api.dependencies import CurrentUser, require_permissions
+from upskills.api.dependencies import authenticated, require_permissions
 from upskills.api.schemas import MessageResponse, PaginatedResponse
-from upskills.domain import Team
+from upskills.domain import Team, User
 from upskills.services import TeamService
 
 from .schemas import (
@@ -22,10 +22,7 @@ from .schemas import (
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
 
-@router.get(
-    "/",
-    dependencies=[Depends(require_permissions("team.view"))],
-)
+@router.get("", dependencies=[Depends(require_permissions("team.view"))])
 @inject
 async def list_teams(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
@@ -51,7 +48,7 @@ async def list_teams(
 @inject
 async def get_my_managed_teams(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
-    current_user: CurrentUser,
+    current_user: Annotated[User, Depends(authenticated)],
 ) -> list[TeamWithMembersResponse]:
     teams = await service.get_teams_by_manager(current_user.user_id)
     return [TeamWithMembersResponse.model_validate(t.model_dump()) for t in teams]
@@ -61,40 +58,24 @@ async def get_my_managed_teams(
 @inject
 async def get_teams_im_member_of(
     service: Annotated[TeamService, Depends(Provide["team_service"])],
-    current_user: CurrentUser,
+    current_user: Annotated[User, Depends(authenticated)],
 ) -> list[TeamResponse]:
     teams = await service.get_teams_for_user(current_user.user_id)
     return [TeamResponse.model_validate(t.model_dump()) for t in teams]
 
 
-@router.post(
-    "/",
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permissions("team.manage"))],
-)
+@router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permissions("team.manage"))])
 @inject
 async def create_team(
     data: TeamCreate,
     service: Annotated[TeamService, Depends(Provide["team_service"])],
 ) -> TeamWithMembersResponse:
-    try:
-        input_data = Team(
-            name=data.name,
-            manager_user_id=data.manager_user_id,
-        )
-        result = await service.create_team(input_data)
-        return TeamWithMembersResponse.model_validate(result.model_dump())
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    team = Team(name=data.name, manager_user_id=data.manager_user_id)
+    result = await service.create_team(team)
+    return TeamWithMembersResponse.model_validate(result.model_dump())
 
 
-@router.get(
-    "/{team_id}",
-    dependencies=[Depends(require_permissions("team.view"))],
-)
+@router.get("/{team_id}", dependencies=[Depends(require_permissions("team.view"))])
 @inject
 async def get_team(
     team_id: int,
@@ -111,41 +92,26 @@ async def get_team(
     return TeamWithMembersResponse.model_validate(result.model_dump())
 
 
-@router.put(
-    "/{team_id}",
-    dependencies=[Depends(require_permissions("team.manage"))],
-)
+@router.put("/{team_id}", dependencies=[Depends(require_permissions("team.manage"))])
 @inject
 async def update_team(
     team_id: int,
     data: TeamUpdate,
     service: Annotated[TeamService, Depends(Provide["team_service"])],
 ) -> TeamWithMembersResponse:
-    try:
-        input_data = Team(
-            name=data.name,
-            manager_user_id=data.manager_user_id,
-        )
-        result = await service.update_team(team_id, input_data)
+    team = Team(name=data.name, manager_user_id=data.manager_user_id)
+    result = await service.update_team(team_id, team)
 
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Team not found",
-            )
-
-        return TeamWithMembersResponse.model_validate(result.model_dump())
-    except ValueError as e:
+    if not result:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Team not found",
+        )
+
+    return TeamWithMembersResponse.model_validate(result.model_dump())
 
 
-@router.delete(
-    "/{team_id}",
-    dependencies=[Depends(require_permissions("team.manage"))],
-)
+@router.delete("/{team_id}", dependencies=[Depends(require_permissions("team.manage"))])
 @inject
 async def delete_team(
     team_id: int,
@@ -162,10 +128,7 @@ async def delete_team(
     return MessageResponse(message="Team deleted successfully.")
 
 
-@router.get(
-    "/{team_id}/members",
-    dependencies=[Depends(require_permissions("team.view"))],
-)
+@router.get("/{team_id}/members", dependencies=[Depends(require_permissions("team.view"))])
 @inject
 async def get_team_members(
     team_id: int,
@@ -175,30 +138,18 @@ async def get_team_members(
     return [TeamMemberResponse.model_validate(m.model_dump()) for m in members]
 
 
-@router.post(
-    "/{team_id}/members",
-    dependencies=[Depends(require_permissions("team.manage"))],
-)
+@router.post("/{team_id}/members", dependencies=[Depends(require_permissions("team.manage"))])
 @inject
 async def add_team_member(
     team_id: int,
     data: TeamMemberAdd,
     service: Annotated[TeamService, Depends(Provide["team_service"])],
 ) -> MessageResponse:
-    try:
-        await service.add_member(team_id, data.user_id)
-        return MessageResponse(message="Member added to team.")
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    await service.add_member(team_id, data.user_id)
+    return MessageResponse(message="Member added to team.")
 
 
-@router.post(
-    "/{team_id}/members/bulk",
-    dependencies=[Depends(require_permissions("team.manage"))],
-)
+@router.post("/{team_id}/members/bulk", dependencies=[Depends(require_permissions("team.manage"))])
 @inject
 async def add_team_members_bulk(
     team_id: int,
@@ -222,10 +173,7 @@ async def add_team_members_bulk(
     return MessageResponse(message=f"Added {len(data.user_ids)} members to team.")
 
 
-@router.delete(
-    "/{team_id}/members/{user_id}",
-    dependencies=[Depends(require_permissions("team.manage"))],
-)
+@router.delete("/{team_id}/members/{user_id}", dependencies=[Depends(require_permissions("team.manage"))])
 @inject
 async def remove_team_member(
     team_id: int,

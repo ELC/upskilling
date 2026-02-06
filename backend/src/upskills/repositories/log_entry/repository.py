@@ -9,33 +9,26 @@ from .models import LogEntry
 
 
 class LogEntryRepository(BaseRepository[LogEntry]):
-    async def get_by_id_with_details(self, log_entry_id: int) -> LogEntryDomain | None:
+    async def get_by_id(self, id_value: int, id_column: str = "log_entry_id") -> LogEntry | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(LogEntry)
                 .options(
                     selectinload(LogEntry.user),
-                    selectinload(LogEntry.related_path_assignment).selectinload(
-                        UserPathAssignment.path_template
-                    ),
+                    selectinload(LogEntry.related_path_assignment).selectinload(UserPathAssignment.path_template),
                 )
-                .where(LogEntry.log_entry_id == log_entry_id)
+                .where(LogEntry.log_entry_id == id_value)
             )
             result = await session.execute(stmt)
-            entry = result.scalar_one_or_none()
-            return self.to_domain(entry, include_details=True) if entry else None
+            return result.scalar_one_or_none()
 
-    async def get_by_career_path(
-        self, user_career_path_id: int, entry_type: str | None = None
-    ) -> list[LogEntryDomain]:
+    async def get_by_career_path(self, user_career_path_id: int, entry_type: str | None = None) -> list[LogEntryDomain]:
         async with self._db_provider.session() as session:
             stmt = (
                 select(LogEntry)
                 .options(
                     selectinload(LogEntry.user),
-                    selectinload(LogEntry.related_path_assignment).selectinload(
-                        UserPathAssignment.path_template
-                    ),
+                    selectinload(LogEntry.related_path_assignment).selectinload(UserPathAssignment.path_template),
                 )
                 .where(LogEntry.user_career_path_id == user_career_path_id)
             )

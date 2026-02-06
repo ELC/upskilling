@@ -3,24 +3,29 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from upskills.api.dependencies import require_permissions
+from upskills.api.dependencies import get_optional_user, require_permissions
 from upskills.api.schemas import MessageResponse
 from upskills.domain import PathStep
 from upskills.services import PathStepService
 
-from .schemas import PathStepCreate, PathStepResponse, PathStepUpdate, StepDependencyCreate
+from .schemas import (
+    PathStepCreate,
+    PathStepResponse,
+    PathStepUpdate,
+    StepDependencyCreate,
+)
 
 router = APIRouter(prefix="/steps", tags=["Path Steps"])
 
 
-@router.get("/templates/{path_id}/steps")
+@router.get("/templates/{path_id}/steps", dependencies=[Depends(get_optional_user)])
 @inject
 async def list_steps(
     path_id: int,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> list[PathStepResponse]:
-    steps = await service.get_steps_for_path(path_id)
-    return [PathStepResponse.model_validate(s.model_dump()) for s in steps]
+    results = await service.get_steps_for_path(path_id)
+    return [PathStepResponse.model_validate(r.model_dump()) for r in results]
 
 
 @router.post(
@@ -34,25 +39,18 @@ async def create_step(
     data: PathStepCreate,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> PathStepResponse:
-    try:
-        input_data = PathStep(
-            path_template_id=path_id,
-            step_order=data.step_order,
-            name=data.name,
-            description=data.description,
-            duration_hours=data.duration_hours,
-            course_link=data.course_link,
-        )
-        result = await service.create_step(input_data)
-        return PathStepResponse.model_validate(result.model_dump())
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    step = PathStep(
+        step_order=data.step_order,
+        name=data.name,
+        description=data.description,
+        duration_hours=data.duration_hours,
+        course_link=data.course_link,
+    )
+    result = await service.create_step(path_id, step)
+    return PathStepResponse.model_validate(result.model_dump())
 
 
-@router.get("/{step_id}")
+@router.get("/{step_id}", dependencies=[Depends(get_optional_user)])
 @inject
 async def get_step(
     step_id: int,
@@ -66,28 +64,24 @@ async def get_step(
             detail="Step not found",
         )
 
-    # Map domain object to API schema
     return PathStepResponse.model_validate(result.model_dump())
 
 
-@router.put(
-    "/{step_id}",
-    dependencies=[Depends(require_permissions("path_content.add"))],
-)
+@router.put("/{step_id}", dependencies=[Depends(require_permissions("path_content.add"))])
 @inject
 async def update_step(
     step_id: int,
     data: PathStepUpdate,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> PathStepResponse:
-    input_data = PathStep(
+    step = PathStep(
         step_order=data.step_order,
         name=data.name,
         description=data.description,
         duration_hours=data.duration_hours,
         course_link=data.course_link,
     )
-    result = await service.update_step(step_id, input_data)
+    result = await service.update_step(step_id, step)
 
     if not result:
         raise HTTPException(
@@ -98,10 +92,7 @@ async def update_step(
     return PathStepResponse.model_validate(result.model_dump())
 
 
-@router.delete(
-    "/{step_id}",
-    dependencies=[Depends(require_permissions("path_content.add"))],
-)
+@router.delete("/{step_id}", dependencies=[Depends(require_permissions("path_content.add"))])
 @inject
 async def delete_step(
     step_id: int,
@@ -118,10 +109,7 @@ async def delete_step(
     return MessageResponse(message="Step deleted successfully.")
 
 
-@router.post(
-    "/{step_id}/dependencies",
-    dependencies=[Depends(require_permissions("path_content.add"))],
-)
+@router.post("/{step_id}/dependencies", dependencies=[Depends(require_permissions("path_content.add"))])
 @inject
 async def add_step_dependency(
     step_id: int,
@@ -133,8 +121,7 @@ async def add_step_dependency(
 
 
 @router.delete(
-    "/{step_id}/dependencies/{depends_on_step_id}",
-    dependencies=[Depends(require_permissions("path_content.add"))],
+    "/{step_id}/dependencies/{depends_on_step_id}", dependencies=[Depends(require_permissions("path_content.add"))]
 )
 @inject
 async def remove_step_dependency(

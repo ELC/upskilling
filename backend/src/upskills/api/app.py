@@ -5,16 +5,17 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import base_router, v1_router
 from upskills.core import get_settings
 from upskills.db import DatabaseProvider
 from upskills.injections import Container
+
+from .routers import base_router, v1_router
 
 
 @asynccontextmanager
 @inject
 async def lifespan(
-    app: FastAPI,
+    _app: FastAPI,
     db_provider: DatabaseProvider = Provide["db_provider"],
 ) -> AsyncIterator[None]:
     await db_provider.init_db()
@@ -27,7 +28,7 @@ def app_factory() -> FastAPI:
 
     container = Container()
     container.config.from_pydantic(settings)
-    container.wire(packages=["upskills"])
+    container.wire(packages=["upskills"])  # pylint: disable=no-member E1101
 
     app = FastAPI(
         title=settings.app_name,

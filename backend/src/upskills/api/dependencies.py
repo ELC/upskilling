@@ -34,7 +34,7 @@ async def get_optional_user(
 CurrentUser = Annotated[User | None, Depends(get_optional_user)]
 
 
-async def authenticated(
+def authenticated(
     user: CurrentUser,
 ) -> User:
     if not user:

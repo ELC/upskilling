@@ -1,5 +1,3 @@
-"""Database module."""
-
 from .provider import DatabaseProvider
 from .sqlite import SQLiteProvider
 

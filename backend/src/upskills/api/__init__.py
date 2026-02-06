@@ -1,5 +1,3 @@
-"""API module."""
-
 from .app import app_factory
 from .dependencies import (
     CurrentUser,

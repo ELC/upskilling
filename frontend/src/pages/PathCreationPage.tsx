@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { careersApi, pathsApi } from '../services/api';
-import type { Career, PathTemplate, PathTemplateWithSteps } from '../types';
-import { Plus, BookOpen, Clock, ExternalLink, Save, X } from 'lucide-react';
+import type { Career, PathTemplate } from '../types';
+import { Plus, BookOpen, ExternalLink, Save, X } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ActionMenu from '../components/ActionMenu';
 

@@ -3,6 +3,16 @@ from dependency_injector.wiring import Provide, inject
 from upskills.domain import PathTemplate
 from upskills.repositories import CareerRepository, PathTemplateRepository
 
+CREATE_FIELDS = {
+    "career_id",
+    "name",
+    "description",
+    "duration_hours",
+    "default_start_offset_days",
+    "default_deadline_offset_days",
+}
+UPDATE_FIELDS = {"name", "description", "duration_hours", "default_start_offset_days", "default_deadline_offset_days"}
+
 
 class PathTemplateService:
     @inject
@@ -15,7 +25,10 @@ class PathTemplateService:
         self._career_repository = career_repository
 
     async def get_path(self, path_template_id: int) -> PathTemplate | None:
-        return await self._path_template_repository.get_by_id_with_steps(path_template_id)
+        path_db = await self._path_template_repository.get_by_id(path_template_id)
+        if not path_db:
+            return None
+        return self._path_template_repository.to_domain(path_db, include_steps=True)
 
     async def get_all_paths(
         self, *, skip: int = 0, limit: int = 100, career_id: int | None = None
@@ -28,25 +41,34 @@ class PathTemplateService:
         total = await self._path_template_repository.count()
         return paths, total
 
-    async def create_path(self, data: PathTemplate) -> PathTemplate:
-        career = await self._career_repository.get_by_id_with_paths(data.career_id)
+    async def create_path(self, path: PathTemplate) -> PathTemplate:
+        if path.career_id is None:
+            msg = "Career ID is required"
+            raise ValueError(msg)
+
+        career = await self._career_repository.get_by_id(path.career_id)
         if not career:
             msg = "Career not found"
             raise ValueError(msg)
 
-        db_model = await self._path_template_repository.create(data)
+        db_model = await self._path_template_repository.create(path.model_dump(include=CREATE_FIELDS))
         return self._path_template_repository.to_domain(db_model)
 
-    async def update_path(self, path_template_id: int, data: PathTemplate) -> PathTemplate | None:
-        db_model = await self._path_template_repository.get_by_id(path_template_id, id_column="path_template_id")
-        if not db_model:
+    async def update_path(self, path_template_id: int, path: PathTemplate) -> PathTemplate | None:
+        path_db = await self._path_template_repository.get_by_id(path_template_id)
+        if not path_db:
             return None
-        updated = await self._path_template_repository.update(db_model, data)
-        return self._path_template_repository.to_domain(updated)
+
+        update_data = path.model_dump(include=UPDATE_FIELDS, exclude_none=True)
+
+        if update_data:
+            updated = await self._path_template_repository.update(path_db, update_data)
+            return self._path_template_repository.to_domain(updated)
+        return self._path_template_repository.to_domain(path_db)
 
     async def delete_path(self, path_template_id: int) -> bool:
-        db_model = await self._path_template_repository.get_by_id(path_template_id, id_column="path_template_id")
-        if not db_model:
+        path_db = await self._path_template_repository.get_by_id(path_template_id)
+        if not path_db:
             return False
-        await self._path_template_repository.delete(db_model)
+        await self._path_template_repository.delete(path_db)
         return True

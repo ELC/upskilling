@@ -22,4 +22,10 @@ class Team(DomainModel):
     name: str | None = None
     manager_user_id: int | None = None
     manager: User | None = None
-    members: list[TeamMember] = Field(default_factory=list)
+    members: list["TeamMembership"] = Field(default_factory=list)
+
+
+class TeamMembership(DomainModel):
+    team_id: int | None = None
+    user_id: int | None = None
+    user: User | None = None

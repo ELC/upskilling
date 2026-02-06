@@ -3,22 +3,17 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from upskills.api.dependencies import require_permissions
+from upskills.api.dependencies import get_optional_user, require_permissions
 from upskills.api.schemas import MessageResponse, PaginatedResponse
 from upskills.domain import PathTemplate
 from upskills.services import PathTemplateService
 
-from .schemas import (
-    PathTemplateCreate,
-    PathTemplateResponse,
-    PathTemplateUpdate,
-    PathTemplateWithStepsResponse,
-)
+from .schemas import PathTemplateCreate, PathTemplateResponse, PathTemplateUpdate, PathTemplateWithStepsResponse
 
 router = APIRouter(prefix="/paths", tags=["Path Templates"])
 
 
-@router.get("/")
+@router.get("", dependencies=[Depends(get_optional_user)])
 @inject
 async def list_paths(
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
@@ -43,34 +38,26 @@ async def list_paths(
 
 
 @router.post(
-    "/",
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permissions("path_template.create"))],
+    "", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permissions("path_template.create"))]
 )
 @inject
 async def create_path(
     data: PathTemplateCreate,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
 ) -> PathTemplateResponse:
-    try:
-        input_data = PathTemplate(
-            career_id=data.career_id,
-            name=data.name,
-            description=data.description,
-            duration_hours=data.duration_hours,
-            default_start_offset_days=data.default_start_offset_days,
-            default_deadline_offset_days=data.default_deadline_offset_days,
-        )
-        result = await service.create_path(input_data)
-        return PathTemplateResponse.model_validate(result.model_dump())
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    path = PathTemplate(
+        career_id=data.career_id,
+        name=data.name,
+        description=data.description,
+        duration_hours=data.duration_hours,
+        default_start_offset_days=data.default_start_offset_days,
+        default_deadline_offset_days=data.default_deadline_offset_days,
+    )
+    result = await service.create_path(path)
+    return PathTemplateResponse.model_validate(result.model_dump())
 
 
-@router.get("/{path_id}")
+@router.get("/{path_id}", dependencies=[Depends(get_optional_user)])
 @inject
 async def get_path(
     path_id: int,
@@ -84,28 +71,24 @@ async def get_path(
             detail="Path template not found",
         )
 
-    # Map domain object to API schema
     return PathTemplateWithStepsResponse.model_validate(result.model_dump())
 
 
-@router.put(
-    "/{path_id}",
-    dependencies=[Depends(require_permissions("path_template.update"))],
-)
+@router.put("/{path_id}", dependencies=[Depends(require_permissions("path_template.update"))])
 @inject
 async def update_path(
     path_id: int,
     data: PathTemplateUpdate,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
 ) -> PathTemplateResponse:
-    input_data = PathTemplate(
+    path = PathTemplate(
         name=data.name,
         description=data.description,
         duration_hours=data.duration_hours,
         default_start_offset_days=data.default_start_offset_days,
         default_deadline_offset_days=data.default_deadline_offset_days,
     )
-    result = await service.update_path(path_id, input_data)
+    result = await service.update_path(path_id, path)
 
     if not result:
         raise HTTPException(
@@ -116,10 +99,7 @@ async def update_path(
     return PathTemplateResponse.model_validate(result.model_dump())
 
 
-@router.delete(
-    "/{path_id}",
-    dependencies=[Depends(require_permissions("path_template.update"))],
-)
+@router.delete("/{path_id}", dependencies=[Depends(require_permissions("path_template.update"))])
 @inject
 async def delete_path(
     path_id: int,

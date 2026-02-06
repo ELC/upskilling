@@ -1,5 +1,3 @@
-"""API v1 router."""
-
 from fastapi import APIRouter, Depends
 
 from upskills.api.dependencies import authenticated

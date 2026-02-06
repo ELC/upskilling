@@ -17,3 +17,9 @@ class Token(DomainModel):
 class AuthResult(DomainModel):
     user: UserDomain
     tokens: Token
+
+
+class TokenPayload(DomainModel):
+    sub: str
+    type: str
+    exp: int

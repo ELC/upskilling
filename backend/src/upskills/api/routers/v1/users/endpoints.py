@@ -3,8 +3,9 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from upskills.api.dependencies import CurrentUser, require_permissions
+from upskills.api.dependencies import authenticated, require_permissions
 from upskills.api.schemas import MessageResponse, PaginatedResponse, UserResponse, UserWithPermissionsResponse
+from upskills.domain import User as UserDomain
 from upskills.services import UserService
 
 from .schemas import PasswordChange, UserUpdate
@@ -12,10 +13,7 @@ from .schemas import PasswordChange, UserUpdate
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.get(
-    "/",
-    dependencies=[Depends(require_permissions("team.view"))],
-)
+@router.get("", dependencies=[Depends(require_permissions("user.view"))])
 @inject
 async def list_users(
     service: Annotated[UserService, Depends(Provide["user_service"])],
@@ -41,7 +39,7 @@ async def list_users(
 @inject
 async def get_my_profile(
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    current_user: CurrentUser,
+    current_user: Annotated[UserDomain, Depends(authenticated)],
 ) -> UserWithPermissionsResponse:
     result = await service.get_user_with_permissions(current_user.user_id)
 
@@ -59,28 +57,22 @@ async def get_my_profile(
 async def update_my_profile(
     data: UserUpdate,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    current_user: CurrentUser,
+    current_user: Annotated[UserDomain, Depends(authenticated)],
 ) -> UserResponse:
-    try:
-        result = await service.update_user(
-            current_user.user_id,
-            full_name=data.full_name,
-            email=data.email,
-            bio=data.bio,
+    user = UserDomain(
+        full_name=data.full_name,
+        email=data.email,
+        bio=data.bio,
+    )
+    result = await service.update_user(current_user.user_id, user)
+
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
         )
 
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
-
-        return UserResponse.model_validate(result.model_dump())
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    return UserResponse.model_validate(result.model_dump())
 
 
 @router.post("/me/change-password")
@@ -88,32 +80,23 @@ async def update_my_profile(
 async def change_my_password(
     data: PasswordChange,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    current_user: CurrentUser,
+    current_user: Annotated[UserDomain, Depends(authenticated)],
 ) -> MessageResponse:
-    try:
-        success = await service.change_password(
-            current_user.user_id,
-            data.current_password,
-            data.new_password,
-        )
+    success = await service.change_password(
+        current_user.user_id,
+        data.current_password,
+        data.new_password,
+    )
 
-        if success:
-            return MessageResponse(message="Password changed successfully.")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to change password.",
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    if success:
+        return MessageResponse(message="Password changed successfully.")
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Failed to change password.",
+    )
 
 
-@router.get(
-    "/{user_id}",
-    dependencies=[Depends(require_permissions("team.view"))],
-)
+@router.get("/{user_id}", dependencies=[Depends(require_permissions("user.view"))])
 @inject
 async def get_user(
     user_id: int,
@@ -130,22 +113,13 @@ async def get_user(
     return UserResponse.model_validate(result.model_dump())
 
 
-@router.delete(
-    "/{user_id}",
-    dependencies=[Depends(require_permissions("team.manage"))],
-)
+@router.delete("/{user_id}", dependencies=[Depends(require_permissions("user.manage"))])
 @inject
 async def delete_user(
     user_id: int,
     service: Annotated[UserService, Depends(Provide["user_service"])],
 ) -> MessageResponse:
-    try:
-        success = await service.delete_user(user_id)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    success = await service.delete_user(user_id)
 
     if not success:
         raise HTTPException(
@@ -156,41 +130,23 @@ async def delete_user(
     return MessageResponse(message="User deleted successfully.")
 
 
-@router.post(
-    "/{user_id}/roles/{role_name}",
-    dependencies=[Depends(require_permissions("team.manage"))],
-)
+@router.post("/{user_id}/roles/{role_name}", dependencies=[Depends(require_permissions("user.manage"))])
 @inject
 async def assign_role_to_user(
     user_id: int,
     role_name: str,
     service: Annotated[UserService, Depends(Provide["user_service"])],
 ) -> MessageResponse:
-    try:
-        await service.assign_role(user_id, role_name)
-        return MessageResponse(message=f"Role '{role_name}' assigned to user.")
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    await service.assign_role(user_id, role_name)
+    return MessageResponse(message=f"Role '{role_name}' assigned to user.")
 
 
-@router.delete(
-    "/{user_id}/roles/{role_name}",
-    dependencies=[Depends(require_permissions("team.manage"))],
-)
+@router.delete("/{user_id}/roles/{role_name}", dependencies=[Depends(require_permissions("user.manage"))])
 @inject
 async def remove_role_from_user(
     user_id: int,
     role_name: str,
     service: Annotated[UserService, Depends(Provide["user_service"])],
 ) -> MessageResponse:
-    try:
-        await service.remove_role(user_id, role_name)
-        return MessageResponse(message=f"Role '{role_name}' removed from user.")
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    await service.remove_role(user_id, role_name)
+    return MessageResponse(message=f"Role '{role_name}' removed from user.")

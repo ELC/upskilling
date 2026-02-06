@@ -50,7 +50,6 @@ export default function DevelopmentPlansPage() {
   const currentCareer = careerPaths[0];
   const currentPath = currentCareer?.pathAssignments?.find(a => a.status === 'In Progress');
   const pathsRemaining = currentCareer?.pathAssignments?.filter(a => a.status !== 'Completed').length || 0;
-  const pathsCompleted = currentCareer?.pathAssignments?.filter(a => a.status === 'Completed').length || 0;
 
   return (
     <div className="space-y-8">

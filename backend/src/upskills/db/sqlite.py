@@ -1,7 +1,5 @@
-"""SQLite database provider implementation."""
-
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 
 from sqlalchemy.ext.asyncio import (
@@ -11,23 +9,13 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from upskills.repositories.base import Base
+from upskills.repositories.base.models import Base
 
 from .provider import DatabaseProvider
 
 
 class SQLiteProvider(DatabaseProvider):
-    """SQLite implementation of the database provider.
-
-    This provider uses aiosqlite for async SQLite operations.
-    """
-
     def __init__(self, db_path: str) -> None:
-        """Initialize the SQLite provider.
-
-        Args:
-            db_path: Path to the SQLite database file.
-        """
         self._db_path = db_path
         self._engine: AsyncEngine = create_async_engine(
             f"sqlite+aiosqlite:///{db_path}",
@@ -42,8 +30,6 @@ class SQLiteProvider(DatabaseProvider):
         )
 
     async def init_db(self) -> None:
-        """Initialize the database by creating all tables."""
-        # Ensure the directory exists
         db_dir = Path(self._db_path).parent
         if db_dir and not db_dir.exists():
             db_dir.mkdir(parents=True, exist_ok=True)
@@ -52,22 +38,19 @@ class SQLiteProvider(DatabaseProvider):
             await conn.run_sync(Base.metadata.create_all)
 
     async def close(self) -> None:
-        """Close the database engine and all connections."""
         await self._engine.dispose()
 
-    @asynccontextmanager
-    async def session(self) -> AsyncIterator[AsyncSession]:
-        """Provide a transactional scope around a series of operations.
+    def session(self) -> AbstractAsyncContextManager[AsyncSession]:
+        @asynccontextmanager
+        async def _session() -> AsyncIterator[AsyncSession]:
+            db_session = self._session_factory()
+            try:
+                yield db_session
+                await db_session.commit()
+            except Exception:
+                await db_session.rollback()
+                raise
+            finally:
+                await db_session.close()
 
-        Yields:
-            AsyncSession: Database session for operations.
-        """
-        session = self._session_factory()
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+        return _session()

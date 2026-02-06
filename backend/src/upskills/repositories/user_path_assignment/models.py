@@ -1,5 +1,3 @@
-"""User path assignment model."""
-
 from datetime import date
 from typing import TYPE_CHECKING
 
@@ -15,15 +13,11 @@ if TYPE_CHECKING:
     from upskills.repositories.user_step_progress.models import UserStepProgress
 
 
-class UserPathAssignment(Base):
-    """Concrete assignment of a path template to a user's career journey."""
-
+class UserPathAssignment(Base):  # pylint: disable=too-few-public-methods R0903
     __tablename__ = "user_path_assignments"
 
     user_path_assignment_id: Mapped[int] = mapped_column(primary_key=True)
-    user_career_path_id: Mapped[int] = mapped_column(
-        ForeignKey("user_career_paths.user_career_path_id")
-    )
+    user_career_path_id: Mapped[int] = mapped_column(ForeignKey("user_career_paths.user_career_path_id"))
     path_template_id: Mapped[int] = mapped_column(ForeignKey("path_templates.path_template_id"))
     start_date: Mapped[date] = mapped_column(Date)
     deadline: Mapped[date] = mapped_column(Date)
@@ -37,12 +31,7 @@ class UserPathAssignment(Base):
         CheckConstraint("mentor_validation_status IN ('Pending', 'Approved', 'Rejected')"),
     )
 
-    # Relationships
     user_career_path: Mapped["UserCareerPath"] = relationship(back_populates="path_assignments")
     path_template: Mapped["PathTemplate"] = relationship(back_populates="assignments")
-    step_progress: Mapped[list["UserStepProgress"]] = relationship(
-        back_populates="path_assignment", lazy="selectin"
-    )
-    log_entries: Mapped[list["LogEntry"]] = relationship(
-        back_populates="related_path_assignment", lazy="selectin"
-    )
+    step_progress: Mapped[list["UserStepProgress"]] = relationship(back_populates="path_assignment", lazy="selectin")
+    log_entries: Mapped[list["LogEntry"]] = relationship(back_populates="related_path_assignment", lazy="selectin")

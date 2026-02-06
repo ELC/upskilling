@@ -27,10 +27,18 @@ class LogEntryResponse(BaseSchema):
     user_career_path_id: int
     entry_type: str
     entry_date: date
-    notes: str
-    related_user_path_assignment_id: int | None
+    notes: str | None = None
+    related_user_path_assignment_id: int | None = None
 
 
 class LogEntryDetailResponse(LogEntryResponse):
     user_name: str
     path_name: str | None = None
+
+
+__all__ = [
+    "LogEntryCreate",
+    "LogEntryDetailResponse",
+    "LogEntryResponse",
+    "LogEntryUpdate",
+]

@@ -1,8 +1,19 @@
-from .auth import AuthResult, Token, TokenType
+from .auth import (
+    AuthResult,
+    Token,
+    TokenPayload,
+    TokenType,
+)
 from .base import DomainModel
 from .career import Career
-from .log_entry import LogEntry, LogEntryType
-from .path_step import PathStep, PathStepDependency
+from .log_entry import (
+    LogEntry,
+    LogEntryType,
+)
+from .path_step import (
+    PathStep,
+    PathStepDependency,
+)
 from .path_template import PathTemplate
 from .progress import (
     DashboardStats,
@@ -13,12 +24,17 @@ from .progress import (
     UserStepProgress,
     ValidationStatus,
 )
-from .role import ActionResponse, RoleResponse
-from .team import Team, TeamListItem, TeamMember
-from .user import User
+from .role import Action, Role
+from .team import (
+    Team,
+    TeamListItem,
+    TeamMember,
+    TeamMembership,
+)
+from .user import RoleInfo, User
 
 __all__ = [
-    "ActionResponse",
+    "Action",
     "AuthResult",
     "Career",
     "DashboardStats",
@@ -30,11 +46,14 @@ __all__ = [
     "PathStepDependency",
     "PathTemplate",
     "ProgressStatus",
-    "RoleResponse",
+    "Role",
+    "RoleInfo",
     "Team",
     "TeamListItem",
     "TeamMember",
+    "TeamMembership",
     "Token",
+    "TokenPayload",
     "TokenType",
     "User",
     "UserCareerPath",

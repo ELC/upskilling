@@ -3,17 +3,22 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from upskills.api.dependencies import require_permissions
+from upskills.api.dependencies import get_optional_user, require_permissions
 from upskills.api.schemas import MessageResponse, PaginatedResponse
-from upskills.domain import Career as CareerDomain
+from upskills.domain import Career
 from upskills.services import CareerService
 
-from .schemas import CareerCreate, CareerResponse, CareerUpdate, CareerWithPathsResponse
+from .schemas import (
+    CareerCreate,
+    CareerResponse,
+    CareerUpdate,
+    CareerWithPathsResponse,
+)
 
 router = APIRouter(prefix="/careers", tags=["Careers"])
 
 
-@router.get("/")
+@router.get("", dependencies=[Depends(get_optional_user)])
 @inject
 async def list_careers(
     service: Annotated[CareerService, Depends(Provide["career_service"])],
@@ -25,7 +30,6 @@ async def list_careers(
     careers, total = await service.get_all_careers(skip=skip, limit=page_size)
     total_pages = (total + page_size - 1) // page_size
 
-    # Map domain objects to API schemas
     items = [CareerResponse.model_validate(c.model_dump()) for c in careers]
 
     return PaginatedResponse(
@@ -47,15 +51,12 @@ async def create_career(
     data: CareerCreate,
     service: Annotated[CareerService, Depends(Provide["career_service"])],
 ) -> CareerResponse:
-    input_data = CareerDomain(
-        name=data.name,
-        specialization=data.specialization,
-    )
-    result = await service.create_career(input_data)
+    career = Career(name=data.name, specialization=data.specialization)
+    result = await service.create_career(career)
     return CareerResponse.model_validate(result.model_dump())
 
 
-@router.get("/{career_id}")
+@router.get("/{career_id}", dependencies=[Depends(get_optional_user)])
 @inject
 async def get_career(
     career_id: int,
@@ -72,21 +73,15 @@ async def get_career(
     return CareerWithPathsResponse.model_validate(result.model_dump())
 
 
-@router.put(
-    "/{career_id}",
-    dependencies=[Depends(require_permissions("career.update"))],
-)
+@router.put("/{career_id}", dependencies=[Depends(require_permissions("career.update"))])
 @inject
 async def update_career(
     career_id: int,
     data: CareerUpdate,
     service: Annotated[CareerService, Depends(Provide["career_service"])],
 ) -> CareerResponse:
-    input_data = CareerDomain(
-        name=data.name,
-        specialization=data.specialization,
-    )
-    result = await service.update_career(career_id, input_data)
+    career = Career(name=data.name, specialization=data.specialization)
+    result = await service.update_career(career_id, career)
 
     if not result:
         raise HTTPException(
@@ -97,10 +92,7 @@ async def update_career(
     return CareerResponse.model_validate(result.model_dump())
 
 
-@router.delete(
-    "/{career_id}",
-    dependencies=[Depends(require_permissions("career.update"))],
-)
+@router.delete("/{career_id}", dependencies=[Depends(require_permissions("career.update"))])
 @inject
 async def delete_career(
     career_id: int,

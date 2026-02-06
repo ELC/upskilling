@@ -1,8 +1,7 @@
 from pydantic import Field
 
-from upskills.api.schemas import BaseSchema
-
 from upskills.api.routers.v1.path_steps.schemas import PathStepResponse
+from upskills.api.schemas import BaseSchema
 
 
 class PathTemplateCreate(BaseSchema):
@@ -26,11 +25,19 @@ class PathTemplateResponse(BaseSchema):
     path_template_id: int
     career_id: int
     name: str
-    description: str
-    duration_hours: int
-    default_start_offset_days: int | None
-    default_deadline_offset_days: int | None
+    description: str | None = None
+    duration_hours: int | None = None
+    default_start_offset_days: int | None = None
+    default_deadline_offset_days: int | None = None
 
 
 class PathTemplateWithStepsResponse(PathTemplateResponse):
     steps: list[PathStepResponse] = Field(default_factory=list)
+
+
+__all__ = [
+    "PathTemplateCreate",
+    "PathTemplateResponse",
+    "PathTemplateUpdate",
+    "PathTemplateWithStepsResponse",
+]

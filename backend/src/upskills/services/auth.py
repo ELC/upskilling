@@ -7,8 +7,9 @@ from upskills.core import (
     verify_password,
     verify_token,
 )
-from upskills.domain import AuthResult, Token
+from upskills.domain import AuthResult, RoleInfo, Token, User
 from upskills.repositories import RoleRepository, UserRepository
+from upskills.repositories import User as UserModel
 
 
 class AuthService:
@@ -44,22 +45,30 @@ class AuthService:
         if mentee_role:
             await self._user_repository.assign_role(db_model.user_id, mentee_role.role_id)
 
-        user = await self._user_repository.get_by_id_with_roles(db_model.user_id)
+        user = await self._user_repository.get_by_id(db_model.user_id)
+        if not user:
+            msg = "Failed to retrieve user after registration"
+            raise RuntimeError(msg)
         tokens = self._create_tokens(db_model.user_id)
 
-        return AuthResult(user=user, tokens=tokens)
+        return AuthResult(
+            user=self._user_model_to_domain(user),
+            tokens=tokens,
+        )
 
     async def login(self, email: str, password: str) -> AuthResult:
-        db_model = await self._user_repository.get_by_email(email)
+        user = await self._user_repository.get_by_email(email)
 
-        if not db_model or not verify_password(password, db_model.password_hash):
+        if not user or not verify_password(password, user.password_hash):
             msg = "Invalid email or password"
             raise ValueError(msg)
 
-        user = self._user_repository.to_domain(db_model)
-        tokens = self._create_tokens(db_model.user_id)
+        tokens = self._create_tokens(user.user_id)
 
-        return AuthResult(user=user, tokens=tokens)
+        return AuthResult(
+            user=self._user_model_to_domain(user),
+            tokens=tokens,
+        )
 
     async def refresh_tokens(self, refresh_token: str) -> Token:
         user_id_str = verify_token(refresh_token, "refresh")
@@ -69,21 +78,21 @@ class AuthService:
             raise ValueError(msg)
 
         user_id = int(user_id_str)
-        db_model = await self._user_repository.get_by_id(user_id, id_column="user_id")
+        user = await self._user_repository.get_by_id(user_id, id_column="user_id")
 
-        if not db_model:
+        if not user:
             msg = "User not found"
             raise ValueError(msg)
 
-        return self._create_tokens(db_model.user_id)
+        return self._create_tokens(user.user_id)
 
     async def request_password_reset(self, email: str) -> str | None:
-        db_model = await self._user_repository.get_by_email(email)
+        user = await self._user_repository.get_by_email(email)
 
-        if not db_model:
+        if not user:
             return None
 
-        return await self._user_repository.create_password_reset_token(db_model.user_id)
+        return await self._user_repository.create_password_reset_token(user.user_id)
 
     async def reset_password(self, token: str, new_password: str) -> bool:
         reset_token = await self._user_repository.get_password_reset_token(token)
@@ -105,4 +114,27 @@ class AuthService:
         return Token(
             access_token=create_access_token(user_id),
             refresh_token=create_refresh_token(user_id),
+        )
+
+    @staticmethod
+    def _user_model_to_domain(user: UserModel) -> User:
+        roles: list[RoleInfo] = []
+        if user.roles:
+            roles = [
+                RoleInfo(
+                    role_id=user_role.role.role_id,
+                    name=user_role.role.name,
+                    description=user_role.role.description,
+                    max_active_paths=user_role.role.max_active_paths,
+                )
+                for user_role in user.roles
+                if user_role.role
+            ]
+        return User(
+            user_id=user.user_id,
+            full_name=user.full_name,
+            email=user.email,
+            bio=user.bio,
+            created_at=user.created_at,
+            roles=roles,
         )

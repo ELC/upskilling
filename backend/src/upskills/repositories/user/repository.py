@@ -13,28 +13,28 @@ from .models import Action, PasswordResetToken, Role, User, UserRole
 
 
 class UserRepository(BaseRepository[User]):
-    async def get_by_id_with_roles(self, user_id: int) -> UserDomain | None:
+    async def get_by_id(self, id_value: int, id_column: str = "user_id") -> User | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(User)
                 .options(selectinload(User.roles).selectinload(UserRole.role))
-                .where(User.user_id == user_id)
+                .where(User.user_id == id_value)
             )
             result = await session.execute(stmt)
-            user = result.scalar_one_or_none()
-            return self.to_domain(user) if user else None
+            return result.scalar_one_or_none()
 
     async def get_by_email(self, email: str) -> User | None:
         async with self._db_provider.session() as session:
             stmt = select(User).options(selectinload(User.roles).selectinload(UserRole.role)).where(User.email == email)
+            stmt = select(User).options(selectinload(User.roles).selectinload(UserRole.role)).where(User.email == email)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
 
-    async def get_all_with_roles(self, *, skip: int = 0, limit: int = 100) -> list[UserDomain]:
+    async def get_all_with_roles(self, *, skip: int = 0, limit: int = 100) -> list[User]:
         async with self._db_provider.session() as session:
             stmt = select(User).options(selectinload(User.roles).selectinload(UserRole.role)).offset(skip).limit(limit)
             result = await session.execute(stmt)
-            return [self.to_domain(u) for u in result.scalars().all()]
+            return list(result.scalars().all())
 
     async def get_user_permissions(self, user_id: int) -> list[str]:
         async with self._db_provider.session() as session:
@@ -112,4 +112,4 @@ class UserRepository(BaseRepository[User]):
 
     @staticmethod
     def to_domain(user: User) -> UserDomain:
-        return UserDomain.model_validate(user.model_dump())
+        return UserDomain.model_validate(user.to_dict())
