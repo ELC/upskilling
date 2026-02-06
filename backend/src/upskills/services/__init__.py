@@ -1,5 +1,3 @@
-"""Service layer - business logic."""
-
 from .auth import AuthService
 from .career import CareerService
 from .logbook import LogbookService

@@ -10,7 +10,7 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.0
     hooks:
       - id: ruff-check
       - id: ruff-format
@@ -23,6 +23,7 @@ repos:
           - pydantic>=2.10.0
           - sqlalchemy>=2.0.36
           - fastapi>=0.115.0
+          - dependency-injector>=4.48.1
 
 
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -31,5 +32,8 @@ repos:
       - id: mypy
         additional_dependencies:
           - pydantic>=2.10.0
+          - pydantic-settings>=2.6.0
           - sqlalchemy>=2.0.36
           - fastapi>=0.115.0
+          - uvicorn>=0.32.0
+          - dependency-injector>=4.48.1

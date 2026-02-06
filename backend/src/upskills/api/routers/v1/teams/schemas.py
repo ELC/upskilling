@@ -33,13 +33,28 @@ class TeamResponse(BaseSchema):
     manager_user_id: int
 
 
-class TeamWithMembersResponse(TeamResponse):
-    manager: UserResponse
-    members: list[TeamMemberResponse] = Field(default_factory=list)
-
-
 class TeamListResponse(BaseSchema):
     team_id: int
     name: str
     member_count: int
     manager_name: str
+
+
+class TeamWithMembersResponse(BaseSchema):
+    team_id: int
+    name: str
+    manager_user_id: int
+    manager: UserResponse | None = None
+    members: list[TeamMemberResponse] = Field(default_factory=list)
+
+
+__all__ = [
+    "TeamCreate",
+    "TeamListResponse",
+    "TeamMemberAdd",
+    "TeamMemberBulkAdd",
+    "TeamMemberResponse",
+    "TeamResponse",
+    "TeamUpdate",
+    "TeamWithMembersResponse",
+]

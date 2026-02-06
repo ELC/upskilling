@@ -5,11 +5,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.api.schemas import MessageResponse, PaginatedResponse
 from upskills.core import CurrentUser, require_permissions
-from upskills.domain import Career as CareerDomain
+from upskills.domain import Career
 from upskills.repositories import User
 from upskills.services import CareerService
 
-from .schemas import CareerCreate, CareerResponse, CareerUpdate, CareerWithPathsResponse
+from .schemas import (
+    CareerCreate,
+    CareerResponse,
+    CareerUpdate,
+    CareerWithPathsResponse,
+)
 
 router = APIRouter(prefix="/careers", tags=["Careers"])
 
@@ -27,7 +32,6 @@ async def list_careers(
     careers, total = await service.get_all_careers(skip=skip, limit=page_size)
     total_pages = (total + page_size - 1) // page_size
 
-    # Map domain objects to API schemas
     items = [CareerResponse.model_validate(c.model_dump()) for c in careers]
 
     return PaginatedResponse(
@@ -46,11 +50,8 @@ async def create_career(
     service: Annotated[CareerService, Depends(Provide["career_service"])],
     _: Annotated[User, Depends(require_permissions("career.create"))],
 ) -> CareerResponse:
-    input_data = CareerDomain(
-        name=data.name,
-        specialization=data.specialization,
-    )
-    result = await service.create_career(input_data)
+    career = Career(name=data.name, specialization=data.specialization)
+    result = await service.create_career(career)
     return CareerResponse.model_validate(result.model_dump())
 
 
@@ -80,11 +81,8 @@ async def update_career(
     service: Annotated[CareerService, Depends(Provide["career_service"])],
     _: Annotated[User, Depends(require_permissions("career.update"))],
 ) -> CareerResponse:
-    input_data = CareerDomain(
-        name=data.name,
-        specialization=data.specialization,
-    )
-    result = await service.update_career(career_id, input_data)
+    career = Career(name=data.name, specialization=data.specialization)
+    result = await service.update_career(career_id, career)
 
     if not result:
         raise HTTPException(

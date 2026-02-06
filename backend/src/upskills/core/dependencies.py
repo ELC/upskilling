@@ -1,5 +1,3 @@
-"""FastAPI dependencies for authentication and authorization."""
-
 from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
@@ -7,8 +5,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from upskills.repositories import User
-from upskills.repositories import UserRepository
+from upskills.repositories import User, UserRepository
 
 from .security import verify_token
 
@@ -21,7 +18,6 @@ async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
     repo: Annotated[UserRepository, Depends(Provide["user_repository"])],
 ) -> User:
-    """Get the current authenticated user from the JWT token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -52,7 +48,6 @@ async def get_current_user_optional(
     request: Request,
     repo: Annotated[UserRepository, Depends(Provide["user_repository"])],
 ) -> User | None:
-    """Get the current user if authenticated, otherwise None."""
     auth_header = request.headers.get("Authorization")
 
     if not auth_header or not auth_header.startswith("Bearer "):
@@ -75,8 +70,6 @@ async def get_current_user_optional(
 def require_permissions(
     *required_permissions: str,
 ) -> Callable[..., Coroutine[Any, Any, User]]:
-    """Dependency factory that checks if user has required permissions."""
-
     @inject
     async def check_permissions(
         current_user: Annotated[User, Depends(get_current_user)],

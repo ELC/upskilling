@@ -1,14 +1,16 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from upskills.domain import PathStep as PathStepDomain, PathStepDependency, PathTemplate as PathTemplateDomain
+from upskills.domain import PathStep as PathStepDomain
+from upskills.domain import PathStepDependency
+from upskills.domain import PathTemplate as PathTemplateDomain
 from upskills.repositories.base import BaseRepository
 
 from .models import PathTemplate, PathTemplateStep
 
 
 class PathTemplateRepository(BaseRepository[PathTemplate]):
-    async def get_by_id_with_steps(self, path_template_id: int) -> PathTemplateDomain | None:
+    async def get_by_id(self, id_value: int, id_column: str = "path_template_id") -> PathTemplate | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(PathTemplate)
@@ -16,11 +18,10 @@ class PathTemplateRepository(BaseRepository[PathTemplate]):
                     selectinload(PathTemplate.career),
                     selectinload(PathTemplate.steps).selectinload(PathTemplateStep.dependencies),
                 )
-                .where(PathTemplate.path_template_id == path_template_id)
+                .where(PathTemplate.path_template_id == id_value)
             )
             result = await session.execute(stmt)
-            path = result.scalar_one_or_none()
-            return self.to_domain(path, include_steps=True) if path else None
+            return result.scalar_one_or_none()
 
     async def get_by_career(self, career_id: int) -> list[PathTemplateDomain]:
         async with self._db_provider.session() as session:

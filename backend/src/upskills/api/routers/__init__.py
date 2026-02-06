@@ -1,5 +1,3 @@
-"""API routers."""
-
 from .base import router as base_router
 from .v1 import router as v1_router
 

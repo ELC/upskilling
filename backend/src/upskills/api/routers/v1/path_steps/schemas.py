@@ -25,7 +25,7 @@ class StepDependencyCreate(BaseSchema):
 
 class PathStepDependencyResponse(BaseSchema):
     depends_on_step_id: int
-    depends_on_step_name: str
+    depends_on_step_name: str | None = None
 
 
 class PathStepResponse(BaseSchema):
@@ -33,7 +33,16 @@ class PathStepResponse(BaseSchema):
     path_template_id: int
     step_order: int
     name: str
-    description: str | None
-    duration_hours: int | None
-    course_link: str | None
+    description: str | None = None
+    duration_hours: int | None = None
+    course_link: str | None = None
     dependencies: list[PathStepDependencyResponse] = Field(default_factory=list)
+
+
+__all__ = [
+    "PathStepCreate",
+    "PathStepDependencyResponse",
+    "PathStepResponse",
+    "PathStepUpdate",
+    "StepDependencyCreate",
+]

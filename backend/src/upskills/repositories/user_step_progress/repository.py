@@ -8,16 +8,15 @@ from .models import UserStepProgress
 
 
 class UserStepProgressRepository(BaseRepository[UserStepProgress]):
-    async def get_by_id_with_step(self, progress_id: int) -> UserStepProgressDomain | None:
+    async def get_by_id(self, id_value: int, id_column: str = "user_step_progress_id") -> UserStepProgress | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(UserStepProgress)
                 .options(selectinload(UserStepProgress.step))
-                .where(UserStepProgress.user_step_progress_id == progress_id)
+                .where(UserStepProgress.user_step_progress_id == id_value)
             )
             result = await session.execute(stmt)
-            progress = result.scalar_one_or_none()
-            return self.to_domain(progress) if progress else None
+            return result.scalar_one_or_none()
 
     async def get_by_assignment(self, user_path_assignment_id: int) -> list[UserStepProgressDomain]:
         async with self._db_provider.session() as session:
@@ -53,4 +52,4 @@ class UserStepProgressRepository(BaseRepository[UserStepProgress]):
 
     @staticmethod
     def to_domain(progress: UserStepProgress) -> UserStepProgressDomain:
-        return UserStepProgressDomain.model_validate(progress.model_dump())
+        return UserStepProgressDomain.model_validate(progress.to_dict())

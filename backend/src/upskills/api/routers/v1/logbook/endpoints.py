@@ -4,12 +4,17 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.api.schemas import MessageResponse
-from upskills.core import CurrentUser, require_permissions
+from upskills.core import CurrentUser, handle_service_errors, require_permissions
 from upskills.domain import LogEntry
 from upskills.repositories import User
 from upskills.services import LogbookService
 
-from .schemas import LogEntryCreate, LogEntryDetailResponse, LogEntryResponse, LogEntryUpdate
+from .schemas import (
+    LogEntryCreate,
+    LogEntryDetailResponse,
+    LogEntryResponse,
+    LogEntryUpdate,
+)
 
 router = APIRouter(prefix="/logbook", tags=["Logbook"])
 
@@ -22,33 +27,28 @@ async def get_logbook_entries(
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
     entry_type: str | None = None,
 ) -> list[LogEntryDetailResponse]:
-    entries = await service.get_entries_for_career_path(career_path_id, entry_type)
-    return [LogEntryDetailResponse.model_validate(e.model_dump()) for e in entries]
+    results = await service.get_entries_for_career_path(career_path_id, entry_type)
+    return [LogEntryDetailResponse.model_validate(r.model_dump()) for r in results]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 @inject
+@handle_service_errors
 async def create_logbook_entry(
     data: LogEntryCreate,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
     _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> LogEntryResponse:
-    try:
-        input_data = LogEntry(
-            user_id=data.user_id,
-            user_career_path_id=data.user_career_path_id,
-            entry_type=data.entry_type.value,
-            entry_date=data.entry_date,
-            notes=data.notes,
-            related_user_path_assignment_id=data.related_user_path_assignment_id,
-        )
-        result = await service.create_entry(input_data)
-        return LogEntryResponse.model_validate(result.model_dump())
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    entry = LogEntry(
+        user_id=data.user_id,
+        user_career_path_id=data.user_career_path_id,
+        entry_type=data.entry_type.value,
+        entry_date=data.entry_date,
+        notes=data.notes,
+        related_user_path_assignment_id=data.related_user_path_assignment_id,
+    )
+    result = await service.create_entry(entry)
+    return LogEntryResponse.model_validate(result.model_dump())
 
 
 @router.get("/{log_entry_id}")
@@ -66,7 +66,6 @@ async def get_logbook_entry(
             detail="Log entry not found",
         )
 
-    # Map domain response to API schema
     return LogEntryDetailResponse.model_validate(result.model_dump())
 
 
@@ -78,12 +77,12 @@ async def update_logbook_entry(
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
     _: Annotated[User, Depends(require_permissions("logbook.create"))],
 ) -> LogEntryResponse:
-    input_data = LogEntry(
+    entry = LogEntry(
         entry_type=data.entry_type.value if data.entry_type else None,
         entry_date=data.entry_date,
         notes=data.notes,
     )
-    result = await service.update_entry(log_entry_id, input_data)
+    result = await service.update_entry(log_entry_id, entry)
 
     if not result:
         raise HTTPException(

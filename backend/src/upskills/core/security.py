@@ -1,5 +1,3 @@
-"""Security utilities for authentication and authorization."""
-
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -10,14 +8,14 @@ from .config import get_settings
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
+    hashed: bytes = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12))
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash."""
     try:
-        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+        result: bool = bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+        return result  # noqa: TRY300
     except (ValueError, TypeError):
         return False
 
@@ -26,7 +24,6 @@ def create_access_token(
     subject: str | int,
     expires_delta: timedelta | None = None,
 ) -> str:
-    """Create a JWT access token."""
     settings = get_settings()
 
     if expires_delta:
@@ -48,7 +45,6 @@ def create_refresh_token(
     subject: str | int,
     expires_delta: timedelta | None = None,
 ) -> str:
-    """Create a JWT refresh token."""
     settings = get_settings()
 
     if expires_delta:
@@ -67,20 +63,16 @@ def create_refresh_token(
 
 
 def decode_token(token: str) -> dict[str, Any] | None:
-    """Decode and validate a JWT token."""
     settings = get_settings()
 
     try:
-        payload: dict[str, Any] = jwt.decode(
-            token, settings.secret_key, algorithms=[settings.algorithm]
-        )
-        return payload
+        payload: dict[str, Any] = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
     except JWTError:
         return None
+    return payload
 
 
 def verify_token(token: str, token_type: str = "access") -> str | None:
-    """Verify a token and return the subject (user_id) if valid."""
     payload = decode_token(token)
 
     if payload is None:

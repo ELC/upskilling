@@ -1,5 +1,3 @@
-"""Team repository and models."""
-
 from .models import Team, TeamMember
 from .repository import TeamRepository
 

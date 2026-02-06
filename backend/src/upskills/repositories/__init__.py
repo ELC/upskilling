@@ -1,5 +1,3 @@
-"""Repository layer - data access."""
-
 from .base import Base, BaseRepository, TimestampMixin, UpdateTimestampMixin
 from .career import Career, CareerRepository
 from .log_entry import LogEntry, LogEntryRepository

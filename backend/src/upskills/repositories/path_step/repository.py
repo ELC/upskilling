@@ -7,18 +7,17 @@ from upskills.repositories.path_template.models import PathStepDependency, PathT
 
 
 class PathStepRepository(BaseRepository[PathTemplateStep]):
-    async def get_by_id_with_deps(self, step_id: int) -> PathStepDomain | None:
+    async def get_by_id(self, id_value: int, id_column: str = "step_id") -> PathTemplateStep | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(PathTemplateStep)
                 .options(selectinload(PathTemplateStep.dependencies))
-                .where(PathTemplateStep.step_id == step_id)
+                .where(PathTemplateStep.step_id == id_value)
             )
             result = await session.execute(stmt)
-            step = result.scalar_one_or_none()
-            return self.to_domain(step) if step else None
+            return result.scalar_one_or_none()
 
-    async def get_by_path_template(self, path_template_id: int) -> list[PathStepDomain]:
+    async def get_by_path_template(self, path_template_id: int) -> list[PathTemplateStep]:
         async with self._db_provider.session() as session:
             stmt = (
                 select(PathTemplateStep)
@@ -27,7 +26,7 @@ class PathStepRepository(BaseRepository[PathTemplateStep]):
                 .order_by(PathTemplateStep.step_order)
             )
             result = await session.execute(stmt)
-            return [self.to_domain(s) for s in result.scalars().all()]
+            return list(result.scalars().all())
 
     async def add_dependency(self, step_id: int, depends_on_step_id: int) -> None:
         async with self._db_provider.session() as session:
@@ -51,4 +50,4 @@ class PathStepRepository(BaseRepository[PathTemplateStep]):
 
     @staticmethod
     def to_domain(step: PathTemplateStep) -> PathStepDomain:
-        return PathStepDomain.model_validate(step.model_dump())
+        return PathStepDomain.model_validate(step.to_dict())

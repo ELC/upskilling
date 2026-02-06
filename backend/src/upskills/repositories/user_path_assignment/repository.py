@@ -1,5 +1,6 @@
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.functions import count
 
 from upskills.domain import PathStep as PathStepDomain
 from upskills.domain import PathTemplate as PathTemplateDomain
@@ -13,7 +14,7 @@ from .models import UserPathAssignment
 
 
 class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
-    async def get_by_id_with_details(self, assignment_id: int) -> UserPathAssignmentDomain | None:
+    async def get_by_id(self, id_value: int, id_column: str = "user_path_assignment_id") -> UserPathAssignment | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(UserPathAssignment)
@@ -21,13 +22,12 @@ class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
                     selectinload(UserPathAssignment.path_template).selectinload(PathTemplate.steps),
                     selectinload(UserPathAssignment.step_progress),
                 )
-                .where(UserPathAssignment.user_path_assignment_id == assignment_id)
+                .where(UserPathAssignment.user_path_assignment_id == id_value)
             )
             result = await session.execute(stmt)
-            assignment = result.scalar_one_or_none()
-            return self.to_domain(assignment, include_details=True) if assignment else None
+            return result.scalar_one_or_none()
 
-    async def get_by_career_path(self, user_career_path_id: int) -> list[UserPathAssignmentDomain]:
+    async def get_by_career_path(self, user_career_path_id: int) -> list[UserPathAssignment]:
         async with self._db_provider.session() as session:
             stmt = (
                 select(UserPathAssignment)
@@ -39,9 +39,9 @@ class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
                 .order_by(UserPathAssignment.start_date)
             )
             result = await session.execute(stmt)
-            return [self.to_domain(a) for a in result.scalars().all()]
+            return list[UserPathAssignment](result.scalars().all())
 
-    async def get_pending_validation(self, mentor_user_id: int | None = None) -> list[UserPathAssignment]:
+    async def get_pending_validation(self, _mentor_user_id: int | None = None) -> list[UserPathAssignment]:
         async with self._db_provider.session() as session:
             stmt = (
                 select(UserPathAssignment)
@@ -61,12 +61,12 @@ class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
     async def count_completed_for_career_path(self, user_career_path_id: int) -> tuple[int, int]:
         async with self._db_provider.session() as session:
             total_stmt = (
-                select(func.count())
+                select(count())  # pylint: disable=no-member E1101
                 .select_from(UserPathAssignment)
                 .where(UserPathAssignment.user_career_path_id == user_career_path_id)
             )
             completed_stmt = (
-                select(func.count())
+                select(count())  # pylint: disable=no-member E1101
                 .select_from(UserPathAssignment)
                 .where(
                     UserPathAssignment.user_career_path_id == user_career_path_id,

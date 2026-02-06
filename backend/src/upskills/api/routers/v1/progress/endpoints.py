@@ -3,8 +3,12 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from upskills.core import CurrentUser, require_permissions
-from upskills.domain import UserCareerPath, UserPathAssignment, UserStepProgress
+from upskills.core import CurrentUser, handle_service_errors, require_permissions
+from upskills.domain import (
+    UserCareerPath,
+    UserPathAssignment,
+    UserStepProgress,
+)
 from upskills.repositories import User
 from upskills.services import ProgressService, TeamService
 
@@ -26,9 +30,6 @@ from .schemas import (
 router = APIRouter(prefix="/progress", tags=["Progress"])
 
 
-# === Dashboard ===
-
-
 @router.get("/dashboard")
 @inject
 async def get_dashboard(
@@ -39,17 +40,14 @@ async def get_dashboard(
     return DashboardStats.model_validate(result.model_dump())
 
 
-# === Career Paths ===
-
-
 @router.get("/career-paths")
 @inject
 async def get_my_career_paths(
     current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> list[UserCareerPathDetailResponse]:
-    paths = await service.get_user_career_paths(current_user.user_id)
-    return [UserCareerPathDetailResponse.model_validate(p.model_dump()) for p in paths]
+    results = await service.get_user_career_paths(current_user.user_id)
+    return [UserCareerPathDetailResponse.model_validate(r.model_dump()) for r in results]
 
 
 @router.get("/career-paths/{career_path_id}")
@@ -72,25 +70,20 @@ async def get_career_path(
 
 @router.post("/career-paths", status_code=status.HTTP_201_CREATED)
 @inject
+@handle_service_errors
 async def assign_career_path(
     data: UserCareerPathCreate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
     _: Annotated[User, Depends(require_permissions("paths.assign"))],
 ) -> UserCareerPathResponse:
-    try:
-        input_data = UserCareerPath(
-            user_id=data.user_id,
-            career_id=data.career_id,
-            start_date=data.start_date,
-            end_date=data.end_date,
-        )
-        result = await service.assign_career_path(input_data)
-        return UserCareerPathResponse.model_validate(result.model_dump())
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    career_path = UserCareerPath(
+        user_id=data.user_id,
+        career_id=data.career_id,
+        start_date=data.start_date,
+        end_date=data.end_date,
+    )
+    result = await service.assign_career_path(career_path)
+    return UserCareerPathResponse.model_validate(result.model_dump())
 
 
 @router.put("/career-paths/{career_path_id}")
@@ -101,11 +94,11 @@ async def update_career_path(
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
     _: Annotated[User, Depends(require_permissions("paths.assign"))],
 ) -> UserCareerPathResponse:
-    input_data = UserCareerPath(
+    career_path = UserCareerPath(
         start_date=data.start_date,
         end_date=data.end_date,
     )
-    result = await service.update_career_path(career_path_id, input_data)
+    result = await service.update_career_path(career_path_id, career_path)
 
     if not result:
         raise HTTPException(
@@ -116,9 +109,6 @@ async def update_career_path(
     return UserCareerPathResponse.model_validate(result.model_dump())
 
 
-# === Path Assignments ===
-
-
 @router.get("/career-paths/{career_path_id}/assignments")
 @inject
 async def get_path_assignments(
@@ -126,31 +116,26 @@ async def get_path_assignments(
     current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> list[UserPathAssignmentResponse]:
-    assignments = await service.get_path_assignments(career_path_id)
-    return [UserPathAssignmentResponse.model_validate(a.model_dump()) for a in assignments]
+    results = await service.get_path_assignments(career_path_id)
+    return [UserPathAssignmentResponse.model_validate(r.model_dump()) for r in results]
 
 
 @router.post("/assignments", status_code=status.HTTP_201_CREATED)
 @inject
+@handle_service_errors
 async def assign_path(
     data: UserPathAssignmentCreate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
     _: Annotated[User, Depends(require_permissions("paths.assign"))],
 ) -> UserPathAssignmentResponse:
-    try:
-        input_data = UserPathAssignment(
-            user_career_path_id=data.user_career_path_id,
-            path_template_id=data.path_template_id,
-            start_date=data.start_date,
-            deadline=data.deadline,
-        )
-        result = await service.assign_path(input_data)
-        return UserPathAssignmentResponse.model_validate(result.model_dump())
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    assignment = UserPathAssignment(
+        user_career_path_id=data.user_career_path_id,
+        path_template_id=data.path_template_id,
+        start_date=data.start_date,
+        deadline=data.deadline,
+    )
+    result = await service.assign_path(assignment)
+    return UserPathAssignmentResponse.model_validate(result.model_dump())
 
 
 @router.get("/assignments/{assignment_id}")
@@ -179,11 +164,11 @@ async def update_assignment(
     current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserPathAssignmentResponse:
-    input_data = UserPathAssignment(
+    assignment = UserPathAssignment(
         status=data.status.value if data.status else None,
         mentor_validation_status=data.mentor_validation_status.value if data.mentor_validation_status else None,
     )
-    result = await service.update_assignment_status(assignment_id, input_data)
+    result = await service.update_assignment_status(assignment_id, assignment)
 
     if not result:
         raise HTTPException(
@@ -194,17 +179,14 @@ async def update_assignment(
     return UserPathAssignmentResponse.model_validate(result.model_dump())
 
 
-# === Mentor Validation ===
-
-
 @router.get("/pending-validations")
 @inject
 async def get_pending_validations(
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
     _: Annotated[User, Depends(require_permissions("paths.validate"))],
 ) -> list[UserPathAssignmentDetailResponse]:
-    assignments = await service.get_pending_validations()
-    return [UserPathAssignmentDetailResponse.model_validate(a.model_dump()) for a in assignments]
+    results = await service.get_pending_validations()
+    return [UserPathAssignmentDetailResponse.model_validate(r.model_dump()) for r in results]
 
 
 @router.post("/assignments/{assignment_id}/approve")
@@ -214,8 +196,8 @@ async def approve_assignment(
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
     _: Annotated[User, Depends(require_permissions("paths.validate"))],
 ) -> UserPathAssignmentResponse:
-    input_data = UserPathAssignment(mentor_validation_status="Approved")
-    result = await service.update_assignment_status(assignment_id, input_data)
+    assignment = UserPathAssignment(mentor_validation_status="Approved")
+    result = await service.update_assignment_status(assignment_id, assignment)
 
     if not result:
         raise HTTPException(
@@ -233,8 +215,8 @@ async def reject_assignment(
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
     _: Annotated[User, Depends(require_permissions("paths.validate"))],
 ) -> UserPathAssignmentResponse:
-    input_data = UserPathAssignment(mentor_validation_status="Rejected")
-    result = await service.update_assignment_status(assignment_id, input_data)
+    assignment = UserPathAssignment(mentor_validation_status="Rejected")
+    result = await service.update_assignment_status(assignment_id, assignment)
 
     if not result:
         raise HTTPException(
@@ -245,9 +227,6 @@ async def reject_assignment(
     return UserPathAssignmentResponse.model_validate(result.model_dump())
 
 
-# === Step Progress ===
-
-
 @router.get("/assignments/{assignment_id}/steps")
 @inject
 async def get_step_progress(
@@ -255,8 +234,8 @@ async def get_step_progress(
     current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> list[UserStepProgressResponse]:
-    progress_list = await service.get_step_progress(assignment_id)
-    return [UserStepProgressResponse.model_validate(p.model_dump()) for p in progress_list]
+    results = await service.get_step_progress(assignment_id)
+    return [UserStepProgressResponse.model_validate(r.model_dump()) for r in results]
 
 
 @router.put("/steps/{progress_id}")
@@ -267,7 +246,7 @@ async def update_step_progress(
     current_user: CurrentUser,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserStepProgressResponse:
-    input_data = UserStepProgress(
+    progress = UserStepProgress(
         status=data.status.value if data.status else None,
         progress_percent=data.progress_percent,
         planned_start_date=data.planned_start_date,
@@ -275,7 +254,7 @@ async def update_step_progress(
         actual_start_date=data.actual_start_date,
         actual_end_date=data.actual_end_date,
     )
-    result = await service.update_step_progress(progress_id, input_data)
+    result = await service.update_step_progress(progress_id, progress)
 
     if not result:
         raise HTTPException(
@@ -284,9 +263,6 @@ async def update_step_progress(
         )
 
     return UserStepProgressResponse.model_validate(result.model_dump())
-
-
-# === Team Progress (for mentors) ===
 
 
 @router.get("/team-progress")
@@ -300,7 +276,10 @@ async def get_team_progress(
 
     member_ids: set[int] = set()
     for team in teams:
-        member_ids.update(member.user_id for member in team.members)
+        if team.members:
+            for member in team.members:
+                if member.user_id is not None:
+                    member_ids.add(member.user_id)
 
     if not member_ids:
         return []

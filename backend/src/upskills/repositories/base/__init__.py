@@ -1,5 +1,3 @@
-"""Base repository and models."""
-
 from .models import Base, TimestampMixin, UpdateTimestampMixin
 from .repository import BaseRepository
 

@@ -1,5 +1,3 @@
-"""Path template repository and models."""
-
 from .models import PathStepDependency, PathTemplate, PathTemplateStep
 from .repository import PathTemplateRepository
 

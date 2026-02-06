@@ -1,5 +1,3 @@
-"""User step progress model."""
-
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
@@ -13,15 +11,11 @@ if TYPE_CHECKING:
     from upskills.repositories.user_path_assignment.models import UserPathAssignment
 
 
-class UserStepProgress(Base):
-    """Progress on individual steps within an assigned path."""
-
+class UserStepProgress(Base):  # pylint: disable=too-few-public-methods R0903
     __tablename__ = "user_step_progress"
 
     user_step_progress_id: Mapped[int] = mapped_column(primary_key=True)
-    user_path_assignment_id: Mapped[int] = mapped_column(
-        ForeignKey("user_path_assignments.user_path_assignment_id")
-    )
+    user_path_assignment_id: Mapped[int] = mapped_column(ForeignKey("user_path_assignments.user_path_assignment_id"))
     step_id: Mapped[int] = mapped_column(ForeignKey("path_template_steps.step_id"))
     status: Mapped[str] = mapped_column(String(20), default="Pending")
     progress_percent: Mapped[int] = mapped_column(default=0)
@@ -36,6 +30,5 @@ class UserStepProgress(Base):
         CheckConstraint("progress_percent >= 0 AND progress_percent <= 100"),
     )
 
-    # Relationships
     path_assignment: Mapped["UserPathAssignment"] = relationship(back_populates="step_progress")
     step: Mapped["PathTemplateStep"] = relationship()

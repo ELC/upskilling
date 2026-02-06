@@ -4,12 +4,17 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.api.schemas import MessageResponse
-from upskills.core import CurrentUser, require_permissions
+from upskills.core import CurrentUser, handle_service_errors, require_permissions
 from upskills.domain import PathStep
 from upskills.repositories import User
 from upskills.services import PathStepService
 
-from .schemas import PathStepCreate, PathStepResponse, PathStepUpdate, StepDependencyCreate
+from .schemas import (
+    PathStepCreate,
+    PathStepResponse,
+    PathStepUpdate,
+    StepDependencyCreate,
+)
 
 router = APIRouter(prefix="/steps", tags=["Path Steps"])
 
@@ -21,34 +26,28 @@ async def list_steps(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     current_user: CurrentUser,
 ) -> list[PathStepResponse]:
-    steps = await service.get_steps_for_path(path_id)
-    return [PathStepResponse.model_validate(s.model_dump()) for s in steps]
+    results = await service.get_steps_for_path(path_id)
+    return [PathStepResponse.model_validate(r.model_dump()) for r in results]
 
 
 @router.post("/templates/{path_id}/steps", status_code=status.HTTP_201_CREATED)
 @inject
+@handle_service_errors
 async def create_step(
     path_id: int,
     data: PathStepCreate,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> PathStepResponse:
-    try:
-        input_data = PathStep(
-            path_template_id=path_id,
-            step_order=data.step_order,
-            name=data.name,
-            description=data.description,
-            duration_hours=data.duration_hours,
-            course_link=data.course_link,
-        )
-        result = await service.create_step(input_data)
-        return PathStepResponse.model_validate(result.model_dump())
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    step = PathStep(
+        step_order=data.step_order,
+        name=data.name,
+        description=data.description,
+        duration_hours=data.duration_hours,
+        course_link=data.course_link,
+    )
+    result = await service.create_step(path_id, step)
+    return PathStepResponse.model_validate(result.model_dump())
 
 
 @router.get("/{step_id}")
@@ -66,7 +65,6 @@ async def get_step(
             detail="Step not found",
         )
 
-    # Map domain object to API schema
     return PathStepResponse.model_validate(result.model_dump())
 
 
@@ -78,14 +76,14 @@ async def update_step(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
     _: Annotated[User, Depends(require_permissions("path_content.add"))],
 ) -> PathStepResponse:
-    input_data = PathStep(
+    step = PathStep(
         step_order=data.step_order,
         name=data.name,
         description=data.description,
         duration_hours=data.duration_hours,
         course_link=data.course_link,
     )
-    result = await service.update_step(step_id, input_data)
+    result = await service.update_step(step_id, step)
 
     if not result:
         raise HTTPException(

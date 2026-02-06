@@ -1,5 +1,3 @@
-"""Authentication schemas."""
-
 from pydantic import EmailStr, Field
 
 from upskills.api.schemas import BaseSchema, UserResponse

@@ -4,17 +4,12 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.api.schemas import MessageResponse, PaginatedResponse
-from upskills.core import CurrentUser, require_permissions
+from upskills.core import CurrentUser, handle_service_errors, require_permissions
 from upskills.domain import PathTemplate
 from upskills.repositories import User
 from upskills.services import PathTemplateService
 
-from .schemas import (
-    PathTemplateCreate,
-    PathTemplateResponse,
-    PathTemplateUpdate,
-    PathTemplateWithStepsResponse,
-)
+from .schemas import PathTemplateCreate, PathTemplateResponse, PathTemplateUpdate, PathTemplateWithStepsResponse
 
 router = APIRouter(prefix="/paths", tags=["Path Templates"])
 
@@ -46,27 +41,22 @@ async def list_paths(
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 @inject
+@handle_service_errors
 async def create_path(
     data: PathTemplateCreate,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
     _: Annotated[User, Depends(require_permissions("path_template.create"))],
 ) -> PathTemplateResponse:
-    try:
-        input_data = PathTemplate(
-            career_id=data.career_id,
-            name=data.name,
-            description=data.description,
-            duration_hours=data.duration_hours,
-            default_start_offset_days=data.default_start_offset_days,
-            default_deadline_offset_days=data.default_deadline_offset_days,
-        )
-        result = await service.create_path(input_data)
-        return PathTemplateResponse.model_validate(result.model_dump())
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    path = PathTemplate(
+        career_id=data.career_id,
+        name=data.name,
+        description=data.description,
+        duration_hours=data.duration_hours,
+        default_start_offset_days=data.default_start_offset_days,
+        default_deadline_offset_days=data.default_deadline_offset_days,
+    )
+    result = await service.create_path(path)
+    return PathTemplateResponse.model_validate(result.model_dump())
 
 
 @router.get("/{path_id}")
@@ -84,7 +74,6 @@ async def get_path(
             detail="Path template not found",
         )
 
-    # Map domain object to API schema
     return PathTemplateWithStepsResponse.model_validate(result.model_dump())
 
 
@@ -96,14 +85,14 @@ async def update_path(
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
     _: Annotated[User, Depends(require_permissions("path_template.update"))],
 ) -> PathTemplateResponse:
-    input_data = PathTemplate(
+    path = PathTemplate(
         name=data.name,
         description=data.description,
         duration_hours=data.duration_hours,
         default_start_offset_days=data.default_start_offset_days,
         default_deadline_offset_days=data.default_deadline_offset_days,
     )
-    result = await service.update_path(path_id, input_data)
+    result = await service.update_path(path_id, path)
 
     if not result:
         raise HTTPException(

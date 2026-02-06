@@ -1,5 +1,3 @@
-"""User repository and models."""
-
 from .models import Action, PasswordResetToken, Role, RoleAction, User, UserRole
 from .repository import UserRepository
 

@@ -150,6 +150,12 @@ ignore = [
     "COM812", # trailing comma
     "E501",   # line too long (handled by formatter)
     "B008",   # function calls in defaults (FastAPI Depends)
+    "ARG002", # unused method argument
+    "RUF067", # __init__ module logic (FastAPI router pattern)
+    "S105",   # hardcoded password (dev defaults in pydantic settings)
+    "S107",   # hardcoded password in default (false positive on token_type)
+    "DOC501", # raised exception missing from docstring
+    "DOC502", # documented exception from inner function (API docs clarity)
 ]
 
 
@@ -158,6 +164,44 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+
+#########################
+# Pylint
+#########################
+
+[tool.pylint.main]
+extension-pkg-allow-list = ["mypy","dependency_injector","pydantic_settings"]
+
+[tool.pylint.typecheck]
+generated-members = ["sqlalchemy.func.*"]
+contextmanager-decorators = ["contextlib.contextmanager"]
+ignore-none = true
+ignore-on-opaque-inference = true
+ignored-checks-for-mixins = [
+    "no-member",
+    "not-async-context-manager",
+    "not-context-manager",
+    "attribute-defined-outside-init",
+]
+ignored-classes = ["optparse.Values", "thread._local", "_thread._local"]
+missing-member-hint = true
+missing-member-hint-distance = 1
+missing-member-max-choices = 1
+mixin-class-rgx = ".*[Mm]ixin"
+
+[tool.pylint.messages_control]
+disable = [
+    "C0114",  # missing-module-docstring
+    "C0115",  # missing-class-docstring
+    "C0116",  # missing-function-docstring
+    "C0301",  # line-too-long (handled by ruff format)
+    "E0401",  # import-error (already validated by mypy)
+    "R0801",  # duplicate-code (acceptable for response builders)
+    "R0903",  # too-few-public-methods (dataclasses/DTOs)
+    "R0913",  # too-many-arguments (DI constructors)
+    "R0917",  # too-many-positional-arguments (DI constructors)
+]
 
 
 #########################

@@ -2,15 +2,10 @@ from datetime import date
 
 from pydantic import Field
 
+from upskills.api.routers.v1.path_steps.schemas import PathStepResponse
+from upskills.api.routers.v1.path_templates.schemas import PathTemplateResponse
 from upskills.api.schemas import BaseSchema
 from upskills.domain import ProgressStatus, ValidationStatus
-
-# Import path-related responses from other routers
-from ..path_steps.schemas import PathStepResponse
-from ..path_templates.schemas import PathTemplateResponse
-
-
-# === Dashboard ===
 
 
 class DashboardStats(BaseSchema):
@@ -33,9 +28,6 @@ class MenteeProgressSummary(BaseSchema):
     paths_completed: int
     paths_total: int
     pending_validation: int
-
-
-# === Career Paths ===
 
 
 class UserCareerPathCreate(BaseSchema):
@@ -76,9 +68,6 @@ class UserCareerPathDetailResponse(UserCareerPathResponse):
     path_assignments: list[UserPathAssignmentResponse] = Field(default_factory=list)
 
 
-# === Path Assignments ===
-
-
 class UserPathAssignmentCreate(BaseSchema):
     user_career_path_id: int
     path_template_id: int
@@ -111,9 +100,6 @@ class UserPathAssignmentDetailResponse(UserPathAssignmentResponse):
     step_progress: list[UserStepProgressResponse] = Field(default_factory=list)
 
 
-# === Step Progress ===
-
-
 class UserStepProgressUpdate(BaseSchema):
     status: ProgressStatus | None = None
     progress_percent: int | None = Field(None, ge=0, le=100)
@@ -121,3 +107,19 @@ class UserStepProgressUpdate(BaseSchema):
     planned_end_date: date | None = None
     actual_start_date: date | None = None
     actual_end_date: date | None = None
+
+
+__all__ = [
+    "DashboardStats",
+    "MenteeProgressSummary",
+    "UserCareerPathCreate",
+    "UserCareerPathDetailResponse",
+    "UserCareerPathResponse",
+    "UserCareerPathUpdate",
+    "UserPathAssignmentCreate",
+    "UserPathAssignmentDetailResponse",
+    "UserPathAssignmentResponse",
+    "UserPathAssignmentUpdate",
+    "UserStepProgressResponse",
+    "UserStepProgressUpdate",
+]

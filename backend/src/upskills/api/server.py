@@ -1,7 +1,8 @@
 from uvicorn import Config, Server
 
-from .app import app_factory
 from upskills.core import get_settings
+
+from .app import app_factory
 
 
 def server_factory() -> Server:

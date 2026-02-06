@@ -1,5 +1,3 @@
-"""User career path repository and models."""
-
 from .models import UserCareerPath
 from .repository import UserCareerPathRepository
 

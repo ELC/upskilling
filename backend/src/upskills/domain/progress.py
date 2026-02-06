@@ -1,11 +1,15 @@
-from datetime import date
+from datetime import date, datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from pydantic import Field
 
 from .base import DomainModel
 from .path_step import PathStep
 from .path_template import PathTemplate
+
+if TYPE_CHECKING:
+    from .career import Career
 
 
 class ProgressStatus(StrEnum):
@@ -52,6 +56,7 @@ class UserStepProgress(DomainModel):
     planned_end_date: date | None = None
     actual_start_date: date | None = None
     actual_end_date: date | None = None
+    updated_at: datetime | None = None
     step: PathStep | None = None
 
 
@@ -77,4 +82,5 @@ class UserCareerPath(DomainModel):
     overall_progress_percent: int = 0
     career_name: str | None = None
     career_specialization: str | None = None
+    career: "Career | None" = None
     path_assignments: list[UserPathAssignment] = Field(default_factory=list)
