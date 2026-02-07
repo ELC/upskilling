@@ -1,8 +1,16 @@
+from collections.abc import Sequence
 from datetime import datetime
 
 from pydantic import Field
 
 from .base import DomainModel
+
+
+class RoleInfo(DomainModel):
+    role_id: int
+    name: str
+    description: str | None = None
+    max_active_paths: int = 0
 
 
 class User(DomainModel):
@@ -13,12 +21,5 @@ class User(DomainModel):
     password_hash: str | None = None
     bio: str | None = None
     created_at: datetime | None = None
-    roles: list["RoleInfo"] = Field(default_factory=list)
-    permissions: list[str] = Field(default_factory=list)
-
-
-class RoleInfo(DomainModel):
-    role_id: int
-    name: str
-    description: str | None = None
-    max_active_paths: int = 0
+    roles: Sequence[RoleInfo] = Field(default_factory=list)
+    permissions: Sequence[str] = Field(default_factory=list)

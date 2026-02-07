@@ -25,7 +25,7 @@ from .progress import (
     ValidationStatus,
 )
 from .role import Action, Role
-from .team import Team, TeamMembership
+from .team import Team
 from .user import RoleInfo, User
 
 __all__ = [
@@ -44,7 +44,6 @@ __all__ = [
     "Role",
     "RoleInfo",
     "Team",
-    "TeamMembership",
     "Token",
     "TokenPayload",
     "TokenType",

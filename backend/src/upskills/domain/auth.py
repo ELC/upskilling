@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 from .base import DomainModel
-from .user import User as UserDomain
+from .user import User
 
 
 class TokenType(StrEnum):
@@ -15,7 +15,7 @@ class Token(DomainModel):
 
 
 class AuthResult(DomainModel):
-    user: UserDomain
+    user: User
     tokens: Token
 
 
