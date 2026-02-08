@@ -3,9 +3,8 @@ from typing import Annotated
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from upskills.api.dependencies import CurrentUser, require_permissions
 from upskills.api.schemas import MessageResponse, PaginatedResponse, UserResponse, UserWithPermissionsResponse
-from upskills.core import CurrentUser, require_permissions
-from upskills.repositories import User
 from upskills.services import UserService
 
 from .schemas import PasswordChange, UserUpdate
@@ -13,11 +12,13 @@ from .schemas import PasswordChange, UserUpdate
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.get("")
+@router.get(
+    "/",
+    dependencies=[Depends(require_permissions("team.view"))],
+)
 @inject
 async def list_users(
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    _: Annotated[User, Depends(require_permissions("team.view"))],
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> PaginatedResponse[UserResponse]:
@@ -27,7 +28,7 @@ async def list_users(
 
     items = [UserResponse.model_validate(u.model_dump()) for u in users]
 
-    return PaginatedResponse(
+    return PaginatedResponse[UserResponse](
         items=items,
         total=total,
         page=page,
@@ -109,12 +110,14 @@ async def change_my_password(
         ) from e
 
 
-@router.get("/{user_id}")
+@router.get(
+    "/{user_id}",
+    dependencies=[Depends(require_permissions("team.view"))],
+)
 @inject
 async def get_user(
     user_id: int,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    _: Annotated[User, Depends(require_permissions("team.view"))],
 ) -> UserResponse:
     result = await service.get_user(user_id)
 
@@ -127,12 +130,14 @@ async def get_user(
     return UserResponse.model_validate(result.model_dump())
 
 
-@router.delete("/{user_id}")
+@router.delete(
+    "/{user_id}",
+    dependencies=[Depends(require_permissions("team.manage"))],
+)
 @inject
 async def delete_user(
     user_id: int,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     try:
         success = await service.delete_user(user_id)
@@ -151,13 +156,15 @@ async def delete_user(
     return MessageResponse(message="User deleted successfully.")
 
 
-@router.post("/{user_id}/roles/{role_name}")
+@router.post(
+    "/{user_id}/roles/{role_name}",
+    dependencies=[Depends(require_permissions("team.manage"))],
+)
 @inject
 async def assign_role_to_user(
     user_id: int,
     role_name: str,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     try:
         await service.assign_role(user_id, role_name)
@@ -169,13 +176,15 @@ async def assign_role_to_user(
         ) from e
 
 
-@router.delete("/{user_id}/roles/{role_name}")
+@router.delete(
+    "/{user_id}/roles/{role_name}",
+    dependencies=[Depends(require_permissions("team.manage"))],
+)
 @inject
 async def remove_role_from_user(
     user_id: int,
     role_name: str,
     service: Annotated[UserService, Depends(Provide["user_service"])],
-    _: Annotated[User, Depends(require_permissions("team.manage"))],
 ) -> MessageResponse:
     try:
         await service.remove_role(user_id, role_name)
