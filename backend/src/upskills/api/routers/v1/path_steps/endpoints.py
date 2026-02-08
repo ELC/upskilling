@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.api.dependencies import get_optional_user, require_permissions
 from upskills.api.schemas import MessageResponse
-from upskills.domain import PathStep
+from upskills.domain import PathStep, PathTemplate
 from upskills.services import PathStepService
 
 from .schemas import (
@@ -40,7 +40,8 @@ async def create_step(
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> PathStepResponse:
     step = PathStep(
-        path_template_id=path_id,
+        step_id=0,
+        path_template=PathTemplate(path_template_id=path_id),
         step_order=data.step_order,
         name=data.name,
         description=data.description,

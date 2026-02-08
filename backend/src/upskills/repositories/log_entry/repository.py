@@ -2,6 +2,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from upskills.domain import LogEntry as LogEntryDomain
+from upskills.domain import PathTemplate as PathTemplateDomain
+from upskills.domain import User as UserDomain
+from upskills.domain import UserPathAssignment as UserPathAssignmentDomain
 from upskills.repositories.base import BaseRepository
 from upskills.repositories.user_path_assignment.models import UserPathAssignment
 
@@ -53,22 +56,44 @@ class LogEntryRepository(BaseRepository[LogEntry]):
 
     @staticmethod
     def to_domain(entry: LogEntry, *, include_details: bool = False) -> LogEntryDomain:
-        path_name = None
         user_name = None
+        path_name = None
+        user = None
+        related_assignment = None
 
         if include_details:
-            if entry.related_path_assignment and entry.related_path_assignment.path_template:
-                path_name = entry.related_path_assignment.path_template.name
-            user_name = entry.user.full_name if entry.user else "Unknown"
+            user = UserDomain.model_validate(entry.user) if entry.user else None
+            user_name = entry.user.full_name if entry.user else None
+
+            if entry.related_path_assignment:
+                template = (
+                    PathTemplateDomain.model_validate(entry.related_path_assignment.path_template)
+                    if entry.related_path_assignment.path_template
+                    else None
+                )
+                path_name = (
+                    entry.related_path_assignment.path_template.name
+                    if entry.related_path_assignment.path_template
+                    else None
+                )
+
+                related_assignment = UserPathAssignmentDomain(
+                    user_path_assignment_id=entry.related_path_assignment.user_path_assignment_id,
+                    path_template=template,
+                    start_date=entry.related_path_assignment.start_date,
+                    deadline=entry.related_path_assignment.deadline,
+                    status=entry.related_path_assignment.status,
+                    progress_percent=entry.related_path_assignment.progress_percent,
+                    mentor_validation_status=entry.related_path_assignment.mentor_validation_status,
+                )
 
         return LogEntryDomain(
             log_entry_id=entry.log_entry_id,
-            user_id=entry.user_id,
-            user_career_path_id=entry.user_career_path_id,
+            user=user,
             entry_type=entry.entry_type,
             entry_date=entry.entry_date,
             notes=entry.notes,
-            related_user_path_assignment_id=entry.related_user_path_assignment_id,
+            related_path_assignment=related_assignment,
             user_name=user_name,
             path_name=path_name,
         )

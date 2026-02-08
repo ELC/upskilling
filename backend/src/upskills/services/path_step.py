@@ -21,14 +21,23 @@ class PathStepService:
         steps = await self.path_step_repository.get_by_path_template(path_template_id)
         return [self.path_step_repository.to_domain(s) for s in steps]
 
-    async def create(self, path_step_: PathStep) -> PathStep:
-        path = await self.path_template_repository.get_by_id(path_step_.path_template_id, id_column="path_template_id")
+    async def create(self, path_step: PathStep) -> PathStep:
+        path_template_id = path_step.path_template.path_template_id
+        path = await self.path_template_repository.get_by_id(path_template_id, id_column="path_template_id")
         if not path:
             msg = "Path template not found"
             raise ValueError(msg)
 
-        path_step = await self.path_step_repository.create(path_step_)
-        return self.path_step_repository.to_domain(path_step)
+        path_step_data = {
+            "path_template_id": path_template_id,
+            "name": path_step.name,
+            "step_order": path_step.step_order,
+            "description": path_step.description,
+            "duration_hours": path_step.duration_hours,
+            "course_link": path_step.course_link,
+        }
+        created_step = await self.path_step_repository.create(path_step_data)
+        return self.path_step_repository.to_domain(created_step)
 
     async def update(self, step_id: int, path_step_: PathStep) -> PathStep | None:
         path_step = await self.path_step_repository.get_by_id(step_id, id_column="step_id")

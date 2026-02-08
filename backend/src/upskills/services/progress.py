@@ -35,14 +35,31 @@ class ProgressService:
             return None
         return self.career_path_repository.to_domain(career_path)
 
-    async def assign(self, career_path_: UserCareerPath) -> UserCareerPath:
-        user = await self.user_repository.get_by_id(career_path_.user_id)
+    async def assign(self, career_path: UserCareerPath) -> UserCareerPath:
+        user_id = career_path.user.user_id if career_path.user else None
+        career_id = career_path.career.career_id if career_path.career else None
+
+        if not user_id:
+            msg = "User is required"
+            raise ValueError(msg)
+        if not career_id:
+            msg = "Career is required"
+            raise ValueError(msg)
+
+        user = await self.user_repository.get_by_id(user_id)
         if not user:
             msg = "User not found"
             raise ValueError(msg)
 
-        career_path = await self.career_path_repository.create(career_path_)
-        return self.career_path_repository.to_domain(career_path)
+        career_path_data = {
+            "user_id": user_id,
+            "career_id": career_id,
+            "start_date": career_path.start_date,
+            "end_date": career_path.end_date,
+            "overall_progress_percent": 0,
+        }
+        created_path = await self.career_path_repository.create(career_path_data)
+        return self.career_path_repository.to_domain(created_path)
 
     async def update(self, user_career_path_id: int, career_path_: UserCareerPath) -> UserCareerPath | None:
         career_path = await self.career_path_repository.get_by_id(user_career_path_id, id_column="user_career_path_id")
@@ -61,34 +78,49 @@ class ProgressService:
             return None
         return self.assignment_repository.to_domain(assignment)
 
-    async def assign_path(self, assignment_: UserPathAssignment) -> UserPathAssignment:
-        career_path = await self.career_path_repository.get_by_id(
-            assignment_.user_career_path_id, id_column="user_career_path_id"
-        )
+    async def assign_path(self, assignment: UserPathAssignment) -> UserPathAssignment:
+        user_career_path_id = assignment.user_career_path.user_career_path_id if assignment.user_career_path else None
+        path_template_id = assignment.path_template.path_template_id if assignment.path_template else None
+
+        if not user_career_path_id:
+            msg = "User career path is required"
+            raise ValueError(msg)
+        if not path_template_id:
+            msg = "Path template is required"
+            raise ValueError(msg)
+
+        career_path = await self.career_path_repository.get_by_id(user_career_path_id, id_column="user_career_path_id")
         if not career_path:
             msg = "Career path not found"
             raise ValueError(msg)
 
-        template = await self.path_template_repository.get_by_id(
-            assignment_.path_template_id, id_column="path_template_id"
-        )
+        template = await self.path_template_repository.get_by_id(path_template_id, id_column="path_template_id")
         if not template:
             msg = "Path template not found"
             raise ValueError(msg)
 
-        assignment = await self.assignment_repository.create(assignment_)
+        assignment_data = {
+            "user_career_path_id": user_career_path_id,
+            "path_template_id": path_template_id,
+            "start_date": assignment.start_date,
+            "deadline": assignment.deadline,
+            "status": "Pending",
+            "progress_percent": 0,
+            "mentor_validation_status": "Pending",
+        }
+        created_assignment = await self.assignment_repository.create(assignment_data)
 
         if template.steps:
             for step in template.steps:
-                step_progress = UserStepProgress(
-                    user_path_assignment_id=assignment.user_path_assignment_id,
-                    step_id=step.step_id,
-                    status="Pending",
-                    progress_percent=0,
-                )
-                await self.step_progress_repository.create(step_progress)
+                step_progress_data = {
+                    "user_path_assignment_id": created_assignment.user_path_assignment_id,
+                    "step_id": step.step_id,
+                    "status": "Pending",
+                    "progress_percent": 0,
+                }
+                await self.step_progress_repository.create(step_progress_data)
 
-        return self.assignment_repository.to_domain(assignment)
+        return self.assignment_repository.to_domain(created_assignment)
 
     async def update_assignment_status(self, assignment_id: int, data: UserPathAssignment) -> UserPathAssignment | None:
         assignment = await self.assignment_repository.get_by_id(assignment_id, id_column="user_path_assignment_id")
@@ -205,7 +237,7 @@ class ProgressService:
             else ("In Progress" if any(sp.status != "Pending" for sp in assignment.step_progress) else "Pending")
         )
 
-        update_data = UserPathAssignment(progress_percent=new_progress, status=new_status)
+        update_data = {"progress_percent": new_progress, "status": new_status}
         await self.assignment_repository.update(assignment, update_data)
         await self._recalculate_progress(assignment.user_career_path_id)
 
@@ -221,5 +253,5 @@ class ProgressService:
         total_progress = sum(a.progress_percent for a in career_path.path_assignments)
         new_progress = total_progress // total_assignments
 
-        update_data = UserCareerPath(overall_progress_percent=new_progress)
+        update_data = {"overall_progress_percent": new_progress}
         await self.career_path_repository.update(career_path, update_data)

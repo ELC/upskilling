@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.api.dependencies import authenticated, require_permissions
 from upskills.api.schemas import MessageResponse, PaginatedResponse
-from upskills.domain import Team, User
+from upskills.domain import User
 from upskills.services import TeamService
 
 from .schemas import (
@@ -70,7 +70,12 @@ async def create_team(
     data: TeamCreate,
     service: Annotated[TeamService, Depends(Provide["team_service"])],
 ) -> TeamWithMembersResponse:
-    team = Team(name=data.name, manager_user_id=data.manager_user_id)
+    team = Team(
+        team_id=0,
+        name=data.name,
+        manager=User(user_id=data.manager_user_id),
+        members=[],
+    )
     result = await service.create_team(team)
     return TeamWithMembersResponse.model_validate(result.model_dump())
 
@@ -99,7 +104,12 @@ async def update_team(
     data: TeamUpdate,
     service: Annotated[TeamService, Depends(Provide["team_service"])],
 ) -> TeamWithMembersResponse:
-    team = Team(name=data.name, manager_user_id=data.manager_user_id)
+    team = Team(
+        team_id=team_id,
+        name=data.name,
+        manager=User(user_id=data.manager_user_id) if data.manager_user_id else None,
+        members=[],
+    )
     result = await service.update_team(team_id, team)
 
     if not result:

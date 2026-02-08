@@ -1,7 +1,10 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from upskills.domain import Career as CareerDomain
+from upskills.domain import PathTemplate as PathTemplateDomain
 from upskills.domain import UserCareerPath as UserCareerPathDomain
+from upskills.domain import UserPathAssignment as UserPathAssignmentDomain
 from upskills.repositories.base import BaseRepository
 from upskills.repositories.user_path_assignment.models import UserPathAssignment
 
@@ -53,7 +56,30 @@ class UserCareerPathRepository(BaseRepository[UserCareerPath]):
 
     @staticmethod
     def to_domain(path: UserCareerPath, *, include_assignments: bool = False) -> UserCareerPathDomain:
-        path_dict = path.to_dict()
-        if not include_assignments and "path_assignments" in path_dict:
-            path_dict.pop("path_assignments")
-        return UserCareerPathDomain.model_validate(path_dict)
+        career = CareerDomain.model_validate(path.career) if path.career else None
+
+        path_assignments = []
+        if include_assignments and path.path_assignments:
+            path_assignments = [
+                UserPathAssignmentDomain(
+                    user_path_assignment_id=a.user_path_assignment_id,
+                    path_template=PathTemplateDomain.model_validate(a.path_template) if a.path_template else None,
+                    start_date=a.start_date,
+                    deadline=a.deadline,
+                    status=a.status,
+                    progress_percent=a.progress_percent,
+                    mentor_validation_status=a.mentor_validation_status,
+                )
+                for a in path.path_assignments
+            ]
+
+        return UserCareerPathDomain(
+            user_career_path_id=path.user_career_path_id,
+            career=career,
+            start_date=path.start_date,
+            end_date=path.end_date,
+            overall_progress_percent=path.overall_progress_percent,
+            career_name=path.career.name if path.career else None,
+            career_specialization=path.career.specialization if path.career else None,
+            path_assignments=path_assignments,
+        )

@@ -50,4 +50,14 @@ class PathStepRepository(BaseRepository[PathTemplateStep]):
 
     @staticmethod
     def to_domain(step: PathTemplateStep) -> PathStepDomain:
-        return PathStepDomain.model_validate(step.to_dict())
+        from upskills.domain import PathStepDependency
+
+        deps = []
+        if step.dependencies:
+            deps = [
+                PathStepDependency(step=PathStepDomain.model_validate(dep.depends_on_step))
+                for dep in step.dependencies
+                if dep.depends_on_step
+            ]
+
+        return PathStepDomain.model_validate(step).model_copy(update={"dependencies": deps})

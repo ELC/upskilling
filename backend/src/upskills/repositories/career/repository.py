@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from upskills.domain import Career as CareerDomain
+from upskills.domain import PathTemplate as PathTemplateDomain
 from upskills.repositories.base import BaseRepository
 
 from .models import Career
@@ -22,7 +23,13 @@ class CareerRepository(BaseRepository[Career]):
 
     @staticmethod
     def to_domain(career: Career, *, include_paths: bool = False) -> CareerDomain:
-        career_dict = career.to_dict()
-        if not include_paths and "path_templates" in career_dict:
-            career_dict.pop("path_templates")
-        return CareerDomain.model_validate(career_dict)
+        path_templates = []
+        if include_paths and career.path_templates:
+            path_templates = [PathTemplateDomain.model_validate(pt) for pt in career.path_templates]
+
+        return CareerDomain(
+            career_id=career.career_id,
+            name=career.name,
+            specialization=career.specialization,
+            path_templates=path_templates,
+        )

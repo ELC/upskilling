@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.api.dependencies import get_optional_user, require_permissions
 from upskills.api.schemas import MessageResponse, PaginatedResponse
-from upskills.domain import PathTemplate
+from upskills.domain import Career, PathTemplate
 from upskills.services import PathTemplateService
 
 from .schemas import PathTemplateCreate, PathTemplateResponse, PathTemplateUpdate, PathTemplateWithStepsResponse
@@ -46,7 +46,8 @@ async def create_path(
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
 ) -> PathTemplateResponse:
     path = PathTemplate(
-        career_id=data.career_id,
+        path_template_id=0,
+        career=Career(career_id=data.career_id),
         name=data.name,
         description=data.description,
         duration_hours=data.duration_hours,

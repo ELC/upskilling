@@ -3,7 +3,6 @@ from sqlalchemy.orm import selectinload
 
 from upskills.domain import RoleInfo
 from upskills.domain import Team as TeamDomain
-from upskills.domain import TeamMembership as TeamMembershipDomain
 from upskills.domain import User as UserDomain
 from upskills.repositories.base import BaseRepository
 from upskills.repositories.user.models import User
@@ -115,27 +114,27 @@ class TeamRepository(BaseRepository[Team]):
                 roles=manager_roles,
             )
 
-        members: list[TeamMembershipDomain] = []
+        members: list[UserDomain] = []
         if team.members:
             members = [
-                TeamMembershipDomain(
-                    team_id=tm.team_id,
-                    user_id=tm.user_id,
-                    user=UserDomain(
-                        user_id=tm.user.user_id,
-                        full_name=tm.user.full_name,
-                        email=tm.user.email,
-                    )
-                    if tm.user
-                    else None,
+                UserDomain(
+                    user_id=tm.user.user_id,
+                    full_name=tm.user.full_name,
+                    email=tm.user.email,
+                    bio=tm.user.bio,
+                    created_at=tm.user.created_at,
                 )
                 for tm in team.members
+                if tm.user
             ]
+
+        if not manager:
+            msg = "Team manager is required"
+            raise ValueError(msg)
 
         return TeamDomain(
             team_id=team.team_id,
             name=team.name,
-            manager_user_id=team.manager_user_id,
             manager=manager,
             members=members,
         )

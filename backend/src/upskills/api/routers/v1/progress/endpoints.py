@@ -4,7 +4,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.api.dependencies import authenticated, require_permissions
-from upskills.domain import User, UserCareerPath, UserPathAssignment, UserStepProgress
+from upskills.domain import Career, PathTemplate, User, UserCareerPath, UserPathAssignment, UserStepProgress
 from upskills.services import ProgressService, TeamService
 
 from .schemas import (
@@ -71,8 +71,9 @@ async def assign_career_path(
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserCareerPathResponse:
     career_path = UserCareerPath(
-        user_id=data.user_id,
-        career_id=data.career_id,
+        user_career_path_id=0,
+        user=User(user_id=data.user_id),
+        career=Career(career_id=data.career_id),
         start_date=data.start_date,
         end_date=data.end_date,
     )
@@ -121,8 +122,9 @@ async def assign_path(
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserPathAssignmentResponse:
     assignment = UserPathAssignment(
-        user_career_path_id=data.user_career_path_id,
-        path_template_id=data.path_template_id,
+        user_path_assignment_id=0,
+        user_career_path=UserCareerPath(user_career_path_id=data.user_career_path_id),
+        path_template=PathTemplate(path_template_id=data.path_template_id),
         start_date=data.start_date,
         deadline=data.deadline,
     )

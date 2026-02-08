@@ -89,49 +89,28 @@ class UserPathAssignmentRepository(BaseRepository[UserPathAssignment]):
                 step_progress = [
                     UserStepProgressDomain(
                         user_step_progress_id=sp.user_step_progress_id,
-                        user_path_assignment_id=sp.user_path_assignment_id,
-                        step_id=sp.step_id,
+                        step=PathStepDomain.model_validate(sp.step) if sp.step else None,
                         status=sp.status,
                         progress_percent=sp.progress_percent,
                         planned_start_date=sp.planned_start_date,
                         planned_end_date=sp.planned_end_date,
                         actual_start_date=sp.actual_start_date,
                         actual_end_date=sp.actual_end_date,
-                        step=PathStepDomain(
-                            step_id=sp.step.step_id,
-                            path_template_id=sp.step.path_template_id,
-                            step_order=sp.step.step_order,
-                            name=sp.step.name,
-                            description=sp.step.description,
-                            duration_hours=sp.step.duration_hours,
-                            course_link=sp.step.course_link,
-                        )
-                        if sp.step
-                        else None,
+                        updated_at=sp.updated_at,
                     )
                     for sp in assignment.step_progress
                 ]
 
             if assignment.path_template:
-                path_template = PathTemplateDomain(
-                    path_template_id=assignment.path_template.path_template_id,
-                    career_id=assignment.path_template.career_id,
-                    name=assignment.path_template.name,
-                    description=assignment.path_template.description,
-                    duration_hours=assignment.path_template.duration_hours,
-                    default_start_offset_days=assignment.path_template.default_start_offset_days,
-                    default_deadline_offset_days=assignment.path_template.default_deadline_offset_days,
-                )
+                path_template = PathTemplateDomain.model_validate(assignment.path_template)
 
         return UserPathAssignmentDomain(
             user_path_assignment_id=assignment.user_path_assignment_id,
-            user_career_path_id=assignment.user_career_path_id,
-            path_template_id=assignment.path_template_id,
+            path_template=path_template,
             start_date=assignment.start_date,
             deadline=assignment.deadline,
             status=assignment.status,
             progress_percent=assignment.progress_percent,
             mentor_validation_status=assignment.mentor_validation_status,
-            path_template=path_template,
             step_progress=step_progress,
         )

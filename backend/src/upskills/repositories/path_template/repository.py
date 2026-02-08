@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from upskills.domain import Career as CareerDomain
 from upskills.domain import PathStep as PathStepDomain
 from upskills.domain import PathStepDependency
 from upskills.domain import PathTemplate as PathTemplateDomain
@@ -56,28 +57,17 @@ class PathTemplateRepository(BaseRepository[PathTemplate]):
                 deps: list[PathStepDependency] = []
                 if step.dependencies:
                     deps = [
-                        PathStepDependency(
-                            depends_on_step_id=dep.depends_on_step_id,
-                            depends_on_step_name=dep.depends_on_step.name if dep.depends_on_step else None,
-                        )
+                        PathStepDependency(step=PathStepDomain.model_validate(dep.depends_on_step))
                         for dep in step.dependencies
+                        if dep.depends_on_step
                     ]
-                steps.append(
-                    PathStepDomain(
-                        step_id=step.step_id,
-                        path_template_id=step.path_template_id,
-                        step_order=step.step_order,
-                        name=step.name,
-                        description=step.description,
-                        duration_hours=step.duration_hours,
-                        course_link=step.course_link,
-                        dependencies=deps,
-                    )
-                )
+                steps.append(PathStepDomain.model_validate(step).model_copy(update={"dependencies": deps}))
+
+        career = CareerDomain.model_validate(path.career) if path.career else None
 
         return PathTemplateDomain(
             path_template_id=path.path_template_id,
-            career_id=path.career_id,
+            career=career,
             name=path.name,
             description=path.description,
             duration_hours=path.duration_hours,

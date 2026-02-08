@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class PathStep(DomainModel):
     step_id: int
-    path_template: PathTemplate | None = None
+    path_template: PathTemplate
     step_order: int | None = None
     name: str | None = None
     description: str | None = None

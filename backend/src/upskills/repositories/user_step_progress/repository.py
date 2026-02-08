@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from upskills.domain import PathStep as PathStepDomain
 from upskills.domain import UserStepProgress as UserStepProgressDomain
 from upskills.repositories.base import BaseRepository
 
@@ -52,4 +53,16 @@ class UserStepProgressRepository(BaseRepository[UserStepProgress]):
 
     @staticmethod
     def to_domain(progress: UserStepProgress) -> UserStepProgressDomain:
-        return UserStepProgressDomain.model_validate(progress.to_dict())
+        step = PathStepDomain.model_validate(progress.step) if progress.step else None
+
+        return UserStepProgressDomain(
+            user_step_progress_id=progress.user_step_progress_id,
+            step=step,
+            status=progress.status,
+            progress_percent=progress.progress_percent,
+            planned_start_date=progress.planned_start_date,
+            planned_end_date=progress.planned_end_date,
+            actual_start_date=progress.actual_start_date,
+            actual_end_date=progress.actual_end_date,
+            updated_at=progress.updated_at,
+        )

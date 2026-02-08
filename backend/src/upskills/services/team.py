@@ -30,27 +30,43 @@ class TeamService:
         teams = await self.team_repository.get_teams_for_user(user_id)
         return [self.team_repository.to_domain(team) for team in teams]
 
-    async def create_team(self, team_: Team) -> Team:
-        manager = await self.user_repository.get_by_id(team_.manager_user_id)
+    async def create_team(self, team: Team) -> Team:
+        # Validate manager exists
+        manager_user_id = team.manager.user_id if team.manager else None
+        if not manager_user_id:
+            msg = "Manager is required"
+            raise ValueError(msg)
+
+        manager = await self.user_repository.get_by_id(manager_user_id)
         if not manager:
             msg = "Manager user not found"
             raise ValueError(msg)
 
-        team = await self.team_repository.create(team_)
-        return self.team_repository.to_domain(team)
+        team_data = {
+            "name": team.name,
+            "manager_user_id": manager_user_id,
+        }
+        created_team = await self.team_repository.create(team_data)
+        return self.team_repository.to_domain(created_team)
 
-    async def update_team(self, team_id: int, team_: Team) -> Team | None:
-        team = await self.team_repository.get_by_id(team_id, id_column="team_id")
-        if not team:
+    async def update_team(self, team_id: int, team: Team) -> Team | None:
+        existing_team = await self.team_repository.get_by_id(team_id, id_column="team_id")
+        if not existing_team:
             return None
 
-        if team_.manager_user_id:
-            manager = await self.user_repository.get_by_id(team_.manager_user_id)
+        update_data = {}
+        if team.name is not None:
+            update_data["name"] = team.name
+
+        if team.manager:
+            manager_user_id = team.manager.user_id
+            manager = await self.user_repository.get_by_id(manager_user_id)
             if not manager:
                 msg = "Manager user not found"
                 raise ValueError(msg)
+            update_data["manager_user_id"] = manager_user_id
 
-        updated_team = await self.team_repository.update(team, team_)
+        updated_team = await self.team_repository.update(existing_team, update_data)
         return self.team_repository.to_domain(updated_team)
 
     async def delete_team(self, team_id: int) -> bool:

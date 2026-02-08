@@ -28,14 +28,27 @@ class PathTemplateService:
         total = await self.path_template_repository.count()
         return paths, total
 
-    async def create(self, path_template_: PathTemplate) -> PathTemplate:
-        career = await self.career_repository.get_by_id(path_template_.career_id, id_column="career_id")
+    async def create(self, path_template: PathTemplate) -> PathTemplate:
+        career_id = path_template.career.career_id if path_template.career else None
+        if not career_id:
+            msg = "Career is required"
+            raise ValueError(msg)
+
+        career = await self.career_repository.get_by_id(career_id, id_column="career_id")
         if not career:
             msg = "Career not found"
             raise ValueError(msg)
 
-        path_template = await self.path_template_repository.create(path_template_)
-        return self.path_template_repository.to_domain(path_template)
+        path_template_data = {
+            "career_id": career_id,
+            "name": path_template.name,
+            "description": path_template.description,
+            "duration_hours": path_template.duration_hours,
+            "default_start_offset_days": path_template.default_start_offset_days,
+            "default_deadline_offset_days": path_template.default_deadline_offset_days,
+        }
+        created_template = await self.path_template_repository.create(path_template_data)
+        return self.path_template_repository.to_domain(created_template)
 
     async def update(self, path_template_id: int, path_template_: PathTemplate) -> PathTemplate | None:
         path_template = await self.path_template_repository.get_by_id(path_template_id, id_column="path_template_id")

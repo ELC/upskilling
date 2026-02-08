@@ -24,16 +24,26 @@ class LogbookService:
             return None
         return self.log_repository.to_domain(log_entry, include_details=True)
 
-    async def create(self, log_entry_: LogEntry) -> LogEntry:
-        career_path = await self.career_path_repository.get_by_id(
-            log_entry_.user_career_path_id, id_column="user_career_path_id"
-        )
+    async def create(self, log_entry: LogEntry) -> LogEntry:
+        user_id = log_entry.user.user_id
+        user_career_path_id = log_entry.user_career_path.user_career_path_id
+        related_assignment_id = log_entry.related_path_assignment.user_path_assignment_id
+
+        career_path = await self.career_path_repository.get_by_id(user_career_path_id, id_column="user_career_path_id")
         if not career_path:
             msg = "Career path not found"
             raise ValueError(msg)
 
-        log_entry = await self.log_repository.create(log_entry_)
-        return self.log_repository.to_domain(log_entry)
+        log_entry_data = {
+            "user_id": user_id,
+            "user_career_path_id": user_career_path_id,
+            "entry_type": log_entry.entry_type,
+            "entry_date": log_entry.entry_date,
+            "notes": log_entry.notes,
+            "related_user_path_assignment_id": related_assignment_id,
+        }
+        created_entry = await self.log_repository.create(log_entry_data)
+        return self.log_repository.to_domain(created_entry)
 
     async def update(self, log_entry_id: int, log_entry_: LogEntry) -> LogEntry | None:
         log_entry = await self.log_repository.get_by_id(log_entry_id, id_column="log_entry_id")
