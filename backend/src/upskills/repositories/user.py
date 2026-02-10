@@ -4,7 +4,6 @@ import secrets
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from upskills.models.db.progress import UserCareerPath
@@ -15,9 +14,6 @@ from upskills.repositories.base import BaseRepository
 
 class UserRepository(BaseRepository[User]):
     """Repository for User operations."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, User)
 
     async def get_by_id(self, user_id: int, id_column: str = "user_id") -> User | None:
         """Get user by ID with roles loaded."""
@@ -68,6 +64,7 @@ class UserRepository(BaseRepository[User]):
         user_role = UserRole(user_id=user_id, role_id=role_id)
         self._session.add(user_role)
         await self._session.flush()
+        await self._session.commit()
 
     async def remove_role(self, user_id: int, role_id: int) -> None:
         """Remove a role from a user."""
@@ -77,6 +74,7 @@ class UserRepository(BaseRepository[User]):
         if user_role:
             await self._session.delete(user_role)
             await self._session.flush()
+            await self._session.commit()
 
     async def create_password_reset_token(self, user_id: int, expires_hours: int = 24) -> str:
         """Create a password reset token for a user."""
@@ -90,6 +88,7 @@ class UserRepository(BaseRepository[User]):
         )
         self._session.add(reset_token)
         await self._session.flush()
+        await self._session.commit()
         return token
 
     async def get_password_reset_token(self, token: str) -> PasswordResetToken | None:
@@ -106,6 +105,7 @@ class UserRepository(BaseRepository[User]):
         """Mark a password reset token as used."""
         token.used = True
         await self._session.flush()
+        await self._session.commit()
 
     async def has_team_memberships(self, user_id: int) -> bool:
         """Check if a user is a member of any team."""
@@ -122,9 +122,6 @@ class UserRepository(BaseRepository[User]):
 
 class RoleRepository(BaseRepository[Role]):
     """Repository for Role operations."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, Role)
 
     async def get_by_id(self, role_id: int, id_column: str = "role_id") -> Role | None:
         return await super().get_by_id(role_id, "role_id")

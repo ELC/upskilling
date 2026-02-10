@@ -1,7 +1,8 @@
 """Base repository with common CRUD operations."""
 
-from typing import Any, TypeVar
+from typing import Any, TypeVar, get_args
 
+from dependency_injector.wiring import Provide, inject
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,15 +17,33 @@ class BaseRepository[ModelType: Base]:
     This follows the Repository pattern to abstract data access logic.
     """
 
-    def __init__(self, session: AsyncSession, model: type[ModelType]) -> None:
+    @inject
+    def __init__(
+        self,
+        session: AsyncSession = Provide["db_session"],
+    ) -> None:
         """Initialize the repository.
 
         Args:
-            session: The database session.
-            model: The SQLAlchemy model class.
+            session: The database session (injected).
         """
         self._session = session
-        self._model = model
+
+    @property
+    def _model(self) -> type[ModelType]:
+        """Extract the model type from the generic type parameter.
+
+        Returns:
+            The model class for this repository.
+        """
+        # Get the first base class (should be BaseRepository[SomeModel])
+        base = self.__class__.__orig_bases__[0]
+        # Extract the type arguments from the generic
+        args = get_args(base)
+        if args:
+            return args[0]
+        msg = f"Could not determine model type for {self.__class__.__name__}"
+        raise RuntimeError(msg)
 
     async def get_by_id(self, id_value: int, id_column: str = "id") -> ModelType | None:
         """Get a single record by its primary key.
@@ -95,6 +114,7 @@ class BaseRepository[ModelType: Base]:
         self._session.add(instance)
         await self._session.flush()
         await self._session.refresh(instance)
+        await self._session.commit()
         return instance
 
     async def update(
@@ -116,6 +136,7 @@ class BaseRepository[ModelType: Base]:
                 setattr(instance, key, value)
         await self._session.flush()
         await self._session.refresh(instance)
+        await self._session.commit()
         return instance
 
     async def delete(self, instance: ModelType) -> None:
@@ -126,6 +147,7 @@ class BaseRepository[ModelType: Base]:
         """
         await self._session.delete(instance)
         await self._session.flush()
+        await self._session.commit()
 
     async def exists(self, **kwargs: Any) -> bool:
         """Check if a record exists with the given criteria.
