@@ -4,8 +4,8 @@ from typing import Any, TypeVar, get_args
 
 from dependency_injector.wiring import Provide, inject
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from upskills.db.provider import DatabaseProvider
 from upskills.models.db.base import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
@@ -15,19 +15,21 @@ class BaseRepository[ModelType: Base]:
     """Base repository providing common CRUD operations.
 
     This follows the Repository pattern to abstract data access logic.
+    Each method uses a session from the DatabaseProvider with automatic
+    transaction management.
     """
 
     @inject
     def __init__(
         self,
-        session: AsyncSession = Provide["db_session"],
+        db_provider: DatabaseProvider = Provide["db_provider"],
     ) -> None:
         """Initialize the repository.
 
         Args:
-            session: The database session (injected).
+            db_provider: The database provider (injected).
         """
-        self._session = session
+        self._db_provider = db_provider
 
     @property
     def _model(self) -> type[ModelType]:
@@ -55,10 +57,11 @@ class BaseRepository[ModelType: Base]:
         Returns:
             The model instance or None if not found.
         """
-        column = getattr(self._model, id_column)
-        stmt = select(self._model).where(column == id_value)
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+        async with self._db_provider.session() as session:
+            column = getattr(self._model, id_column)
+            stmt = select(self._model).where(column == id_value)
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
 
     async def get_all(
         self,
@@ -79,15 +82,16 @@ class BaseRepository[ModelType: Base]:
         Returns:
             List of model instances.
         """
-        stmt = select(self._model)
+        async with self._db_provider.session() as session:
+            stmt = select(self._model)
 
-        if order_by:
-            column = getattr(self._model, order_by)
-            stmt = stmt.order_by(column.desc() if descending else column)
+            if order_by:
+                column = getattr(self._model, order_by)
+                stmt = stmt.order_by(column.desc() if descending else column)
 
-        stmt = stmt.offset(skip).limit(limit)
-        result = await self._session.execute(stmt)
-        return list(result.scalars().all())
+            stmt = stmt.offset(skip).limit(limit)
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
 
     async def count(self) -> int:
         """Get the total count of records.
@@ -97,9 +101,10 @@ class BaseRepository[ModelType: Base]:
         """
         from sqlalchemy import func
 
-        stmt = select(func.count()).select_from(self._model)
-        result = await self._session.execute(stmt)
-        return result.scalar() or 0
+        async with self._db_provider.session() as session:
+            stmt = select(func.count()).select_from(self._model)
+            result = await session.execute(stmt)
+            return result.scalar() or 0
 
     async def create(self, data: dict[str, Any]) -> ModelType:
         """Create a new record.
@@ -110,12 +115,13 @@ class BaseRepository[ModelType: Base]:
         Returns:
             The created model instance.
         """
-        instance = self._model(**data)
-        self._session.add(instance)
-        await self._session.flush()
-        await self._session.refresh(instance)
-        await self._session.commit()
-        return instance
+        async with self._db_provider.session() as session:
+            instance = self._model(**data)
+            session.add(instance)
+            await session.flush()
+            await session.refresh(instance)
+            await session.commit()
+            return instance
 
     async def update(
         self,
@@ -131,13 +137,16 @@ class BaseRepository[ModelType: Base]:
         Returns:
             The updated model instance.
         """
-        for key, value in data.items():
-            if hasattr(instance, key) and value is not None:
-                setattr(instance, key, value)
-        await self._session.flush()
-        await self._session.refresh(instance)
-        await self._session.commit()
-        return instance
+        async with self._db_provider.session() as session:
+            # Merge the instance into the new session
+            instance = await session.merge(instance)
+            for key, value in data.items():
+                if hasattr(instance, key) and value is not None:
+                    setattr(instance, key, value)
+            await session.flush()
+            await session.refresh(instance)
+            await session.commit()
+            return instance
 
     async def delete(self, instance: ModelType) -> None:
         """Delete a record.
@@ -145,9 +154,12 @@ class BaseRepository[ModelType: Base]:
         Args:
             instance: The model instance to delete.
         """
-        await self._session.delete(instance)
-        await self._session.flush()
-        await self._session.commit()
+        async with self._db_provider.session() as session:
+            # Merge the instance into the new session
+            instance = await session.merge(instance)
+            await session.delete(instance)
+            await session.flush()
+            await session.commit()
 
     async def exists(self, **kwargs: Any) -> bool:
         """Check if a record exists with the given criteria.
@@ -160,7 +172,8 @@ class BaseRepository[ModelType: Base]:
         """
         from sqlalchemy import exists as sql_exists
 
-        conditions = [getattr(self._model, key) == value for key, value in kwargs.items()]
-        stmt = select(sql_exists().where(*conditions))
-        result = await self._session.execute(stmt)
-        return result.scalar() or False
+        async with self._db_provider.session() as session:
+            conditions = [getattr(self._model, key) == value for key, value in kwargs.items()]
+            stmt = select(sql_exists().where(*conditions))
+            result = await session.execute(stmt)
+            return result.scalar() or False

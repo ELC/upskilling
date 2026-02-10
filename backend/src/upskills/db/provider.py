@@ -33,12 +33,3 @@ class DatabaseProvider(ABC):
                 await session.commit()
         """
         ...
-
-    @abstractmethod
-    async def get_session(self) -> AsyncSession:
-        """Get a new session (for dependency injection).
-
-        Note: The caller is responsible for closing this session.
-        Prefer using the `session()` context manager when possible.
-        """
-        ...

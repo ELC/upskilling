@@ -14,6 +14,7 @@ class RoleRepository(BaseRepository[Role]):
 
     async def get_by_name(self, name: str) -> Role | None:
         """Get role by name."""
-        stmt = select(Role).where(Role.name == name)
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+        async with self._db_provider.session() as session:
+            stmt = select(Role).where(Role.name == name)
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
