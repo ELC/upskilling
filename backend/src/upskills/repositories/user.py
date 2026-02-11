@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from upskills.models.db.progress import UserCareerPath
 from upskills.models.db.team import TeamMember
-from upskills.models.db.user import Action, PasswordResetToken, Role, User, UserRole
+from upskills.models.db.user import Action, PasswordResetToken, User, UserRole
 from upskills.repositories.base import BaseRepository
 
 
@@ -118,16 +118,3 @@ class UserRepository(BaseRepository[User]):
         stmt = select(UserCareerPath).where(UserCareerPath.user_id == user_id).limit(1)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none() is not None
-
-
-class RoleRepository(BaseRepository[Role]):
-    """Repository for Role operations."""
-
-    async def get_by_id(self, role_id: int, id_column: str = "role_id") -> Role | None:
-        return await super().get_by_id(role_id, "role_id")
-
-    async def get_by_name(self, name: str) -> Role | None:
-        """Get role by name."""
-        stmt = select(Role).where(Role.name == name)
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()

@@ -11,7 +11,8 @@ from upskills.models.domain.progress import (
     LogEntryDetailResponse,
     LogEntryResponse,
 )
-from upskills.repositories.progress import LogEntryRepository, UserCareerPathRepository
+from upskills.repositories.log_entry import LogEntryRepository
+from upskills.repositories.user_career_path import UserCareerPathRepository
 
 
 class LogbookService:
