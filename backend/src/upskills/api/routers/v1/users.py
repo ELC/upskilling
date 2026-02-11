@@ -6,15 +6,15 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.core import CurrentUser, require_permissions
-from upskills.models import (
+from upskills.domain import (
     MessageResponse,
     PaginatedResponse,
     PasswordChange,
-    User,
     UserResponse,
     UserUpdate,
     UserWithPermissions,
 )
+from upskills.repositories import User
 from upskills.services import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])

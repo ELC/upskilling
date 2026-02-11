@@ -6,7 +6,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.core import CurrentUser, require_permissions
-from upskills.models import (
+from upskills.domain import (
     MessageResponse,
     PaginatedResponse,
     TeamCreate,
@@ -17,8 +17,8 @@ from upskills.models import (
     TeamResponse,
     TeamUpdate,
     TeamWithMembersResponse,
-    User,
 )
+from upskills.repositories import User
 from upskills.services import TeamService
 
 router = APIRouter(prefix="/teams", tags=["Teams"])

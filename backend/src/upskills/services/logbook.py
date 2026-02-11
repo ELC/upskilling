@@ -5,8 +5,8 @@ from typing import Any
 
 from dependency_injector.wiring import Provide, inject
 
-from upskills.models import LogEntry, LogEntryCreateInput, LogEntryDetailResponse, LogEntryResponse
-from upskills.repositories import LogEntryRepository, UserCareerPathRepository
+from upskills.domain import LogEntryCreateInput, LogEntryDetailResponse, LogEntryResponse
+from upskills.repositories import LogEntry, LogEntryRepository, UserCareerPathRepository
 
 
 class LogbookService:
