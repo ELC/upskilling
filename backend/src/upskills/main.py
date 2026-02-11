@@ -3,10 +3,12 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+from dependency_injector.wiring import Provide, inject
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from upskills.containers import Container
+from upskills.db.provider import DatabaseProvider
+from upskills.injections import Container
 from upskills.core.config import get_settings
 from upskills.api.routers import (
         auth,
@@ -19,19 +21,22 @@ from upskills.api.routers import (
     )
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    container = app.state.container
-    await container.db_provider().init_db()
+@inject
+async def lifespan(
+    app: FastAPI,
+    db_provider: DatabaseProvider = Provide["db_provider"],
+) -> AsyncIterator[None]:
+    await db_provider.init_db()
     yield
-    await container.db_provider().close()
+    await db_provider.close()
 
 
 def app_factory() -> FastAPI:
-    """Create and configure the FastAPI application."""
     settings = get_settings()
 
     container = Container()
     container.config.from_pydantic(settings)
+    container.wire(modules=[__name__])
 
     app = FastAPI(
         title=settings.app_name,
@@ -39,9 +44,6 @@ def app_factory() -> FastAPI:
         debug=settings.debug,
         lifespan=lifespan,
     )
-
-    # Store container in app state
-    app.state.container = container
 
     # CORS middleware
     app.add_middleware(
