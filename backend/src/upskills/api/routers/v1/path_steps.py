@@ -18,7 +18,7 @@ from upskills.models import (
 )
 from upskills.services import PathStepService
 
-router = APIRouter()
+router = APIRouter(prefix="/steps", tags=["Path Steps"])
 
 
 @router.get("/templates/{path_id}/steps")

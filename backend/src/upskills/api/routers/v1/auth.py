@@ -19,7 +19,7 @@ from upskills.models import (
 )
 from upskills.services import AuthService
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
