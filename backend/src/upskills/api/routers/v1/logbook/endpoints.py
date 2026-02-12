@@ -20,7 +20,7 @@ async def get_logbook_entries(
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
     entry_type: str | None = None,
 ) -> list[LogEntryDetailResponse]:
-    entries = await service.get_entries_for_career_path(career_path_id, entry_type)
+    entries = await service.get_for_career_path(career_path_id, entry_type)
     return [LogEntryDetailResponse.model_validate(e.model_dump()) for e in entries]
 
 
@@ -43,7 +43,7 @@ async def create_logbook_entry(
             notes=data.notes,
             related_user_path_assignment_id=data.related_user_path_assignment_id,
         )
-        result = await service.create_entry(input_data)
+        result = await service.create(input_data)
         return LogEntryResponse.model_validate(result.model_dump())
     except ValueError as e:
         raise HTTPException(
@@ -58,7 +58,7 @@ async def get_logbook_entry(
     log_entry_id: int,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
 ) -> LogEntryDetailResponse:
-    result = await service.get_entry(log_entry_id)
+    result = await service.get(log_entry_id)
 
     if not result:
         raise HTTPException(
@@ -85,7 +85,7 @@ async def update_logbook_entry(
         entry_date=data.entry_date,
         notes=data.notes,
     )
-    result = await service.update_entry(log_entry_id, input_data)
+    result = await service.update(log_entry_id, input_data)
 
     if not result:
         raise HTTPException(
@@ -105,7 +105,7 @@ async def delete_logbook_entry(
     log_entry_id: int,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
 ) -> MessageResponse:
-    success = await service.delete_entry(log_entry_id)
+    success = await service.delete(log_entry_id)
 
     if not success:
         raise HTTPException(
