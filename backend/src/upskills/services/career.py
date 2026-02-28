@@ -22,7 +22,7 @@ class CareerService:
         return [self.career_repository.to_domain(c) for c in careers_db], total
 
     async def create(self, career: Career) -> Career:
-        career_db = await self.career_repository.create(career.model_dump(include={"name", "specialization"}))
+        career_db = await self.career_repository.create(career)
         return self.career_repository.to_domain(career_db)
 
     async def update(self, career_id: int, career: Career) -> Career | None:
@@ -30,12 +30,8 @@ class CareerService:
         if not career_db:
             return None
 
-        update_data = career.model_dump(include={"name", "specialization"}, exclude_none=True)
-
-        if update_data:
-            updated_db = await self.career_repository.update(career_db, update_data)
-            return self.career_repository.to_domain(updated_db)
-        return self.career_repository.to_domain(career_db)
+        updated_db = await self.career_repository.update(career_db, career)
+        return self.career_repository.to_domain(updated_db)
 
     async def delete(self, career_id: int) -> bool:
         career_db = await self.career_repository.get_by_id(career_id)

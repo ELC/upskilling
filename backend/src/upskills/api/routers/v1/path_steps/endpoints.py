@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.api.dependencies import get_optional_user, require_permissions
 from upskills.api.schemas import MessageResponse
-from upskills.domain import PathStep, PathTemplate
+from upskills.domain import PathStep
 from upskills.services import PathStepService
 
 from .schemas import (
@@ -39,15 +39,9 @@ async def create_step(
     data: PathStepCreate,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> PathStepResponse:
-    step = PathStep(
-        step_id=0,
-        path_template=PathTemplate(path_template_id=path_id),
-        step_order=data.step_order,
-        name=data.name,
-        description=data.description,
-        duration_hours=data.duration_hours,
-        course_link=data.course_link,
-    )
+    step_data = data.model_dump()
+    step_data["path_template"]["path_template_id"] = path_id
+    step = PathStep.model_validate(step_data)
     result = await service.create(step)
     return PathStepResponse.model_validate(result.model_dump())
 
@@ -58,13 +52,13 @@ async def get_step(
     step_id: int,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> PathStepResponse:
-    result = await service.get(step_id)
-
-    if not result:
+    try:
+        result = await service.get(step_id)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Step not found",
-        )
+            detail=str(e),
+        ) from e
 
     return PathStepResponse.model_validate(result.model_dump())
 
@@ -76,20 +70,16 @@ async def update_step(
     data: PathStepUpdate,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> PathStepResponse:
-    step = PathStep(
-        step_order=data.step_order,
-        name=data.name,
-        description=data.description,
-        duration_hours=data.duration_hours,
-        course_link=data.course_link,
-    )
-    result = await service.update(step_id, step)
-
-    if not result:
+    step_data = data.model_dump(exclude_unset=True)
+    step = PathStep.model_validate(step_data)
+    step.step_id = step_id
+    try:
+        result = await service.update(step)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Step not found",
-        )
+            detail=str(e),
+        ) from e
 
     return PathStepResponse.model_validate(result.model_dump())
 
@@ -100,13 +90,13 @@ async def delete_step(
     step_id: int,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> MessageResponse:
-    success = await service.delete(step_id)
-
-    if not success:
+    try:
+        await service.delete(step_id)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Step not found",
-        )
+            detail=str(e),
+        ) from e
 
     return MessageResponse(message="Step deleted successfully.")
 
@@ -118,7 +108,13 @@ async def add_step_dependency(
     data: StepDependencyCreate,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> MessageResponse:
-    await service.add_dependency(step_id, data.depends_on_step_id)
+    try:
+        await service.add_dependency(step_id, data.depends_on_step_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        ) from e
     return MessageResponse(message="Dependency added successfully.")
 
 
@@ -131,5 +127,11 @@ async def remove_step_dependency(
     depends_on_step_id: int,
     service: Annotated[PathStepService, Depends(Provide["path_step_service"])],
 ) -> MessageResponse:
-    await service.remove_dependency(step_id, depends_on_step_id)
+    try:
+        await service.remove_dependency(step_id, depends_on_step_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        ) from e
     return MessageResponse(message="Dependency removed successfully.")

@@ -9,11 +9,14 @@ from upskills.repositories.base import BaseRepository
 from upskills.repositories.team.models import TeamMember
 from upskills.repositories.user_career_path.models import UserCareerPath
 
+from .mapper import UserMapper
 from .models import Action, PasswordResetToken, Role, User, UserRole
 
 
-class UserRepository(BaseRepository[User]):
-    async def get_by_id(self, id_value: int, id_column: str = "user_id") -> User | None:
+class UserRepository(BaseRepository[User, UserDomain, UserMapper]):
+    _id_column = "user_id"
+
+    async def get_by_id(self, id_value: int) -> User | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(User)
@@ -29,6 +32,16 @@ class UserRepository(BaseRepository[User]):
             stmt = select(User).options(selectinload(User.roles).selectinload(UserRole.role)).where(User.email == email)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
+
+    async def validate_email_available(self, email: str, user: UserDomain) -> None:
+        async with self._db_provider.session() as session:
+            stmt = select(User).where(User.email == email)
+            if user.user_id:
+                stmt = stmt.where(User.user_id != user.user_id)
+            result = await session.execute(stmt)
+            if result.scalar_one_or_none():
+                msg = "Email already in use"
+                raise ValueError(msg)
 
     async def get_all_with_roles(self, *, skip: int = 0, limit: int = 100) -> list[User]:
         async with self._db_provider.session() as session:
@@ -49,16 +62,16 @@ class UserRepository(BaseRepository[User]):
             result = await session.execute(stmt)
             return list(result.scalars().all())
 
-    async def assign_role(self, user_id: int, role_id: int) -> None:
+    async def assign_role(self, user: User, role: Role) -> None:
         async with self._db_provider.session() as session:
-            user_role = UserRole(user_id=user_id, role_id=role_id)
+            user_role = UserRole(user_id=user.user_id, role_id=role.role_id)
             session.add(user_role)
             await session.flush()
             await session.commit()
 
-    async def remove_role(self, user_id: int, role_id: int) -> None:
+    async def remove_role(self, user: User, role: Role) -> None:
         async with self._db_provider.session() as session:
-            stmt = select(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
+            stmt = select(UserRole).where(UserRole.user_id == user.user_id, UserRole.role_id == role.role_id)
             result = await session.execute(stmt)
             user_role = result.scalar_one_or_none()
             if user_role:

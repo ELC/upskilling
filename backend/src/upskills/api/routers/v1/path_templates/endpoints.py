@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from upskills.api.dependencies import get_optional_user, require_permissions
 from upskills.api.schemas import MessageResponse, PaginatedResponse
-from upskills.domain import Career, PathTemplate
+from upskills.domain import PathTemplate
 from upskills.services import PathTemplateService
 
 from .schemas import PathTemplateCreate, PathTemplateResponse, PathTemplateUpdate, PathTemplateWithStepsResponse
@@ -45,15 +45,7 @@ async def create_path(
     data: PathTemplateCreate,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
 ) -> PathTemplateResponse:
-    path = PathTemplate(
-        path_template_id=0,
-        career=Career(career_id=data.career_id),
-        name=data.name,
-        description=data.description,
-        duration_hours=data.duration_hours,
-        default_start_offset_days=data.default_start_offset_days,
-        default_deadline_offset_days=data.default_deadline_offset_days,
-    )
+    path = PathTemplate.model_validate(data.model_dump())
     result = await service.create(path)
     return PathTemplateResponse.model_validate(result.model_dump())
 
@@ -64,13 +56,13 @@ async def get_path(
     path_id: int,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
 ) -> PathTemplateWithStepsResponse:
-    result = await service.get(path_id)
-
-    if not result:
+    try:
+        result = await service.get(path_id)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Path template not found",
-        )
+            detail=str(e),
+        ) from e
 
     return PathTemplateWithStepsResponse.model_validate(result.model_dump())
 
@@ -82,20 +74,16 @@ async def update_path(
     data: PathTemplateUpdate,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
 ) -> PathTemplateResponse:
-    path = PathTemplate(
-        name=data.name,
-        description=data.description,
-        duration_hours=data.duration_hours,
-        default_start_offset_days=data.default_start_offset_days,
-        default_deadline_offset_days=data.default_deadline_offset_days,
-    )
-    result = await service.update(path_id, path)
-
-    if not result:
+    template_data = data.model_dump(exclude_unset=True)
+    template = PathTemplate.model_validate(template_data)
+    template.path_template_id = path_id
+    try:
+        result = await service.update(template)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Path template not found",
-        )
+            detail=str(e),
+        ) from e
 
     return PathTemplateResponse.model_validate(result.model_dump())
 
@@ -106,12 +94,12 @@ async def delete_path(
     path_id: int,
     service: Annotated[PathTemplateService, Depends(Provide["path_template_service"])],
 ) -> MessageResponse:
-    success = await service.delete(path_id)
-
-    if not success:
+    try:
+        await service.delete(path_id)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Path template not found",
-        )
+            detail=str(e),
+        ) from e
 
     return MessageResponse(message="Path template deleted successfully.")

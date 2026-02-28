@@ -32,11 +32,3 @@ class PathTemplateBasicResponse(BaseSchema):
 class CareerWithPathsResponse(CareerResponse):
     path_templates: list[PathTemplateBasicResponse] = Field(default_factory=list)
 
-
-__all__ = [
-    "CareerCreate",
-    "CareerResponse",
-    "CareerUpdate",
-    "CareerWithPathsResponse",
-    "PathTemplateBasicResponse",
-]

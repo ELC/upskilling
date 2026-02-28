@@ -7,11 +7,14 @@ from upskills.domain import User as UserDomain
 from upskills.repositories.base import BaseRepository
 from upskills.repositories.user.models import User
 
+from .mapper import TeamMapper
 from .models import Team, TeamMember
 
 
-class TeamRepository(BaseRepository[Team]):
-    async def get_by_id(self, id_value: int, id_column: str = "team_id") -> Team | None:
+class TeamRepository(BaseRepository[Team, TeamDomain, TeamMapper]):
+    _id_column = "team_id"
+
+    async def get_by_id(self, id_value: int) -> Team | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(Team)
@@ -81,6 +84,14 @@ class TeamRepository(BaseRepository[Team]):
             stmt = select(TeamMember).where(TeamMember.team_id == team_id, TeamMember.user_id == user_id)
             result = await session.execute(stmt)
             return result.scalar_one_or_none() is not None
+
+    async def validate_manager_exists(self, manager: UserDomain) -> None:
+        async with self._db_provider.session() as session:
+            stmt = select(User).where(User.user_id == manager.user_id)
+            result = await session.execute(stmt)
+            if not result.scalar_one_or_none():
+                msg = "Manager user not found"
+                raise ValueError(msg)
 
     async def get_team_members(self, team_id: int) -> list[User]:
         async with self._db_provider.session() as session:

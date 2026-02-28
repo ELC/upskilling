@@ -2,17 +2,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from upskills.domain import LogEntry as LogEntryDomain
-from upskills.domain import PathTemplate as PathTemplateDomain
-from upskills.domain import User as UserDomain
-from upskills.domain import UserPathAssignment as UserPathAssignmentDomain
 from upskills.repositories.base import BaseRepository
 from upskills.repositories.user_path_assignment.models import UserPathAssignment
 
+from .mapper import LogEntryMapper
 from .models import LogEntry
 
 
-class LogEntryRepository(BaseRepository[LogEntry]):
-    async def get_by_id(self, id_value: int, id_column: str = "log_entry_id") -> LogEntry | None:
+class LogEntryRepository(BaseRepository[LogEntry, LogEntryDomain, LogEntryMapper]):
+    _id_column = "log_entry_id"
+
+    async def get_by_id(self, id_value: int) -> LogEntry | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(LogEntry)
@@ -41,7 +41,7 @@ class LogEntryRepository(BaseRepository[LogEntry]):
 
             stmt = stmt.order_by(LogEntry.entry_date.desc())
             result = await session.execute(stmt)
-            return [self.to_domain(e, include_details=True) for e in result.scalars().all()]
+            return [self._mapper.to_domain(e, include_details=True) for e in result.scalars().all()]
 
     async def get_by_user(self, user_id: int) -> list[LogEntryDomain]:
         async with self._db_provider.session() as session:
@@ -52,48 +52,4 @@ class LogEntryRepository(BaseRepository[LogEntry]):
                 .order_by(LogEntry.entry_date.desc())
             )
             result = await session.execute(stmt)
-            return [self.to_domain(e) for e in result.scalars().all()]
-
-    @staticmethod
-    def to_domain(entry: LogEntry, *, include_details: bool = False) -> LogEntryDomain:
-        user_name = None
-        path_name = None
-        user = None
-        related_assignment = None
-
-        if include_details:
-            user = UserDomain.model_validate(entry.user) if entry.user else None
-            user_name = entry.user.full_name if entry.user else None
-
-            if entry.related_path_assignment:
-                template = (
-                    PathTemplateDomain.model_validate(entry.related_path_assignment.path_template)
-                    if entry.related_path_assignment.path_template
-                    else None
-                )
-                path_name = (
-                    entry.related_path_assignment.path_template.name
-                    if entry.related_path_assignment.path_template
-                    else None
-                )
-
-                related_assignment = UserPathAssignmentDomain(
-                    user_path_assignment_id=entry.related_path_assignment.user_path_assignment_id,
-                    path_template=template,
-                    start_date=entry.related_path_assignment.start_date,
-                    deadline=entry.related_path_assignment.deadline,
-                    status=entry.related_path_assignment.status,
-                    progress_percent=entry.related_path_assignment.progress_percent,
-                    mentor_validation_status=entry.related_path_assignment.mentor_validation_status,
-                )
-
-        return LogEntryDomain(
-            log_entry_id=entry.log_entry_id,
-            user=user,
-            entry_type=entry.entry_type,
-            entry_date=entry.entry_date,
-            notes=entry.notes,
-            related_path_assignment=related_assignment,
-            user_name=user_name,
-            path_name=path_name,
-        )
+            return [self._mapper.to_domain(e) for e in result.scalars().all()]

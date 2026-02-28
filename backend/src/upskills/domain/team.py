@@ -7,7 +7,7 @@ from .user import User
 
 
 class Team(DomainModel):
-    team_id: int
+    team_id: int = 0
     name: str | None = None
     manager: User
     members: Sequence[User] = Field(default_factory=list)

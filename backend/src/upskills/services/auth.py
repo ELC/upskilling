@@ -5,11 +5,9 @@ from dependency_injector.wiring import Provide
 from upskills.core import (
     create_access_token,
     create_refresh_token,
-    hash_password,
-    verify_password,
     verify_token,
 )
-from upskills.domain import AuthResult, Token
+from upskills.domain import AuthResult, Token, User
 from upskills.repositories import RoleRepository, UserRepository
 
 
@@ -18,48 +16,40 @@ class AuthService:
     user_repository: UserRepository = Provide["user_repository"]
     role_repository: RoleRepository = Provide["role_repository"]
 
-    async def register(
-        self,
-        full_name: str,
-        email: str,
-        password: str,
-        bio: str | None = None,
-    ) -> AuthResult:
-        existing = await self.user_repository.get_by_email(email)
+    async def register(self, user: User) -> AuthResult:
+        existing = await self.user_repository.get_by_email(user.email)
         if existing:
             msg = "Email already registered"
             raise ValueError(msg)
 
-        db_model = await self.user_repository.create({
-            "full_name": full_name,
-            "email": email,
-            "password_hash": hash_password(password),
-            "bio": bio,
-        })
+        created_user = await self.user_repository.create(user)
 
         mentee_role = await self.role_repository.get_by_name("mentee")
         if mentee_role:
-            await self.user_repository.assign_role(db_model.user_id, mentee_role.role_id)
+            await self.user_repository.assign_role(created_user, mentee_role)
 
-        user = await self.user_repository.get_by_id(db_model.user_id)
-        if not user:
+        registered_user = await self.user_repository.get_by_id(created_user.user_id)
+        if not registered_user:
             msg = "Failed to retrieve user after registration"
             raise RuntimeError(msg)
-        tokens = self._create_tokens(db_model.user_id)
+        tokens = self._create_tokens(created_user.user_id)
 
         return AuthResult(
-            user=self.user_repository.to_domain(user),
+            user=self.user_repository.to_domain(registered_user),
             tokens=tokens,
         )
 
     async def login(self, email: str, password: str) -> AuthResult:
         user = await self.user_repository.get_by_email(email)
 
-        if not user or not verify_password(password, user.password_hash):
+        if not user:
             msg = "Invalid email or password"
             raise ValueError(msg)
 
         user_domain = self.user_repository.to_domain(user)
+        if not user_domain.verify_password(password):
+            msg = "Invalid email or password"
+            raise ValueError(msg)
         tokens = self._create_tokens(user_domain.user_id)
 
         return AuthResult(
@@ -75,7 +65,7 @@ class AuthService:
             raise ValueError(msg)
 
         user_id = int(user_id_str)
-        user = await self.user_repository.get_by_id(user_id, id_column="user_id")
+        user = await self.user_repository.get_by_id(user_id)
 
         if not user:
             msg = "User not found"
@@ -98,9 +88,9 @@ class AuthService:
             msg = "Invalid or expired reset token"
             raise ValueError(msg)
 
-        user = await self.user_repository.get_by_id(reset_token.user_id, id_column="user_id")
+        user = await self.user_repository.get_by_id(reset_token.user_id)
         if user:
-            await self.user_repository.update(user, {"password_hash": hash_password(new_password)})
+            await self.user_repository.update(user, User(password=new_password))
             await self.user_repository.mark_token_used(reset_token)
             return True
 

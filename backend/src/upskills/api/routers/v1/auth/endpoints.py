@@ -27,12 +27,8 @@ async def register(
     data: RegisterRequest,
     service: Annotated[AuthService, Depends(Provide["auth_service"])],
 ) -> AuthResponse:
-    result = await service.register(
-        full_name=data.full_name,
-        email=data.email,
-        password=data.password,
-        bio=data.bio,
-    )
+    user = User.model_validate(data.model_dump())
+    result = await service.register(user)
     return AuthResponse(
         user=UserResponse.model_validate(result.user.model_dump()),
         tokens=TokenResponse.model_validate(result.tokens.model_dump()),

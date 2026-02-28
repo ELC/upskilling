@@ -4,8 +4,12 @@ from upskills.api.routers.v1.path_steps.schemas import PathStepResponse
 from upskills.api.schemas import BaseSchema
 
 
-class PathTemplateCreate(BaseSchema):
+class CareerRef(BaseSchema):
     career_id: int
+
+
+class PathTemplateCreate(BaseSchema):
+    career: CareerRef
     name: str = Field(..., min_length=1, max_length=255)
     description: str
     duration_hours: int = Field(..., gt=0)
@@ -33,11 +37,3 @@ class PathTemplateResponse(BaseSchema):
 
 class PathTemplateWithStepsResponse(PathTemplateResponse):
     steps: list[PathStepResponse] = Field(default_factory=list)
-
-
-__all__ = [
-    "PathTemplateCreate",
-    "PathTemplateResponse",
-    "PathTemplateUpdate",
-    "PathTemplateWithStepsResponse",
-]

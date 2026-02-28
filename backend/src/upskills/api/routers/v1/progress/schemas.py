@@ -30,9 +30,21 @@ class MenteeProgressSummary(BaseSchema):
     pending_validation: int
 
 
-class UserCareerPathCreate(BaseSchema):
+class UserRef(BaseSchema):
     user_id: int
+
+
+class CareerRef(BaseSchema):
     career_id: int
+
+
+class PathTemplateRef(BaseSchema):
+    path_template_id: int
+
+
+class UserCareerPathCreate(BaseSchema):
+    user: UserRef
+    career: CareerRef
     start_date: date
     end_date: date
 
@@ -70,7 +82,7 @@ class UserCareerPathDetailResponse(UserCareerPathResponse):
 
 class UserPathAssignmentCreate(BaseSchema):
     user_career_path_id: int
-    path_template_id: int
+    path_template: PathTemplateRef
     start_date: date
     deadline: date
 
@@ -108,18 +120,3 @@ class UserStepProgressUpdate(BaseSchema):
     actual_start_date: date | None = None
     actual_end_date: date | None = None
 
-
-__all__ = [
-    "DashboardStats",
-    "MenteeProgressSummary",
-    "UserCareerPathCreate",
-    "UserCareerPathDetailResponse",
-    "UserCareerPathResponse",
-    "UserCareerPathUpdate",
-    "UserPathAssignmentCreate",
-    "UserPathAssignmentDetailResponse",
-    "UserPathAssignmentResponse",
-    "UserPathAssignmentUpdate",
-    "UserStepProgressResponse",
-    "UserStepProgressUpdate",
-]

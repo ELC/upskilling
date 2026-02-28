@@ -1,23 +1,14 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from collections.abc import Sequence
 
 from pydantic import Field
 
 from .base import DomainModel
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from .career import Career
-    from .path_step import PathStep
-
-if False:
-    pass
+from .career import Career
+from .path_step import PathStep
 
 
 class PathTemplate(DomainModel):
-    path_template_id: int
+    path_template_id: int = 0
     career: Career | None = None
     name: str | None = None
     description: str | None = None

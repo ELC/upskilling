@@ -7,11 +7,14 @@ from upskills.domain import PathStepDependency
 from upskills.domain import PathTemplate as PathTemplateDomain
 from upskills.repositories.base import BaseRepository
 
+from .mapper import PathTemplateMapper
 from .models import PathTemplate, PathTemplateStep
 
 
-class PathTemplateRepository(BaseRepository[PathTemplate]):
-    async def get_by_id(self, id_value: int, id_column: str = "path_template_id") -> PathTemplate | None:
+class PathTemplateRepository(BaseRepository[PathTemplate, PathTemplateDomain, PathTemplateMapper]):
+    _id_column = "path_template_id"
+
+    async def get_by_id(self, id_value: int) -> PathTemplate | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(PathTemplate)

@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class PathStep(DomainModel):
-    step_id: int
-    path_template: PathTemplate
+    step_id: int = 0
+    path_template: PathTemplate | None = None
     step_order: int | None = None
     name: str | None = None
     description: str | None = None
@@ -24,4 +24,4 @@ class PathStep(DomainModel):
 
 
 class PathStepDependency(DomainModel):
-    step: PathStep
+    step: PathStep | None = None

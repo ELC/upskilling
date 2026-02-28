@@ -8,11 +8,14 @@ from upskills.domain import UserPathAssignment as UserPathAssignmentDomain
 from upskills.repositories.base import BaseRepository
 from upskills.repositories.user_path_assignment.models import UserPathAssignment
 
+from .mapper import UserCareerPathMapper
 from .models import UserCareerPath
 
 
-class UserCareerPathRepository(BaseRepository[UserCareerPath]):
-    async def get_by_id(self, id_value: int, id_column: str = "user_career_path_id") -> UserCareerPath | None:
+class UserCareerPathRepository(BaseRepository[UserCareerPath, UserCareerPathDomain, UserCareerPathMapper]):
+    _id_column = "user_career_path_id"
+
+    async def get_by_id(self, id_value: int) -> UserCareerPath | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(UserCareerPath)

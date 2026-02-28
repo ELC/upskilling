@@ -11,10 +11,11 @@ class PathStepService:
     path_step_repository: PathStepRepository = Provide["path_step_repository"]
     path_template_repository: PathTemplateRepository = Provide["path_template_repository"]
 
-    async def get(self, step_id: int) -> PathStep | None:
+    async def get(self, step_id: int) -> PathStep:
         step = await self.path_step_repository.get_by_id(step_id)
         if not step:
-            return None
+            msg = "Step not found"
+            raise ValueError(msg)
         return self.path_step_repository.to_domain(step)
 
     async def get_for_path(self, path_template_id: int) -> list[PathStep]:
@@ -22,41 +23,51 @@ class PathStepService:
         return [self.path_step_repository.to_domain(s) for s in steps]
 
     async def create(self, path_step: PathStep) -> PathStep:
-        path_template_id = path_step.path_template.path_template_id
-        path = await self.path_template_repository.get_by_id(path_template_id, id_column="path_template_id")
-        if not path:
-            msg = "Path template not found"
-            raise ValueError(msg)
+        if path_step.path_template and path_step.path_template.path_template_id:
+            path = await self.path_template_repository.get_by_id(path_step.path_template.path_template_id)
+            if not path:
+                msg = "Path template not found"
+                raise ValueError(msg)
 
-        path_step_data = {
-            "path_template_id": path_template_id,
-            "name": path_step.name,
-            "step_order": path_step.step_order,
-            "description": path_step.description,
-            "duration_hours": path_step.duration_hours,
-            "course_link": path_step.course_link,
-        }
-        created_step = await self.path_step_repository.create(path_step_data)
+        created_step = await self.path_step_repository.create(path_step)
         return self.path_step_repository.to_domain(created_step)
 
-    async def update(self, step_id: int, path_step_: PathStep) -> PathStep | None:
-        path_step = await self.path_step_repository.get_by_id(step_id, id_column="step_id")
-        if not path_step:
-            return None
-        updated_path_step = await self.path_step_repository.update(path_step, path_step_)
-        return self.path_step_repository.to_domain(updated_path_step)
+    async def update(self, path_step: PathStep) -> PathStep:
+        existing_step = await self.path_step_repository.get_by_id(path_step.step_id)
+        if not existing_step:
+            msg = "Step not found"
+            raise ValueError(msg)
 
-    async def delete(self, step_id: int) -> bool:
-        path_step = await self.path_step_repository.get_by_id(step_id, id_column="step_id")
+        if path_step.path_template and path_step.path_template.path_template_id:
+            path = await self.path_template_repository.get_by_id(path_step.path_template.path_template_id)
+            if not path:
+                msg = "Path template not found"
+                raise ValueError(msg)
+
+        updated_step = await self.path_step_repository.update(existing_step, path_step)
+        return self.path_step_repository.to_domain(updated_step)
+
+    async def delete(self, step_id: int) -> None:
+        path_step = await self.path_step_repository.get_by_id(step_id)
         if not path_step:
-            return False
+            msg = "Step not found"
+            raise ValueError(msg)
         await self.path_step_repository.delete(path_step)
-        return True
 
-    async def add_dependency(self, step_id: int, depends_on_step_id: int) -> bool:
+    async def add_dependency(self, step_id: int, depends_on_step_id: int) -> None:
+        step = await self.path_step_repository.get_by_id(step_id)
+        if not step:
+            msg = "Step not found"
+            raise ValueError(msg)
+        depends_on = await self.path_step_repository.get_by_id(depends_on_step_id)
+        if not depends_on:
+            msg = "Dependent step not found"
+            raise ValueError(msg)
         await self.path_step_repository.add_dependency(step_id, depends_on_step_id)
-        return True
 
-    async def remove_dependency(self, step_id: int, depends_on_step_id: int) -> bool:
+    async def remove_dependency(self, step_id: int, depends_on_step_id: int) -> None:
+        step = await self.path_step_repository.get_by_id(step_id)
+        if not step:
+            msg = "Step not found"
+            raise ValueError(msg)
         await self.path_step_repository.remove_dependency(step_id, depends_on_step_id)
-        return True

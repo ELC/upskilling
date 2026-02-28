@@ -6,13 +6,31 @@ from upskills.api.schemas import BaseSchema
 from upskills.domain import LogEntryType
 
 
-class LogEntryCreate(BaseSchema):
+class UserRef(BaseSchema):
     user_id: int
+
+
+class CareerRef(BaseSchema):
+    career_id: int
+
+
+class UserCareerPathRef(BaseSchema):
     user_career_path_id: int
+    user: UserRef | None = None
+    career: CareerRef | None = None
+
+
+class UserPathAssignmentRef(BaseSchema):
+    user_path_assignment_id: int
+
+
+class LogEntryCreate(BaseSchema):
+    user: UserRef
+    user_career_path: UserCareerPathRef
     entry_type: LogEntryType
     entry_date: date
     notes: str = Field(..., min_length=1)
-    related_user_path_assignment_id: int | None = None
+    related_path_assignment: UserPathAssignmentRef | None = None
 
 
 class LogEntryUpdate(BaseSchema):
@@ -34,11 +52,3 @@ class LogEntryResponse(BaseSchema):
 class LogEntryDetailResponse(LogEntryResponse):
     user_name: str
     path_name: str | None = None
-
-
-__all__ = [
-    "LogEntryCreate",
-    "LogEntryDetailResponse",
-    "LogEntryResponse",
-    "LogEntryUpdate",
-]

@@ -5,11 +5,14 @@ from upskills.domain import PathStep as PathStepDomain
 from upskills.domain import UserStepProgress as UserStepProgressDomain
 from upskills.repositories.base import BaseRepository
 
+from .mapper import UserStepProgressMapper
 from .models import UserStepProgress
 
 
-class UserStepProgressRepository(BaseRepository[UserStepProgress]):
-    async def get_by_id(self, id_value: int, id_column: str = "user_step_progress_id") -> UserStepProgress | None:
+class UserStepProgressRepository(BaseRepository[UserStepProgress, UserStepProgressDomain, UserStepProgressMapper]):
+    _id_column = "user_step_progress_id"
+
+    async def get_by_id(self, id_value: int) -> UserStepProgress | None:
         async with self._db_provider.session() as session:
             stmt = (
                 select(UserStepProgress)
@@ -57,6 +60,7 @@ class UserStepProgressRepository(BaseRepository[UserStepProgress]):
 
         return UserStepProgressDomain(
             user_step_progress_id=progress.user_step_progress_id,
+            user_path_assignment_id=progress.user_path_assignment_id,
             step=step,
             status=progress.status,
             progress_percent=progress.progress_percent,

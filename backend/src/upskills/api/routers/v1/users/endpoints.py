@@ -55,18 +55,12 @@ async def get_my_profile(
 @router.put("/me")
 @inject
 async def update_my_profile(
-    user: UserUpdate,
+    data: UserUpdate,
     service: Annotated[UserService, Depends(Provide["user_service"])],
     current_user: Annotated[UserDomain, Depends(authenticated)],
 ) -> UserResponse:
-    result = await service.update_user(current_user.user_id, user.full_name, user.email, user.bio)
-
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
+    user_data = UserDomain(user_id=current_user.user_id, **data.model_dump(exclude_unset=True))
+    result = await service.update_user(user_data)
     return UserResponse.model_validate(result.model_dump())
 
 
@@ -77,18 +71,12 @@ async def change_my_password(
     service: Annotated[UserService, Depends(Provide["user_service"])],
     current_user: Annotated[UserDomain, Depends(authenticated)],
 ) -> MessageResponse:
-    success = await service.change_password(
+    await service.change_password(
         current_user.user_id,
         data.current_password,
         data.new_password,
     )
-
-    if success:
-        return MessageResponse(message="Password changed successfully.")
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Failed to change password.",
-    )
+    return MessageResponse(message="Password changed successfully.")
 
 
 @router.get("/{user_id}", dependencies=[Depends(require_permissions("user.view"))])
@@ -114,14 +102,7 @@ async def delete_user(
     user_id: int,
     service: Annotated[UserService, Depends(Provide["user_service"])],
 ) -> MessageResponse:
-    success = await service.delete_user(user_id)
-
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
+    await service.delete_user(user_id)
     return MessageResponse(message="User deleted successfully.")
 
 

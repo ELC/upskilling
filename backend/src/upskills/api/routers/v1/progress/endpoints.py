@@ -4,7 +4,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.api.dependencies import authenticated, require_permissions
-from upskills.domain import Career, PathTemplate, User, UserCareerPath, UserPathAssignment, UserStepProgress
+from upskills.domain import User, UserCareerPath, UserPathAssignment, ValidationStatus
 from upskills.services import ProgressService, TeamService
 
 from .schemas import (
@@ -70,13 +70,7 @@ async def assign_career_path(
     data: UserCareerPathCreate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserCareerPathResponse:
-    career_path = UserCareerPath(
-        user_career_path_id=0,
-        user=User(user_id=data.user_id),
-        career=Career(career_id=data.career_id),
-        start_date=data.start_date,
-        end_date=data.end_date,
-    )
+    career_path = UserCareerPath.model_validate(data.model_dump())
     result = await service.assign(career_path)
     return UserCareerPathResponse.model_validate(result.model_dump())
 
@@ -88,11 +82,7 @@ async def update_career_path(
     data: UserCareerPathUpdate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserCareerPathResponse:
-    career_path = UserCareerPath(
-        start_date=data.start_date,
-        end_date=data.end_date,
-    )
-    result = await service.update(career_path_id, career_path)
+    result = await service.update(career_path_id, data)
 
     if not result:
         raise HTTPException(
@@ -121,14 +111,9 @@ async def assign_path(
     data: UserPathAssignmentCreate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserPathAssignmentResponse:
-    assignment = UserPathAssignment(
-        user_path_assignment_id=0,
-        user_career_path=UserCareerPath(user_career_path_id=data.user_career_path_id),
-        path_template=PathTemplate(path_template_id=data.path_template_id),
-        start_date=data.start_date,
-        deadline=data.deadline,
-    )
-    result = await service.assign_path(assignment)
+    assignment = UserPathAssignment.model_validate(data.model_dump())
+    assignment.user_career_path_id = data.user_career_path_id
+    result = await service.assign_path(data.user_career_path_id, assignment)
     return UserPathAssignmentResponse.model_validate(result.model_dump())
 
 
@@ -156,11 +141,7 @@ async def update_assignment(
     data: UserPathAssignmentUpdate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserPathAssignmentResponse:
-    assignment = UserPathAssignment(
-        status=data.status.value if data.status else None,
-        mentor_validation_status=data.mentor_validation_status.value if data.mentor_validation_status else None,
-    )
-    result = await service.update_assignment_status(assignment_id, assignment)
+    result = await service.update_assignment_status(assignment_id, data)
 
     if not result:
         raise HTTPException(
@@ -186,8 +167,9 @@ async def approve_assignment(
     assignment_id: int,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserPathAssignmentResponse:
-    assignment = UserPathAssignment(mentor_validation_status="Approved")
-    result = await service.update_assignment_status(assignment_id, assignment)
+    result = await service.update_assignment_status(
+        assignment_id, UserPathAssignmentUpdate(mentor_validation_status=ValidationStatus.APPROVED)
+    )
 
     if not result:
         raise HTTPException(
@@ -204,8 +186,9 @@ async def reject_assignment(
     assignment_id: int,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserPathAssignmentResponse:
-    assignment = UserPathAssignment(mentor_validation_status="Rejected")
-    result = await service.update_assignment_status(assignment_id, assignment)
+    result = await service.update_assignment_status(
+        assignment_id, UserPathAssignmentUpdate(mentor_validation_status=ValidationStatus.REJECTED)
+    )
 
     if not result:
         raise HTTPException(
@@ -233,15 +216,7 @@ async def update_step_progress(
     data: UserStepProgressUpdate,
     service: Annotated[ProgressService, Depends(Provide["progress_service"])],
 ) -> UserStepProgressResponse:
-    progress = UserStepProgress(
-        status=data.status.value if data.status else None,
-        progress_percent=data.progress_percent,
-        planned_start_date=data.planned_start_date,
-        planned_end_date=data.planned_end_date,
-        actual_start_date=data.actual_start_date,
-        actual_end_date=data.actual_end_date,
-    )
-    result = await service.update_step_progress(progress_id, progress)
+    result = await service.update_step_progress(progress_id, data)
 
     if not result:
         raise HTTPException(
@@ -265,7 +240,7 @@ async def get_team_progress(
     for team in teams:
         if team.members:
             for member in team.members:
-                if member.user_id is not None:
+                if member.user_id:
                     member_ids.add(member.user_id)
 
     if not member_ids:

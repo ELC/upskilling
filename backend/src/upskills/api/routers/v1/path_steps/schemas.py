@@ -3,7 +3,12 @@ from pydantic import Field
 from upskills.api.schemas import BaseSchema
 
 
+class PathTemplateRef(BaseSchema):
+    path_template_id: int
+
+
 class PathStepCreate(BaseSchema):
+    path_template: PathTemplateRef
     step_order: int = Field(..., ge=1)
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
@@ -37,12 +42,3 @@ class PathStepResponse(BaseSchema):
     duration_hours: int | None = None
     course_link: str | None = None
     dependencies: list[PathStepDependencyResponse] = Field(default_factory=list)
-
-
-__all__ = [
-    "PathStepCreate",
-    "PathStepDependencyResponse",
-    "PathStepResponse",
-    "PathStepUpdate",
-    "StepDependencyCreate",
-]

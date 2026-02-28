@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from upskills.api.dependencies import get_optional_user, require_permissions
 from upskills.api.schemas import MessageResponse
-from upskills.domain import LogEntry, User, UserCareerPath, UserPathAssignment
+from upskills.domain import LogEntry
 from upskills.services import LogbookService
 
 from .schemas import (
@@ -35,17 +35,7 @@ async def create_logbook_entry(
     data: LogEntryCreate,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
 ) -> LogEntryResponse:
-    entry = LogEntry(
-        log_entry_id=0,
-        user=User(user_id=data.user_id),
-        user_career_path=UserCareerPath(user_career_path_id=data.user_career_path_id),
-        entry_type=data.entry_type.value,
-        entry_date=data.entry_date,
-        notes=data.notes,
-        related_path_assignment=UserPathAssignment(user_path_assignment_id=data.related_user_path_assignment_id)
-        if data.related_user_path_assignment_id
-        else None,
-    )
+    entry = LogEntry.model_validate(data.model_dump())
     result = await service.create(entry)
     return LogEntryResponse.model_validate(result.model_dump())
 
@@ -74,12 +64,7 @@ async def update_logbook_entry(
     data: LogEntryUpdate,
     service: Annotated[LogbookService, Depends(Provide["logbook_service"])],
 ) -> LogEntryResponse:
-    entry = LogEntry(
-        entry_type=data.entry_type.value if data.entry_type else None,
-        entry_date=data.entry_date,
-        notes=data.notes,
-    )
-    result = await service.update(log_entry_id, entry)
+    result = await service.update(log_entry_id, data)
 
     if not result:
         raise HTTPException(

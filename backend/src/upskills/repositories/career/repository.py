@@ -5,11 +5,14 @@ from upskills.domain import Career as CareerDomain
 from upskills.domain import PathTemplate as PathTemplateDomain
 from upskills.repositories.base import BaseRepository
 
+from .mapper import CareerMapper
 from .models import Career
 
 
-class CareerRepository(BaseRepository[Career]):
-    async def get_by_id(self, id_value: int, id_column: str = "career_id") -> Career | None:
+class CareerRepository(BaseRepository[Career, CareerDomain, CareerMapper]):
+    _id_column = "career_id"
+
+    async def get_by_id(self, id_value: int) -> Career | None:
         async with self._db_provider.session() as session:
             stmt = select(Career).options(selectinload(Career.path_templates)).where(Career.career_id == id_value)
             result = await session.execute(stmt)

@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 from dependency_injector.wiring import Provide
 
+from pydantic import BaseModel
+
 from upskills.domain import Team, User
 from upskills.repositories import TeamRepository, UserRepository
 
@@ -31,53 +33,31 @@ class TeamService:
         return [self.team_repository.to_domain(team) for team in teams]
 
     async def create_team(self, team: Team) -> Team:
-        # Validate manager exists
-        manager_user_id = team.manager.user_id if team.manager else None
-        if not manager_user_id:
-            msg = "Manager is required"
-            raise ValueError(msg)
+        await self.team_repository.validate_manager_exists(team.manager)
 
-        manager = await self.user_repository.get_by_id(manager_user_id)
-        if not manager:
-            msg = "Manager user not found"
-            raise ValueError(msg)
-
-        team_data = {
-            "name": team.name,
-            "manager_user_id": manager_user_id,
-        }
-        created_team = await self.team_repository.create(team_data)
+        created_team = await self.team_repository.create(team)
         return self.team_repository.to_domain(created_team)
 
-    async def update_team(self, team_id: int, team: Team) -> Team | None:
-        existing_team = await self.team_repository.get_by_id(team_id, id_column="team_id")
+    async def update_team(self, team_id: int, update_data: Team) -> Team | None:
+        existing_team = await self.team_repository.get_by_id(team_id)
         if not existing_team:
             return None
 
-        update_data = {}
-        if team.name is not None:
-            update_data["name"] = team.name
-
-        if team.manager:
-            manager_user_id = team.manager.user_id
-            manager = await self.user_repository.get_by_id(manager_user_id)
-            if not manager:
-                msg = "Manager user not found"
-                raise ValueError(msg)
-            update_data["manager_user_id"] = manager_user_id
+        if update_data.manager:
+            await self.team_repository.validate_manager_exists(update_data.manager)
 
         updated_team = await self.team_repository.update(existing_team, update_data)
         return self.team_repository.to_domain(updated_team)
 
     async def delete_team(self, team_id: int) -> bool:
-        team = await self.team_repository.get_by_id(team_id, id_column="team_id")
+        team = await self.team_repository.get_by_id(team_id)
         if not team:
             return False
         await self.team_repository.delete(team)
         return True
 
     async def add_member(self, team_id: int, user_id: int) -> bool:
-        team = await self.team_repository.get_by_id(team_id, id_column="team_id")
+        team = await self.team_repository.get_by_id(team_id)
         if not team:
             msg = "Team not found"
             raise ValueError(msg)
@@ -95,7 +75,7 @@ class TeamService:
         return True
 
     async def remove_member(self, team_id: int, user_id: int) -> bool:
-        team = await self.team_repository.get_by_id(team_id, id_column="team_id")
+        team = await self.team_repository.get_by_id(team_id)
         if not team:
             return False
         await self.team_repository.remove_member(team.team_id, user_id)

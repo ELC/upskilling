@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from dependency_injector.wiring import Provide
 
-from upskills.core import hash_password, verify_password
 from upskills.domain import User
 from upskills.repositories import RoleRepository, UserRepository
 
@@ -19,7 +18,7 @@ class UserService:
         return self.user_repository.to_domain(user)
 
     async def get_user_with_permissions(self, user_id: int) -> User | None:
-        user = await self.user_repository.get_by_id(user_id, id_column="user_id")
+        user = await self.user_repository.get_by_id(user_id)
         if not user:
             return None
 
@@ -33,35 +32,16 @@ class UserService:
         total = await self.user_repository.count()
         return [self.user_repository.to_domain(user) for user in users], total
 
-    async def update_user(
-        self,
-        user_id: int,
-        full_name: str | None = None,
-        email: str | None = None,
-        bio: str | None = None,
-    ) -> User | None:
-        user = await self.user_repository.get_by_id(user_id, id_column="user_id")
-        if not user:
-            return None
+    async def update_user(self, user: User) -> User:
+        existing_user = await self.user_repository.get_by_id(user.user_id)
+        if not existing_user:
+            msg = "User not found"
+            raise ValueError(msg)
 
-        if email and email != user.email:
-            existing = await self.user_repository.get_by_email(email)
-            if existing:
-                msg = "Email already in use"
-                raise ValueError(msg)
+        if user.email:
+            await self.user_repository.validate_email_available(user.email, user)
 
-        update_user = {}
-        if full_name is not None:
-            update_user["full_name"] = full_name
-        if email is not None:
-            update_user["email"] = email
-        if bio is not None:
-            update_user["bio"] = bio
-
-        if not update_user:
-            return self.user_repository.to_domain(user)
-
-        updated_user = await self.user_repository.update(user, update_user)
+        updated_user = await self.user_repository.update(existing_user, user)
         return self.user_repository.to_domain(updated_user)
 
     async def change_password(
@@ -69,22 +49,24 @@ class UserService:
         user_id: int,
         current_password: str,
         new_password: str,
-    ) -> bool:
-        db_model = await self.user_repository.get_by_id(user_id, id_column="user_id")
-        if not db_model:
-            return False
+    ) -> None:
+        existing_user = await self.user_repository.get_by_id(user_id)
+        if not existing_user:
+            msg = "User not found"
+            raise ValueError(msg)
 
-        if not verify_password(current_password, db_model.password_hash):
+        existing_user_domain = self.user_repository.to_domain(existing_user)
+        if not existing_user_domain.verify_password(current_password):
             msg = "Current password is incorrect"
             raise ValueError(msg)
 
-        await self.user_repository.update(db_model, {"password_hash": hash_password(new_password)})
-        return True
+        await self.user_repository.update(existing_user, User(password=new_password))
 
-    async def delete_user(self, user_id: int) -> bool:
-        db_model = await self.user_repository.get_by_id(user_id, id_column="user_id")
-        if not db_model:
-            return False
+    async def delete_user(self, user_id: int) -> None:
+        user_to_delete = await self.user_repository.get_by_id(user_id)
+        if not user_to_delete:
+            msg = "User not found"
+            raise ValueError(msg)
 
         if await self.user_repository.has_team_memberships(user_id):
             msg = "Cannot delete user: they are a member of one or more teams. Remove them from all teams first."
@@ -94,8 +76,7 @@ class UserService:
             msg = "Cannot delete user: they have career paths assigned. Remove all career path assignments first."
             raise ValueError(msg)
 
-        await self.user_repository.delete(db_model)
-        return True
+        await self.user_repository.delete(user_to_delete)
 
     async def assign_role(self, user_id: int, role_name: str) -> bool:
         role = await self.role_repository.get_by_name(role_name)
@@ -103,7 +84,12 @@ class UserService:
             msg = f"Role '{role_name}' not found"
             raise ValueError(msg)
 
-        await self.user_repository.assign_role(user_id, role.role_id)
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            msg = "User not found"
+            raise ValueError(msg)
+
+        await self.user_repository.assign_role(user, role)
         return True
 
     async def remove_role(self, user_id: int, role_name: str) -> bool:
@@ -112,5 +98,10 @@ class UserService:
             msg = f"Role '{role_name}' not found"
             raise ValueError(msg)
 
-        await self.user_repository.remove_role(user_id, role.role_id)
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            msg = "User not found"
+            raise ValueError(msg)
+
+        await self.user_repository.remove_role(user, role)
         return True

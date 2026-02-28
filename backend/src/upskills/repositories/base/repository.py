@@ -1,4 +1,4 @@
-from typing import Any, TypeVar, cast, get_args
+from typing import Any, ClassVar, get_args
 
 from dependency_injector.wiring import Provide, inject
 from pydantic import BaseModel
@@ -8,21 +8,13 @@ from sqlalchemy.sql.functions import count
 
 from upskills.db import DatabaseProvider
 
+from .mapper import BaseMapper
 from .models import Base
 
-ModelT = TypeVar("ModelT", bound=Base)
 
+class BaseRepository[ModelT: Base, DomainT: BaseModel, MapperT: BaseMapper]:
+    _id_column: ClassVar[str] = "id"
 
-def _to_dict(data: dict[str, Any] | BaseModel, *, exclude_unset: bool = False) -> dict[str, Any]:
-    if isinstance(data, dict):
-        return data
-    if hasattr(data, "model_dump"):
-        return data.model_dump(exclude_unset=exclude_unset)
-    msg = f"Expected dict or Pydantic model, got {type(data)}"
-    raise TypeError(msg)
-
-
-class BaseRepository[ModelT: Base]:
     @inject
     def __init__(
         self,
@@ -32,19 +24,15 @@ class BaseRepository[ModelT: Base]:
 
     @property
     def _model(self) -> type[ModelT]:
-        orig_bases = getattr(self.__class__, "__orig_bases__", ())
-        if not orig_bases:
-            msg = f"Could not determine model type for {self.__class__.__name__}"
-            raise RuntimeError(msg)
-        args = get_args(orig_bases[0])
-        if args:
-            return cast("type[ModelT]", args[0])
-        msg = f"Could not determine model type for {self.__class__.__name__}"
-        raise RuntimeError(msg)
+        return get_args(self.__class__.__orig_bases__[0])[0]  # type: ignore[attr-defined, return-value]
 
-    async def get_by_id(self, id_value: int, id_column: str = "id") -> ModelT | None:
+    @property
+    def _mapper(self) -> type[MapperT]:
+        return get_args(self.__class__.__orig_bases__[0])[2]  # type: ignore[attr-defined, return-value]
+
+    async def get_by_id(self, id_value: int) -> ModelT | None:
         async with self._db_provider.session() as session:
-            column = getattr(self._model, id_column)
+            column = getattr(self._model, self._id_column)
             stmt = select(self._model).where(column == id_value)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
@@ -74,10 +62,9 @@ class BaseRepository[ModelT: Base]:
             result = await session.execute(stmt)
             return result.scalar() or 0
 
-    async def create(self, data: dict[str, Any] | BaseModel) -> ModelT:
-        data_dict = _to_dict(data)
+    async def create(self, data: DomainT) -> ModelT:
         async with self._db_provider.session() as session:
-            instance = self._model(**data_dict)
+            instance = self._mapper.to_model(data)  # type: ignore[assignment]
             session.add(instance)
             await session.flush()
             await session.refresh(instance)
@@ -87,14 +74,11 @@ class BaseRepository[ModelT: Base]:
     async def update(
         self,
         instance: ModelT,
-        data: dict[str, Any] | BaseModel,
+        data: DomainT,
     ) -> ModelT:
-        data_dict = _to_dict(data, exclude_unset=True)
         async with self._db_provider.session() as session:
             instance = await session.merge(instance)
-            for key, value in data_dict.items():
-                if hasattr(instance, key):
-                    setattr(instance, key, value)
+            self._mapper.update_model(instance, data)  # type: ignore[arg-type]
             await session.flush()
             await session.refresh(instance)
             await session.commit()
